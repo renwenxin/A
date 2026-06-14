@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>复盘报告 — {{ report.date }}</h1>
+<div class="stats">
+    <div class="stat-card"><strong>{{ report.total_limit_ups }}</strong><br>涨停总数</div>
+    <div class="stat-card"><strong>{{ report.sealed }}</strong><br>封死</div>
+    <div class="stat-card"><strong>{{ report.broken }}</strong><br>炸板</div>
+    <div class="stat-card"><strong>{{ report.seal_rate }}</strong><br>封板率</div>
+    <div class="stat-card"><strong>{{ report.max_consecutive }}</strong><br>最高连板</div>
+</div>
+<h2>时间分布</h2>
+<ul>{% for label, count in report.time_distribution.items() %}
+    <li>{{ label }}: {{ count }}只</li>{% endfor %}</ul>
+<h2>热点板块</h2>
+<ol>{% for sector, count in report.top_sectors %}
+    <li>{{ sector }}: {{ count }}只涨停</li>{% endfor %}</ol>
+<h2>连板梯队</h2>
+<table><tr><th>代码</th><th>名称</th><th>连板</th><th>涨停时间</th></tr>
+{% for lu in report.multi_board_list %}
+<tr><td><a href="/stock/{{ lu.code }}">{{ lu.code }}</a></td>
+    <td>{{ lu.name }}</td><td>{{ lu.consecutive }}板</td><td>{{ lu.limit_up_time }}</td></tr>
+{% endfor %}</table>
+<h2>龙虎榜 Top 10</h2>
+<table><tr><th>代码</th><th>名称</th><th>原因</th><th>净买额(万)</th></tr>
+{% for l in report.top_lhb %}
+<tr><td>{{ l.code }}</td><td>{{ l.name }}</td><td>{{ l.reason }}</td><td>{{ l.net_amount|round(1) }}</td></tr>
+{% endfor %}</table>
+{% endblock %}

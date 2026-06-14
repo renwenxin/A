@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>个股详情 — {{ code }}</h1>
+{% if error %}<p class="error">{{ error }}</p>
+{% else %}
+<table>
+<tr><th>最新价</th><td>{{ latest.get('close', '-') }}</td></tr>
+<tr><th>最高</th><td>{{ latest.get('high', '-') }}</td></tr>
+<tr><th>最低</th><td>{{ latest.get('low', '-') }}</td></tr>
+<tr><th>成交量</th><td>{{ latest.get('volume', '-') }}</td></tr>
+<tr><th>MACD DIF</th><td>{{ latest.get('macd_dif', '-') }}</td></tr>
+<tr><th>MA5</th><td>{{ latest.get('ma5', '-') }}</td></tr>
+</table>
+{% endif %}
+<a href="/screening">← 返回选股</a>
+{% endblock %}

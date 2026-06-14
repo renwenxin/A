@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>选股面板</h1>
+<div class="screener-buttons">
+    <button onclick="screen('one_two')">1进2筛选</button>
+    <button onclick="screen('institution')">机构票筛选</button>
+    <button onclick="screen('leader')">龙头筛选</button>
+    <button onclick="screen('breakout')">突破形态</button>
+    <button onclick="screen('sector_divergence')">板块分歧介入</button>
+    <button onclick="screen('auction')">竞价抢筹</button>
+    <button onclick="screenAll()">一键筛选全部</button>
+</div>
+<div id="results"></div>
+<script>
+async function screen(strategy) {
+    document.getElementById('results').innerHTML = '<p>筛选运行中...</p>';
+    const resp = await fetch(`/api/screen/${strategy}`);
+    const data = await resp.json();
+    if (data.error) { document.getElementById('results').innerHTML = '<p class="error">'+data.error+'</p>'; return; }
+    renderTable(strategy, data);
+}
+async function screenAll() {
+    document.getElementById('results').innerHTML = '<p>筛选运行中...</p>';
+    const resp = await fetch('/api/screen/all');
+    const allData = await resp.json();
+    let html = '';
+    for (const [strategy, results] of Object.entries(allData)) {
+        if (results.error) {
+            html += '<h2>'+strategy+'</h2><p class="error">'+results.error+'</p>';
+            continue;
+        }
+        html += '<h2>'+strategy+' ('+results.length+' 个结果)</h2>';
+        html += buildTable(results);
+    }
+    document.getElementById('results').innerHTML = html;
+}
+function renderTable(strategy, data) {
+    if (!data.length) { document.getElementById('results').innerHTML = '<h2>'+strategy+'</h2><p>无匹配结果</p>'; return; }
+    document.getElementById('results').innerHTML = '<h2>'+strategy+' ('+data.length+' 个结果)</h2>' + buildTable(data);
+}
+function buildTable(data) {
+    if (!data.length) return '<p>无匹配结果</p>';
+    let html = '<table><tr><th>代码</th><th>名称</th><th>得分</th><th>理由</th></tr>';
+    for (const r of data) {
+        html += '<tr><td><a href="/stock/'+r.code+'">'+r.code+'</a></td><td>'+r.name+'</td><td>'+r.score+'</td><td>'+(r.reasons||[]).join('; ')+'</td></tr>';
+    }
+    return html + '</table>';
+}
+</script>
+{% endblock %}

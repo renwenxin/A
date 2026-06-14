@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"D:\\\\cursor\\\\project\" -maxdepth 3 -not -path \"*/\\\\.*\")",
+      "WebSearch",
+      "Bash(npx --version)",
+      "Bash(npx skills *)",
+      "Bash(pip install *)",
+      "Bash(python *)",
+      "Bash(git add *)"
+    ]
+  }
+}
