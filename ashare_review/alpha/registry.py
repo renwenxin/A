@@ -57,4 +57,11 @@ class FactorRegistry:
 _registry = FactorRegistry()
 
 def get_registry() -> FactorRegistry:
+    global _registry
+    if _registry.count == 0:
+        try:
+            from .factors import register_all
+            register_all(_registry)
+        except Exception:
+            pass  # 静默失败，不阻塞启动
     return _registry
