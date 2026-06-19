@@ -27,7 +27,7 @@
 
 <!-- ====== 筛选器面板 ====== -->
 <div class="screener-panel">
-    <!-- 左侧：竞价确认型 -->
+    <!-- 左：竞价确认型 -->
     <div class="screener-column">
         <div class="column-header column-auction">
             <h3>⏰ 竞价确认型</h3>
@@ -36,22 +36,19 @@
         <p class="column-desc">T+1下竞价买入当天不可卖出，必须严格确认条件。</p>
         <button onclick="screen('one_two')" class="btn-screener-card btn-auction">
             <span class="btn-icon">🎯</span>
-            <span class="btn-label">1进2筛选</span>
-            <span class="btn-desc">前日首板 → 次日竞价确认接力</span>
+            <span class="btn-text"><span class="btn-label">1进2筛选</span><span class="btn-desc">前日首板 → 次日竞价确认接力</span></span>
         </button>
         <button onclick="screen('auction')" class="btn-screener-card btn-auction">
             <span class="btn-icon">🔍</span>
-            <span class="btn-label">竞价抢筹</span>
-            <span class="btn-desc">9:25竞价结束 → 四维量价形势分析</span>
+            <span class="btn-text"><span class="btn-label">竞价抢筹</span><span class="btn-desc">9:25竞价结束 → 四维量价形势分析</span></span>
         </button>
         <button onclick="screen('summary')" class="btn-screener-card btn-auction">
             <span class="btn-icon">🎯</span>
-            <span class="btn-label">总筛选</span>
-            <span class="btn-desc">龙头+突破+分歧+机构 → 重叠标的汇总</span>
+            <span class="btn-text"><span class="btn-label">总筛选</span><span class="btn-desc">龙头+突破+分歧+机构 → 重叠标的汇总</span></span>
         </button>
     </div>
 
-    <!-- 右侧：盘中观察型 -->
+    <!-- 中：盘中观察型 -->
     <div class="screener-column">
         <div class="column-header column-intraday">
             <h3>📈 盘中观察型</h3>
@@ -60,27 +57,23 @@
         <p class="column-desc">盘中任何时段都可介入，有充分时间观察确认。</p>
         <button onclick="screen('leader')" class="btn-screener-card btn-intraday">
             <span class="btn-icon">🐉</span>
-            <span class="btn-label">龙头筛选</span>
-            <span class="btn-desc">5条件体系 + 连板接力 + 筹码分析</span>
+            <span class="btn-text"><span class="btn-label">龙头筛选</span><span class="btn-desc">5条件体系 + 连板接力 + 筹码分析</span></span>
         </button>
         <button onclick="screen('breakout')" class="btn-screener-card btn-intraday">
             <span class="btn-icon">📊</span>
-            <span class="btn-label">突破形态</span>
-            <span class="btn-desc">箱体/W底/量炮 + 均线量价验证</span>
+            <span class="btn-text"><span class="btn-label">突破形态</span><span class="btn-desc">箱体/W底/量炮 + 均线量价验证</span></span>
         </button>
         <button onclick="screen('sector_divergence')" class="btn-screener-card btn-intraday">
             <span class="btn-icon">🔄</span>
-            <span class="btn-label">板块分歧介入</span>
-            <span class="btn-desc">昨日涨停潮 → 今日分歧 → 找抗跌标的低吸</span>
+            <span class="btn-text"><span class="btn-label">板块分歧介入</span><span class="btn-desc">昨日涨停潮 → 今日分歧 → 找抗跌标的低吸</span></span>
         </button>
         <button onclick="screen('institution')" class="btn-screener-card btn-intraday">
             <span class="btn-icon">🏛</span>
-            <span class="btn-label">机构票筛选</span>
-            <span class="btn-desc">机构持股>50家 + 年涨停>3次 + 大市值</span>
+            <span class="btn-text"><span class="btn-label">机构票筛选</span><span class="btn-desc">机构持股>50家 + 年涨停>3次 + 大市值</span></span>
         </button>
     </div>
 
-    <!-- 第三列：因子筛选 -->
+    <!-- 右：因子筛选 -->
     <div class="screener-column">
         <div class="column-header column-factor">
             <h3>📐 Alpha 因子筛选</h3>
@@ -89,23 +82,19 @@
         <p class="column-desc">对全市场股票计算因子值 → 横截面排名 → 加权评分 → Top N。计算时间约 10-30 秒。</p>
         <button onclick="screen('factor_momentum')" class="btn-screener-card btn-factor">
             <span class="btn-icon">📈</span>
-            <span class="btn-label">趋势动量</span>
-            <span class="btn-desc">5日/20日动量 + 价格位置 + RSI</span>
+            <span class="btn-text"><span class="btn-label">趋势动量</span><span class="btn-desc">5日/20日动量 + 价格位置 + RSI</span></span>
         </button>
         <button onclick="screen('factor_reversal')" class="btn-screener-card btn-factor">
             <span class="btn-icon">🔄</span>
-            <span class="btn-label">均值回归</span>
-            <span class="btn-desc">均线偏离 + 涨停基因 + 换手强度</span>
+            <span class="btn-text"><span class="btn-label">均值回归</span><span class="btn-desc">均线偏离 + 涨停基因 + 换手强度</span></span>
         </button>
         <button onclick="screen('factor_quality')" class="btn-screener-card btn-factor">
             <span class="btn-icon">🐉</span>
-            <span class="btn-label">龙哥特色</span>
-            <span class="btn-desc">涨停基因 + 筹码集中 + 均线排列</span>
+            <span class="btn-text"><span class="btn-label">龙哥特色</span><span class="btn-desc">涨停基因 + 筹码集中 + 均线排列</span></span>
         </button>
         <button onclick="screen('factor_all')" class="btn-screener-card btn-factor">
             <span class="btn-icon">🎯</span>
-            <span class="btn-label">全因子综合</span>
-            <span class="btn-desc">10因子等权排名 Top 30</span>
+            <span class="btn-text"><span class="btn-label">全因子综合</span><span class="btn-desc">10因子等权排名 Top 30</span></span>
         </button>
     </div>
 </div>
@@ -123,7 +112,6 @@ async function screen(strategy) {
     const el = document.getElementById('results');
     const buttons = document.querySelectorAll('.btn-screener-card');
 
-    // 加载状态
     el.innerHTML = '<div class="loading-container"><span class="loading-spinner"></span><p>正在运行 ' + strategyName(strategy) + ' 筛选...</p></div>';
     el.classList.add('loading');
     buttons.forEach(b => { b.disabled = true; });
@@ -157,190 +145,90 @@ function strategyName(key) {
     return map[key] || key;
 }
 
-function renderStrategyBlock(name, data) {
-    if (!data.total) return '<div class="empty-result"><p class="empty-icon">📭</p><h3>' + name + '</h3><p>无匹配结果</p></div>';
+function renderStrategyBlock(strategyName, data) {
+    if (!data.total) {
+        return '<div class="empty-hint">当前无符合条件的标的</div>';
+    }
 
-    let html = '<div class="strategy-result">';
-    html += '<div class="strategy-bar"><h2>' + name + '</h2><span class="count-badge">共' + data.total + '只</span></div>';
-    // 总筛选显示备注
+    let html = '<div class="strategy-header"><h2>' + strategyName + '</h2>';
+    html += '<span class="result-count">共 ' + data.total + ' 只标的';
+    if (data.data_freshness) html += ' · ' + data.data_freshness;
+    html += '</span></div>';
+
     if (data.note) {
-        html += '<p class="summary-note">📋 ' + data.note + '</p>';
+        html += '<div class="summary-note">' + data.note + '</div>';
     }
 
     // Top 3 精选卡片
     if (data.top_3 && data.top_3.length > 0) {
         html += '<div class="pick-cards">';
-        data.top_3.forEach((r, i) => {
-            html += buildPickCard(r, i + 1);
-        });
+        for (const item of data.top_3) {
+            html += renderPickCard(item, strategyName);
+        }
         html += '</div>';
     }
 
-    // 完整列表（可折叠）
-    html += '<details class="full-list"><summary>查看全部 ' + data.total + ' 个结果</summary>';
-    html += buildTable(data.results);
-    html += '</details></div>';
+    // 完整列表
+    html += renderFullTable(data.results);
+
     return html;
 }
 
-function buildPickCard(r, rank) {
-    const detail = r.detail || {};
-    const analysis = r.analysis || {};
+function renderPickCard(item, strategyName) {
+    const detail = item.detail || {};
+    const analysis = item.analysis || {};
     const tech = analysis.tech || {};
-    const sug = analysis.suggestion || {};
+    const suggestion = analysis.suggestion || {};
 
-    const rankColors = ['#e94560', '#ff6b35', '#f0c040'];
-    const sector = detail.board_type || detail.sector || '';
-    const isSummary = detail.match_count !== undefined;
+    const scoreColor = item.score >= 70 ? '#e94560' : item.score >= 50 ? '#f0c040' : '#999';
     let card = '<div class="pick-card">';
-    card += '<div class="pick-rank" style="background:' + (rankColors[rank - 1] || '#999') + '">#' + rank + '</div>';
-    card += '<div class="pick-header">';
-    card += '<a href="/stock/' + r.code + '" class="pick-code">' + r.code + '</a>';
-    card += '<span class="pick-name">' + r.name + '</span>';
-    if (sector) card += '<span class="pick-sector">' + sector + '</span>';
-    card += '</div>';
-
-    // 总筛选模式：显示当日涨跌幅 + 匹配战法
-    if (isSummary) {
-        card += '<div class="pick-score">';
-        card += '🔥 匹配' + detail.match_count + '战法 | 均分' + r.score;
-        // 显示当日涨跌幅（实时）
-        if (detail.today_change !== undefined && detail.today_change !== null) {
-            const cls = detail.today_change > 0 ? 'up' : (detail.today_change < 0 ? 'down' : '');
-            card += ' | <span class="' + cls + '">当日 ' + (detail.today_change > 0 ? '+' : '') + detail.today_change + '%</span>';
-        }
-        if (detail.today_price) {
-            card += ' | 现价 ' + detail.today_price;
-        }
-        card += '</div>';
-        if (detail.match_detail && detail.match_detail.length) {
-            card += '<div class="match-strategies">';
-            detail.match_detail.forEach(m => {
-                card += '<div class="match-row"><span class="match-strategy">' + m.strategy + '</span>';
-                card += '<span class="match-score">' + m.score + '分</span>';
-                if (m.reasons && m.reasons.length) {
-                    card += '<span class="match-reasons">' + m.reasons.slice(0, 2).join(', ') + '</span>';
-                }
-                card += '</div>';
-            });
-            card += '</div>';
-        }
-    } else {
-        card += '<div class="pick-score">' + '⭐ '.repeat(Math.min(5, Math.ceil(r.score / 20))) + ' ' + r.score + '分</div>';
-    }
-
-    // 技术面速览
-    card += '<div class="pick-section"><div class="section-label">📊 技术面</div>';
-    card += '<div class="tech-grid">';
-
-    if (tech.ma_status && tech.ma_status.length) {
-        let maHTML = '<div class="tech-item"><span class="tech-key">均线</span>';
-        tech.ma_status.forEach(m => {
-            const cls = m.above ? 'ma-above' : 'ma-below';
-            maHTML += '<span class="ma-chip ' + cls + '">MA' + m.period + ' ' + m.pct_from_ma + '%</span>';
-        });
-        maHTML += '<span class="ma-summary ' + (tech.above_ma_count >= 3 ? 'ma-bull' : '') + '">站上' + tech.above_ma_count + '线</span>';
-        maHTML += '</div>';
-        card += maHTML;
-    }
-
-    card += '<div class="tech-item"><span class="tech-key">MACD</span>';
-    card += '<span class="macd-state">' + tech.macd_state + '</span>';
-    card += '<span class="macd-zone">' + tech.macd_zone + '</span>';
-    card += '</div>';
-
-    card += '<div class="tech-item"><span class="tech-key">量价</span>';
-    card += '<span class="vol-state">' + tech.vol_state + '</span>';
-    card += '<span class="vol-ratio">量比 ' + tech.vol_ratio + '</span>';
-    card += '</div>';
-
-    card += '<div class="tech-item"><span class="tech-key">关键位</span>';
-    card += '<span class="spr">支撑 <b>' + tech.support + '</b></span>';
-    card += '<span class="spr">压力 <b>' + tech.resistance + '</b></span>';
-    card += '</div>';
-
-    card += '</div></div>';
-
-    // 操作建议
-    card += '<div class="pick-section"><div class="section-label">🎯 操作建议</div>';
-    card += '<div class="sug-grid">';
-    card += '<div class="sug-item"><span class="sug-key">入场</span><span class="sug-val">' + sug.entry_zone + '</span></div>';
-    card += '<div class="sug-item"><span class="sug-key">止损</span><span class="sug-val stop">' + sug.stop_loss + '</span></div>';
-    card += '<div class="sug-item"><span class="sug-key">目标</span><span class="sug-val target">' + sug.target + '</span></div>';
-    card += '<div class="sug-item"><span class="sug-key">仓位</span><span class="sug-val position">' + sug.position + '</span></div>';
-    if (sug.rr_ratio) {
-        card += '<div class="sug-item"><span class="sug-key">盈亏比</span><span class="sug-val ' + (sug.rr_ratio >= 2 ? 'good' : '') + '">1:' + sug.rr_ratio + '</span></div>';
-    }
-    card += '</div>';
-    if (sug.risk_note) {
-        card += '<div class="risk-note">⚠ ' + sug.risk_note + '</div>';
-    }
-    if (sug.strategy_tip) {
-        card += '<div class="strategy-tip">💡 ' + sug.strategy_tip + '</div>';
-    }
+    card += '<div class="pick-card-header">';
+    card += '<span class="pick-code">' + item.code + '</span>';
+    card += '<span class="pick-name">' + item.name + '</span>';
+    card += '<span class="pick-score" style="color:' + scoreColor + '">' + item.score + '分</span>';
     card += '</div>';
 
     // 理由
-    if (r.reasons && r.reasons.length) {
+    if (item.reasons && item.reasons.length > 0) {
         card += '<div class="pick-reasons">';
-        r.reasons.slice(0, 4).forEach(rs => {
-            card += '<span class="reason-tag">' + rs + '</span>';
-        });
+        for (const r of item.reasons.slice(0, 3)) {
+            card += '<span class="reason-tag">' + r + '</span>';
+        }
         card += '</div>';
     }
-    // AI分析按钮
-    card += '<button class="btn-ai-analyze" onclick="analyzeWithAI(\'' + r.code + '\', \'' + (r.strategies ? r.strategies[0] : 'leader') + '\')" style="margin-top:8px;padding:6px 12px;background:#6c5ce7;color:white;border:none;border-radius:4px;cursor:pointer">🤖 AI分析</button>';
+
+    // AI 分析按钮
+    card += '<button class="btn-ai-analyze" onclick="event.stopPropagation();analyzeWithAI(\'' + item.code + '\',\'' + (item.detail && item.detail.strategy_key || '') + '\')">🤖 AI分析</button>';
+
     card += '</div>';
     return card;
 }
 
-function buildTable(data) {
-    if (!data || !data.length) return '<p>无匹配结果</p>';
-    let html = '<table><tr><th>#</th><th>代码</th><th>名称</th><th>得分</th><th>板块</th>';
-    // 总筛选模式加今日涨跌列
-    const hasToday = data[0] && data[0].today_change !== undefined;
-    if (hasToday) html += '<th>今日涨跌</th>';
-    html += '<th>理由</th></tr>';
-    data.forEach((r, i) => {
-        const detail = r.detail || {};
-        const sector = detail.board_type || detail.sector || '-';
-        const strategies = r.strategies ? r.strategies.join('+') : '';
-        const sectorDisplay = strategies || sector;
-        html += '<tr><td>' + (i + 1) + '</td><td><a href="/stock/' + r.code + '">' + r.code + '</a></td><td>' + r.name + '</td><td>' + r.score + '</td><td class="sector-cell">' + sectorDisplay + '</td>';
-        if (hasToday) {
-            const tc = r.today_change;
-            const cls = tc > 0 ? 'up' : (tc < 0 ? 'down' : '');
-            html += '<td class="' + cls + '">' + (tc != null ? (tc > 0 ? '+' : '') + tc + '%' : '-') + '</td>';
-        }
-        html += '<td>' + (r.reasons || []).join('; ') + '</td></tr>';
-    });
-    return html + '</table>';
+function renderFullTable(results) {
+    if (!results || results.length === 0) return '';
+    let html = '<details><summary style="cursor:pointer;padding:8px 0;color:#6c5ce7;font-weight:bold">展开完整结果 (' + results.length + ' 只)</summary>';
+    html += '<table><tr><th>代码</th><th>名称</th><th>评分</th><th>理由</th></tr>';
+    for (const r of results) {
+        html += '<tr><td>' + r.code + '</td><td>' + (r.name || '') + '</td><td>' + (r.score || '') + '</td><td>' + (r.reasons || []).slice(0, 2).join('; ') + '</td></tr>';
+    }
+    html += '</table></details>';
+    return html;
 }
-</script>
 
-<!-- ====== AI 分析弹窗 ====== -->
-<div id="ai-modal" class="ai-modal" style="display:none">
-    <div class="ai-modal-content">
-        <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
-        <h3 id="ai-modal-title">AI 分析中...</h3>
-        <div id="ai-modal-body"></div>
-    </div>
-</div>
-
-<script>
+// ---- AI Modal ----
 let aiEventSource = null;
 
 function analyzeWithAI(code, strategy) {
-    document.getElementById('ai-modal').style.display = 'block';
-    document.getElementById('ai-modal-title').textContent = '🤖 AI分析 ' + code;
-    document.getElementById('ai-modal-body').innerHTML = '<p>正在调用7个AI分析师...</p>';
+    document.getElementById('ai-modal').style.display = 'flex';
+    document.getElementById('ai-modal-title').textContent = 'AI分析 ' + code;
+    document.getElementById('ai-modal-body').innerHTML = '<p>调用7个AI分析师并行分析...</p>';
 
     if (aiEventSource) aiEventSource.close();
 
     fetch('/api/agent/analyze', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({code: code, strategy: strategy})
+        body: JSON.stringify({code: code, strategy: strategy || 'leader'})
     })
     .then(r => r.json())
     .then(data => {
@@ -349,12 +237,13 @@ function analyzeWithAI(code, strategy) {
             aiEventSource.onmessage = function(e) {
                 const msg = JSON.parse(e.data);
                 if (msg.type === 'status') {
-                    document.getElementById('ai-modal-body').innerHTML +=
-                        '<p>' + msg.data.msg + '</p>';
+                    document.getElementById('ai-modal-body').innerHTML += '<p style="color:#888">' + msg.data.msg + '</p>';
                 } else if (msg.type === 'trading_plan') {
                     showTradingPlanInModal(msg.data);
                 } else if (msg.type === 'done') {
                     aiEventSource.close();
+                } else if (msg.type === 'error') {
+                    document.getElementById('ai-modal-body').innerHTML += '<p class="error">' + msg.data.message + '</p>';
                 }
             };
         }
@@ -364,22 +253,26 @@ function analyzeWithAI(code, strategy) {
 function showTradingPlanInModal(data) {
     const actions = {buy: '买入', sell: '卖出', hold: '持有', watch: '观望'};
     const risks = {low: '低风险', medium: '中风险', high: '高风险'};
-    document.getElementById('ai-modal-body').innerHTML = `
-        <div class="plan-result">
-            <h3>${actions[data.action] || '观望'}</h3>
-            <p>风险等级: ${risks[data.risk_level] || '未知'}</p>
-            ${data.action === 'buy' ? `
-                <p>入场区: ${data.entry_zone ? data.entry_zone.join(' - ') : 'N/A'}</p>
-                <p>止损: ${data.stop_loss}</p>
-                <p>目标: ${data.targets ? data.targets.join(', ') : 'N/A'}</p>
-                <p>建议仓位: ${(data.position_pct * 100).toFixed(0)}%</p>
-            ` : ''}
-            <div class="rationale">${data.rationale || ''}</div>
-            ${(data.agent_opinions || []).map(o => `
-                <div class="opinion-chip">
-                    <strong>${o.agent}</strong>: ${o.direction} (${o.score}分)
-                </div>`).join('')}
-        </div>`;
+    let html = '<div class="plan-result">';
+    html += '<h3 style="color:#e94560">' + (actions[data.action] || '观望') + '</h3>';
+    html += '<p>风险等级: ' + (risks[data.risk_level] || '未知') + '</p>';
+    if (data.action === 'buy') {
+        html += '<p>入场区: ' + (data.entry_zone || []).join(' - ') + '</p>';
+        html += '<p>止损: ' + data.stop_loss + '</p>';
+        html += '<p>目标: ' + (data.targets || []).join(', ') + '</p>';
+        html += '<p>建议仓位: ' + ((data.position_pct || 0) * 100).toFixed(0) + '%</p>';
+    }
+    html += '<div class="plan-rationale">' + (data.rationale || '') + '</div>';
+    if (data.agent_opinions) {
+        html += '<div style="margin-top:10px">';
+        for (const o of data.agent_opinions) {
+            const dirEmoji = o.direction === 'bullish' ? '🔴' : o.direction === 'bearish' ? '🟢' : '⚪';
+            html += '<span class="opinion-chip">' + dirEmoji + ' ' + o.agent + ': ' + o.score + '分</span> ';
+        }
+        html += '</div>';
+    }
+    html += '</div>';
+    document.getElementById('ai-modal-body').innerHTML = html;
 }
 
 function closeAIModal() {
@@ -387,4 +280,13 @@ function closeAIModal() {
     if (aiEventSource) aiEventSource.close();
 }
 </script>
+
+<!-- AI Modal -->
+<div id="ai-modal" class="ai-modal" style="display:none">
+    <div class="ai-modal-content">
+        <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
+        <h3 id="ai-modal-title">AI 分析中...</h3>
+        <div id="ai-modal-body"></div>
+    </div>
+</div>
 {% endblock %}
