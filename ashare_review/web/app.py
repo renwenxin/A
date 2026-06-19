@@ -647,14 +647,5 @@ def stock_detail(code):
 def chat():
     return render_template('chat.html')
 
-@app.route('/alpha')
-def alpha_page():
-    return render_template('alpha.html')
-
-@app.route('/strategies')
-def strategies_page():
-    return render_template('strategies.html')
-
-
 def run(host='127.0.0.1', port=5000, debug=True):
     app.run(host=host, port=port, debug=debug)

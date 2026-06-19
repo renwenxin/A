@@ -955,32 +955,6 @@ button:disabled,
 .risk-medium { color: #f0c040; }
 .risk-high { color: #e94560; }
 
-/* Alpha Page */
-.factor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 15px; }
-.factor-card { background: white; padding: 14px; border-radius: 8px; cursor: pointer; transition: 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; align-items: flex-start; gap: 8px; }
-.factor-card:hover { box-shadow: 0 2px 10px rgba(108,92,231,0.2); }
-.factor-check { margin-top: 2px; }
-.factor-id { font-family: monospace; background: #f0f0ff; padding: 2px 8px; border-radius: 3px; font-size: 0.85em; }
-.factor-name { font-weight: bold; }
-.factor-meta { color: #999; font-size: 0.8em; }
-.alpha-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
-.alpha-toolbar select, .alpha-toolbar input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; }
-.alpha-toolbar button { padding: 6px 14px; background: #6c5ce7; color: white; border: none; border-radius: 4px; cursor: pointer; }
-
-/* Strategy Page */
-.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
-.template-card { background: white; padding: 16px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-.template-card:hover { border-color: #6c5ce7; }
-.template-card.selected { border-color: #6c5ce7; background: #f8f7ff; }
-.template-card h4 { margin: 0 0 4px; color: #6c5ce7; }
-.template-card p { font-size: 0.9em; color: #555; margin: 4px 0; }
-.strategy-section { margin: 20px 0; }
-.strategy-actions { margin: 10px 0; display: flex; gap: 10px; }
-.strategy-actions button { padding: 8px 18px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; }
-.strategy-actions button:first-child { background: #6c5ce7; color: white; }
-.strategy-actions button:last-child { background: #e94560; color: white; }
-#nl-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1em; resize: vertical; }
-
 /* AI Modal */
 .ai-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center; }
 .ai-modal-content { background: white; border-radius: 12px; padding: 30px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; }
