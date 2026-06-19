@@ -82,6 +82,39 @@
     </div>
 </div>
 
+<!-- ====== 因子筛选区 ====== -->
+<div class="screener-panel" style="margin-top:10px">
+    <div class="screener-column" style="max-width:100%">
+        <div class="column-header column-factor">
+            <h3>📐 Alpha 因子筛选</h3>
+            <span class="column-badge">全市场横截面排名</span>
+        </div>
+        <p class="column-desc">对全市场股票计算因子值 → 横截面排名 → 加权评分 → Top N。计算时间约 10-30 秒。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="screen('factor_momentum')" class="btn-screener-card btn-factor">
+                <span class="btn-icon">📈</span>
+                <span class="btn-label">趋势动量</span>
+                <span class="btn-desc">5日/20日动量 + 价格位置 + RSI</span>
+            </button>
+            <button onclick="screen('factor_reversal')" class="btn-screener-card btn-factor">
+                <span class="btn-icon">🔄</span>
+                <span class="btn-label">均值回归</span>
+                <span class="btn-desc">均线偏离 + 涨停基因 + 换手强度</span>
+            </button>
+            <button onclick="screen('factor_quality')" class="btn-screener-card btn-factor">
+                <span class="btn-icon">🐉</span>
+                <span class="btn-label">龙哥特色</span>
+                <span class="btn-desc">涨停基因 + 筹码集中 + 均线排列</span>
+            </button>
+            <button onclick="screen('factor_all')" class="btn-screener-card btn-factor">
+                <span class="btn-icon">🎯</span>
+                <span class="btn-label">全因子综合</span>
+                <span class="btn-desc">10因子等权排名 Top 30</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ====== 结果区域 ====== -->
 <div id="results" class="results-area"></div>
 
@@ -122,7 +155,9 @@ function strategyName(key) {
         'one_two': '1进2筛选', 'auction': '竞价抢筹',
         'leader': '龙头筛选', 'breakout': '突破形态',
         'sector_divergence': '板块分歧介入', 'institution': '机构票筛选',
-        'summary': '总筛选(重叠标的)'
+        'summary': '总筛选(重叠标的)',
+        'factor_momentum': '趋势动量因子', 'factor_reversal': '均值回归因子',
+        'factor_quality': '龙哥特色因子', 'factor_all': '全因子综合',
     };
     return map[key] || key;
 }

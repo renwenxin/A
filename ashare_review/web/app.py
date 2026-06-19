@@ -6,6 +6,7 @@ from ..screening.leader import LeaderScreener
 from ..screening.breakout import BreakoutScreener
 from ..screening.sector_divergence import SectorDivergenceScreener
 from ..screening.auction import AuctionScreener
+from ..alpha.screener import FactorScreener
 from ..report.daily import DailyReport
 from ..report.weekly import WeeklyReport
 from ..data.tdx_reader import TdxReader
@@ -87,6 +88,10 @@ SCREENERS = {
     'breakout': BreakoutScreener(tdx, ak_fetcher),
     'sector_divergence': SectorDivergenceScreener(tdx, ak_fetcher),
     'auction': AuctionScreener(tdx, ak_fetcher),
+    'factor_momentum': FactorScreener(tdx, ak_fetcher, preset='momentum'),
+    'factor_reversal': FactorScreener(tdx, ak_fetcher, preset='reversal'),
+    'factor_quality': FactorScreener(tdx, ak_fetcher, preset='quality'),
+    'factor_all': FactorScreener(tdx, ak_fetcher, preset='all'),
 }
 
 
@@ -206,6 +211,37 @@ def api_alpha_compare():
         return jsonify({'error': f'No data for {code}'}), 404
     results = compare_factors(factor_ids, df)
     return jsonify({'factors': results})
+
+
+@app.route('/api/alpha/screen', methods=['POST'])
+def api_alpha_screen():
+    """全市场因子筛选 — 按因子横截面排名选股"""
+    body = request.get_json(silent=True) or {}
+    preset = body.get('preset', 'momentum')
+    top_n = body.get('top_n', 30)
+    max_stocks = body.get('max_stocks', 500)
+    factor_ids = body.get('factor_ids', None)
+
+    from ..alpha.batch import batch_calculate
+
+    try:
+        results = batch_calculate(
+            tdx=tdx,
+            factor_ids=factor_ids,
+            preset=preset,
+            top_n=top_n,
+            max_stocks=max_stocks,
+        )
+        return jsonify({
+            'preset': preset,
+            'total': len(results),
+            'results': results,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 # ---- Strategy API (Vibe-Trading integration) ----
 @app.route('/api/strategy/templates')
