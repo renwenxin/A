@@ -1,6 +1,62 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>复盘报告 — {{ report.date }}</h1>
+
+<!-- AI 市场综述 -->
+<div class="ai-summary-box" id="ai-summary-box">
+    <button onclick="loadAISummary()" class="btn-ai-summary">🤖 生成AI市场综述</button>
+    <div id="ai-summary-content"></div>
+</div>
+
+<script>
+function loadAISummary() {
+    const el = document.getElementById('ai-summary-content');
+    el.innerHTML = '<p>生成中...</p>';
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            message: '请根据以下复盘数据生成今日A股市场综述：涨停总数{{ report.total_limit_ups }}，封板率等... 请给出：1.市场总览 2.热点板块 3.情绪周期 4.竞价预期 5.操作建议。'
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        let es = new EventSource('/api/chat/stream/' + data.task_id);
+        es.onmessage = function(e) {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'trading_plan') {
+                el.innerHTML = '<div class="ai-review">' + msg.data.rationale + '</div>';
+            }
+        };
+    });
+}
+</script>
+{% if not report.is_trading_day and report.date != 'N/A' %}
+<div class="notice-banner">⚠ 复盘日期为非交易日，数据为最近交易日收盘快照</div>
+{% endif %}
+
+<!-- ====== 情绪周期节点（新增） ====== -->
+{% if report.cycle %}
+<div class="cycle-box cycle-{{ report.cycle.stage }}">
+    <div class="cycle-header">
+        <span class="cycle-stage">📍 {{ report.cycle.stage }}</span>
+        <span class="cycle-risk">风险等级: <strong>{{ report.cycle.risk_level }}</strong></span>
+    </div>
+    <p class="cycle-desc">{{ report.cycle.stage_desc }}</p>
+    <p class="cycle-action"><strong>💡 操作建议：</strong>{{ report.cycle.action }}</p>
+    {% if report.cycle.metrics %}
+    <div class="cycle-metrics">
+        <span>涨停{{ report.cycle.metrics.total_zt }}只</span>
+        <span>封板率{{ report.cycle.metrics.seal_rate }}%</span>
+        <span>最高{{ report.cycle.metrics.max_consecutive }}连板</span>
+        <span>一字板占比{{ report.cycle.metrics.yizi_ratio }}%</span>
+        <span>{{ report.cycle.metrics.height_trend }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ====== 涨停总览 ====== -->
 <div class="stats">
     <div class="stat-card"><strong>{{ report.total_limit_ups }}</strong><br>涨停总数</div>
     <div class="stat-card"><strong>{{ report.sealed }}</strong><br>封死</div>
@@ -8,21 +64,258 @@
     <div class="stat-card"><strong>{{ report.seal_rate }}</strong><br>封板率</div>
     <div class="stat-card"><strong>{{ report.max_consecutive }}</strong><br>最高连板</div>
 </div>
-<h2>时间分布</h2>
+
+<!-- ====== 竞价预期预测（新增） ====== -->
+{% if report.auction_forecast %}
+<h2>🔮 次日竞价预期</h2>
+<div class="forecast-box forecast-{{ report.auction_forecast.forecast }}">
+    <p><strong>预期：{{ report.auction_forecast.forecast }}</strong></p>
+    <p>{{ report.auction_forecast.forecast_desc }}</p>
+    <div class="forecast-stats">
+        <span>🏃 早盘秒板: <strong>{{ report.auction_forecast.early_sealed }}</strong>只</span>
+        <span>☀️ 上午封板: <strong>{{ report.auction_forecast.morning_sealed }}</strong>只</span>
+        <span>🌤 下午封板: <strong>{{ report.auction_forecast.afternoon_sealed }}</strong>只</span>
+        <span>🔒 一字板: <strong>{{ report.auction_forecast.yizi_count }}</strong>只</span>
+    </div>
+    {% if report.auction_forecast.strong_multi %}
+    <p class="forecast-highlight">🔥 次日可能一字/高开的强势连板：
+        {% for s in report.auction_forecast.strong_multi %}
+        <a href="/stock/{{ s.code }}">{{ s.name }}({{ s.consecutive }}板·封成比{{ s.seal_ratio }})</a>
+        {% if not loop.last %}、{% endif %}
+        {% endfor %}
+    </p>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ====== 涨停时间分布 ====== -->
+<h2>⏱ 涨停时间分布</h2>
 <ul>{% for label, count in report.time_distribution.items() %}
-    <li>{{ label }}: {{ count }}只</li>{% endfor %}</ul>
-<h2>热点板块</h2>
-<ol>{% for sector, count in report.top_sectors %}
-    <li>{{ sector }}: {{ count }}只涨停</li>{% endfor %}</ol>
-<h2>连板梯队</h2>
-<table><tr><th>代码</th><th>名称</th><th>连板</th><th>涨停时间</th></tr>
-{% for lu in report.multi_board_list %}
-<tr><td><a href="/stock/{{ lu.code }}">{{ lu.code }}</a></td>
-    <td>{{ lu.name }}</td><td>{{ lu.consecutive }}板</td><td>{{ lu.limit_up_time }}</td></tr>
-{% endfor %}</table>
-<h2>龙虎榜 Top 10</h2>
-<table><tr><th>代码</th><th>名称</th><th>原因</th><th>净买额(万)</th></tr>
-{% for l in report.top_lhb %}
-<tr><td>{{ l.code }}</td><td>{{ l.name }}</td><td>{{ l.reason }}</td><td>{{ l.net_amount|round(1) }}</td></tr>
-{% endfor %}</table>
+    <li>{{ label }}: <strong>{{ count }}</strong>只</li>{% endfor %}</ul>
+
+<!-- ====== 大盘表现 ====== -->
+<h2>📊 大盘表现</h2>
+{% set mkt = report.market_overview %}
+<div class="stats">
+    <div class="stat-card"><strong>{{ mkt.total_volume|int }}</strong><br>成交额(亿)</div>
+    <div class="stat-card up"><strong>{{ mkt.up_count }}</strong><br>上涨</div>
+    <div class="stat-card down"><strong>{{ mkt.down_count }}</strong><br>下跌</div>
+    <div class="stat-card"><strong>{{ mkt.flat_count }}</strong><br>平盘</div>
+    <div class="stat-card"><strong>{{ mkt.avg_change_pct }}%</strong><br>平均涨跌</div>
+</div>
+
+<!-- ====== 板块涨停潮分析（新增） ====== -->
+{% if report.sector_analysis %}
+<h2>🔥 板块涨停分布</h2>
+{% if report.sector_analysis.new_themes %}
+<div class="alert-box alert-info">
+    <strong>🆕 新题材关注：</strong>
+    {% for s in report.sector_analysis.new_themes %}
+    <span class="theme-tag">{{ s.name }}({{ s.zt_count }}只首板)</span>
+    {% endfor %}
+    <br><small>龙哥：重点关注一板中新出现的题材，特别是一板多股涨停的新题材——未来龙头可能在里诞生。</small>
+</div>
+{% endif %}
+
+{% if report.sector_analysis.hot_sectors %}
+<h3>涨停潮板块(≥5只涨停)</h3>
+<table class="sector-table">
+    <tr><th>#</th><th>板块</th><th>涨停数</th><th>强度</th><th>龙头</th><th>最高连板</th><th>首板</th><th>连板</th></tr>
+    {% for s in report.sector_analysis.hot_sectors %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td><strong>{{ s.name }}</strong></td>
+        <td><strong>{{ s.zt_count }}</strong>只</td>
+        <td>{{ s.strength }}</td>
+        <td><a href="/stock/{{ s.leader_code }}">{{ s.leader_name }}</a>({{ s.leader_cons }}板)</td>
+        <td>{{ s.max_consecutive }}板</td>
+        <td>{{ s.first_count }}只</td>
+        <td>{{ s.multi_count }}只</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if report.sector_analysis.all_sectors %}
+<details>
+    <summary>📋 全部板块分布 ({{ report.sector_analysis.all_sectors|length }}个板块)</summary>
+    <table class="sector-table">
+        <tr><th>#</th><th>板块</th><th>涨停数</th><th>强度</th><th>龙头</th><th>最高连板</th></tr>
+        {% for s in report.sector_analysis.all_sectors %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.name }}</td>
+            <td><strong>{{ s.zt_count }}</strong>只</td>
+            <td>{{ s.strength }}</td>
+            <td><a href="/stock/{{ s.leader_code }}">{{ s.leader_name }}</a></td>
+            <td>{{ s.max_consecutive }}板</td>
+        </tr>
+        {% endfor %}
+    </table>
+</details>
+{% endif %}
+{% endif %}
+
+<!-- ====== 热点板块 ====== -->
+{% if report.hot_merged %}
+<h2>🔥 涨停行业分布 Top 15</h2>
+<p class="section-note">概念/行业板块行情接口暂时不可用，以下为涨停池按行业聚合</p>
+{% if report.hot_concepts %}
+<table class="sector-table">
+    <tr><th>#</th><th>行业名称</th><th>涨停数</th></tr>
+    {% for s in report.hot_concepts %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ s.name }}</td>
+        <td><strong>{{ s.zt_count }}</strong>只</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+{% else %}
+<h2>🔥 热点概念板块 Top 10</h2>
+{% if report.hot_concepts %}
+<table class="sector-table">
+    <tr><th>#</th><th>板块名称</th><th>涨跌幅</th><th>涨停数</th><th>领涨股</th></tr>
+    {% for s in report.hot_concepts %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ s.name }}</td>
+        <td class="{% if s.change_pct > 0 %}up{% elif s.change_pct < 0 %}down{% endif %}">
+            {% if s.change_pct != 0 %}{{ s.change_pct }}%{% else %}-{% endif %}
+        </td>
+        <td>{% if s.zt_count %}<strong>{{ s.zt_count }}</strong>{% else %}-{% endif %}</td>
+        <td>{{ s.lead_stock or '-' }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="empty-hint">暂无概念板块数据</p>
+{% endif %}
+
+<h2>🏭 热点行业板块 Top 10</h2>
+{% if report.hot_industries %}
+<table class="sector-table">
+    <tr><th>#</th><th>板块名称</th><th>涨跌幅</th><th>涨停数</th><th>领涨股</th></tr>
+    {% for s in report.hot_industries %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ s.name }}</td>
+        <td class="{% if s.change_pct > 0 %}up{% elif s.change_pct < 0 %}down{% endif %}">
+            {% if s.change_pct != 0 %}{{ s.change_pct }}%{% else %}-{% endif %}
+        </td>
+        <td>{% if s.zt_count %}<strong>{{ s.zt_count }}</strong>{% else %}-{% endif %}</td>
+        <td>{{ s.lead_stock or '-' }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="empty-hint">暂无行业板块数据</p>
+{% endif %}
+{% endif %}
+
+<!-- ====== 连板梯队 ====== -->
+<h2>🪜 连板梯队</h2>
+<table>
+    <tr><th>代码</th><th>名称</th><th>连板</th><th>板型</th><th>涨停时间</th><th>封单(万)</th><th>成交额(亿)</th></tr>
+    {% for lu in report.multi_board_list %}
+    <tr>
+        <td><a href="/stock/{{ lu.code }}">{{ lu.code }}</a></td>
+        <td><strong>{{ lu.name }}</strong></td>
+        <td><strong>{{ lu.consecutive }}板</strong></td>
+        <td>{{ lu.board_type or '-' }}</td>
+        <td>{{ lu.limit_up_time }}</td>
+        <td>{{ lu.seal_amount|int }}</td>
+        <td>{{ lu.turnover_yi }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- ====== 弱转强候选（新增） ====== -->
+{% if report.weak_to_strong %}
+<h2>🔄 弱转强候选池（次日竞价关注）</h2>
+<p class="section-note">今日分歧/烂板/尾盘板，次日竞价高开3%+可构成弱转强买点</p>
+<table>
+    <tr><th>代码</th><th>名称</th><th>连板</th><th>板块</th><th>弱势信号</th><th>确认条件</th></tr>
+    {% for w in report.weak_to_strong %}
+    <tr>
+        <td><a href="/stock/{{ w.code }}">{{ w.code }}</a></td>
+        <td><strong>{{ w.name }}</strong></td>
+        <td>{{ w.consecutive }}板</td>
+        <td>{{ w.board_type or '-' }}</td>
+        <td>{{ w.weak_signal }}</td>
+        <td class="wts-condition">{{ w.confirm_condition }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<!-- ====== 筹码分布信号（新增） ====== -->
+{% if report.chip_signals %}
+<h2>📊 筹码分布信号</h2>
+<table>
+    <tr><th>代码</th><th>名称</th><th>连板</th><th>筹码形态</th><th>信号</th><th>操作</th></tr>
+    {% for cs in report.chip_signals %}
+    <tr class="chip-signal-{{ cs.signal }}">
+        <td><a href="/stock/{{ cs.code }}">{{ cs.code }}</a></td>
+        <td><strong>{{ cs.name }}</strong></td>
+        <td>{{ cs.consecutive }}板</td>
+        <td>{{ cs.pattern }}</td>
+        <td class="signal-{{ 'buy' if cs.signal == '买入' else 'sell' if cs.signal == '卖出' else 'warn' }}">
+            {{ cs.signal }}
+        </td>
+        <td>{{ cs.action }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<!-- ====== 短线情绪 + 精选标的 ====== -->
+{% if report.sentiment %}
+<h2>💡 短线情绪判断</h2>
+<div class="sentiment-box mood-{{ report.sentiment.mood }}">
+    <p><strong>情绪等级：{{ report.sentiment.mood }}</strong></p>
+    <p>{{ report.sentiment.mood_desc }}</p>
+    <p class="sentiment-summary">{{ report.sentiment.summary }}</p>
+</div>
+
+{% if report.sentiment.picks %}
+<h3>⭐ 备选关注标的</h3>
+<table>
+    <tr><th>代码</th><th>名称</th><th>连板</th><th>评分</th><th>理由</th></tr>
+    {% for pick in report.sentiment.picks %}
+    <tr>
+        <td><a href="/stock/{{ pick.code }}">{{ pick.code }}</a></td>
+        <td><strong>{{ pick.name }}</strong></td>
+        <td>{{ pick.consecutive }}板</td>
+        <td>{{ pick.score }}分</td>
+        <td>{{ pick.reasons|join('，') }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="empty-hint">今日暂无满足条件的精选标的，建议观望</p>
+{% endif %}
+{% endif %}
+
+<!-- ====== 龙虎榜 ====== -->
+<h2>🐉 龙虎榜 Top 10</h2>
+{% if report.top_lhb %}
+<table>
+    <tr><th>代码</th><th>名称</th><th>上榜原因</th><th>买入(万)</th><th>卖出(万)</th><th>净买额(万)</th></tr>
+    {% for l in report.top_lhb %}
+    <tr>
+        <td><a href="/stock/{{ l.code }}">{{ l.code }}</a></td>
+        <td>{{ l.name }}</td>
+        <td>{{ l.reason }}</td>
+        <td>{{ l.buy_amount|round(1) }}</td>
+        <td>{{ l.sell_amount|round(1) }}</td>
+        <td class="{% if l.net_amount > 0 %}up{% else %}down{% endif %}">{{ l.net_amount|round(1) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p class="empty-hint">暂无龙虎榜数据 — 今日可能无上榜标的，或检查 akshare 版本</p>
+{% endif %}
+
 {% endblock %}

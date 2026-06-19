@@ -1,0 +1,65 @@
+<!-- ashare_review/web/templates/alpha.html -->
+{% extends "base.html" %}
+{% block content %}
+<h1>📊 Alpha 因子库</h1>
+
+<div class="alpha-toolbar">
+    <select id="alpha-zoo" onchange="loadFactors()">
+        <option value="">全部因子</option>
+        <option value="gtja191">国泰君安191</option>
+        <option value="alpha101">Alpha101</option>
+        <option value="custom">龙哥特色</option>
+    </select>
+    <input id="alpha-code" type="text" value="600519" placeholder="股票代码" style="width:100px">
+    <button onclick="loadFactors()">加载因子</button>
+    <button onclick="compareSelected()">对比选中</button>
+</div>
+
+<div id="alpha-grid" class="factor-grid"></div>
+
+<script>
+function loadFactors() {
+    const zoo = document.getElementById('alpha-zoo').value;
+    fetch('/api/alpha/list' + (zoo ? '?zoo=' + zoo : ''))
+        .then(r => r.json())
+        .then(data => {
+            const grid = document.getElementById('alpha-grid');
+            grid.innerHTML = data.factors.map(f => `
+                <div class="factor-card" id="fc-${f.id}">
+                    <input type="checkbox" class="factor-check" value="${f.id}">
+                    <div class="factor-id">${f.id}</div>
+                    <div class="factor-name">${f.name}</div>
+                    <div class="factor-meta">${f.category} | ${f.zoo}</div>
+                </div>`).join('');
+        });
+}
+
+function compareSelected() {
+    const checked = document.querySelectorAll('.factor-check:checked');
+    const ids = Array.from(checked).map(c => c.value);
+    const code = document.getElementById('alpha-code').value;
+    if (ids.length < 2) { alert('请至少选择2个因子'); return; }
+
+    fetch('/api/alpha/compare', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({factor_ids: ids, code: code})
+    })
+    .then(r => r.json())
+    .then(data => {
+        const grid = document.getElementById('alpha-grid');
+        grid.innerHTML = '<h3>对比结果 (按IR排序)</h3>' +
+            '<table><tr><th>因子</th><th>IC均值</th><th>IC标准差</th><th>IR</th><th>星级</th></tr>' +
+            data.factors.map(f => `
+                <tr>
+                    <td>${f.factor_id}</td>
+                    <td>${f.ic_mean}</td><td>${f.ic_std}</td>
+                    <td><strong>${f.ir}</strong></td>
+                    <td>${'⭐'.repeat(f.stars)}</td>
+                </tr>`).join('') + '</table>';
+    });
+}
+
+loadFactors();
+</script>
+{% endblock %}
