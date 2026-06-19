@@ -50,6 +50,8 @@ class AuctionInfo:
     auction_price: float    # 竞价价格
     open_change_pct: float  # 开盘涨跌幅(%)
     preclose_volume: int    # 昨日爆量(最高量柱)
+    vol_0924: int = 0       # 9:24分竞价量(股)
+    vol_0925: int = 0       # 9:25分竞价量(股)
 
 @dataclass
 class LhbInfo:

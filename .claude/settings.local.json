@@ -7,7 +7,24 @@
       "Bash(npx skills *)",
       "Bash(pip install *)",
       "Bash(python *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(gh auth *)",
+      "Bash(git config *)",
+      "Bash(winget install *)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(PATH='__TRACKED_VAR__:/c/Program Files/GitHub CLI' gh auth login --hostname github.com --web)",
+      "Bash(PATH=\"$PATH:/c/Program Files/GitHub CLI\" gh auth *)",
+      "Bash(GIT_ASKPASS=echo PATH='__TRACKED_VAR__:/c/Program Files/GitHub CLI' gh repo create renwenxin/A --public --source=. --remote=origin --push)",
+      "Bash(explorer \"c:\\\\Users\\\\15195\\\\Pictures\\\\Screenshots\\\\Screenshot 2026-06-16 162819.png\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)"
     ]
   }
 }

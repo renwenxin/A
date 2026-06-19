@@ -343,7 +343,7 @@ def api_screen_summary():
 
     注入当日实时行情快照（spot_df），确保盘中也能看到当天可介入机会。
     """
-    strategies = ['leader', 'breakout', 'sector_divergence', 'institution']
+    strategies = ['leader', 'breakout', 'sector_divergence', 'institution', 'factor_all']
 
     # ---- 当日实时行情快照 ----
     spot_map = {}

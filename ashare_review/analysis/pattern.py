@@ -10,8 +10,8 @@ def detect_box_breakout(df: pd.DataFrame, box_period: int = 40, break_pct: float
         return None
     box_slice = df.iloc[-box_period-3:-3]
     recent = df.iloc[-3:]
-    box_high = box_slice['close'].max()
-    box_low = box_slice['close'].min()
+    box_high = box_slice['high'].max()
+    box_low = box_slice['low'].min()
     box_range = box_high - box_low
     if box_range / box_low < 0.15:  # 箱体振幅 < 15%
         return None

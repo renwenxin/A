@@ -78,3 +78,108 @@ class TdxReader:
             except FileNotFoundError:
                 pass
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+    def get_index_turnover(self, trade_date: date = None) -> dict:
+        """从三大指数获取市场总成交额（亿）"""
+        indices = [
+            ('000001', 'sh', '上证指数'),
+            ('399001', 'sz', '深证成指'),
+        ]
+        result = {'sh_amount': 0, 'sz_amount': 0, 'total_amount': 0, 'date': None}
+        for code, mkt, name in indices:
+            try:
+                df = self.read_daily(code, mkt)
+                if df.empty:
+                    continue
+                if trade_date:
+                    df = df[df['trade_date'] == trade_date]
+                bar = df.iloc[-1]
+                amt_yi = bar['amount'] / 1e8
+                if mkt == 'sh':
+                    result['sh_amount'] = round(amt_yi, 0)
+                else:
+                    result['sz_amount'] = round(amt_yi, 0)
+                result['date'] = bar['trade_date']
+            except (FileNotFoundError, IndexError):
+                pass
+        result['total_amount'] = round(result['sh_amount'] + result['sz_amount'], 0)
+        return result
+
+    def get_market_breadth(self, trade_date: date = None) -> dict:
+        """扫描全市场 .day 文件，统计涨跌家数
+
+        每个文件只读尾部 64 字节（最后 2 条记录），
+        9241 只股票约需 1-3 秒。结果按日期缓存到内存。
+        """
+        cache_key = str(trade_date) if trade_date else 'latest'
+        if not hasattr(self, '_breadth_cache'):
+            self._breadth_cache = {}
+        if cache_key in self._breadth_cache:
+            return self._breadth_cache[cache_key]
+
+        up = down = flat = limit_up = limit_down = 0
+        scanned = 0
+
+        for mkt in ['sh', 'sz', 'bj']:
+            d = self._market_dir(mkt)
+            if not os.path.isdir(d):
+                continue
+            for fn in os.listdir(d):
+                if not fn.endswith('.day'):
+                    continue
+                fpath = os.path.join(d, fn)
+                try:
+                    fsize = os.path.getsize(fpath)
+                    if fsize < RECORD_SIZE * 2:
+                        continue
+                    # 只读尾部 64 字节（最后 2 条 32 字节记录）
+                    read_size = min(RECORD_SIZE * 2, fsize)
+                    with open(fpath, 'rb') as f:
+                        f.seek(fsize - read_size)
+                        tail = f.read(read_size)
+
+                    last_rec = tail[-RECORD_SIZE:]
+                    prev_rec = tail[-RECORD_SIZE*2:-RECORD_SIZE] if len(tail) >= RECORD_SIZE*2 else last_rec
+
+                    _, _, _, _, close, amt, _, _ = struct.unpack('IIIIIfII', last_rec)
+                    _, _, _, _, prev_close, _, _, _ = struct.unpack('IIIIIfII', prev_rec)
+
+                    close_price = close / 100.0
+                    prev_price = prev_close / 100.0
+
+                    if trade_date:
+                        dt_int = struct.unpack('I', last_rec[:4])[0]
+                        dt_str = str(dt_int)
+                        bar_date = date(int(dt_str[:4]), int(dt_str[4:6]), int(dt_str[6:8]))
+                        if bar_date != trade_date:
+                            continue
+
+                    scanned += 1
+
+                    if prev_price == 0:
+                        flat += 1
+                        continue
+
+                    change_pct = (close_price - prev_price) / prev_price * 100
+                    if change_pct > 0:
+                        up += 1
+                    elif change_pct < 0:
+                        down += 1
+                    else:
+                        flat += 1
+
+                    if change_pct >= 9.9:
+                        limit_up += 1
+                    elif change_pct <= -9.9:
+                        limit_down += 1
+
+                except (OSError, struct.error, IndexError):
+                    continue
+
+        result = {
+            'up_count': up, 'down_count': down, 'flat_count': flat,
+            'limit_up_count': limit_up, 'limit_down_count': limit_down,
+            'scanned': scanned,
+        }
+        self._breadth_cache[cache_key] = result
+        return result
