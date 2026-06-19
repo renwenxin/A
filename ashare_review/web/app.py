@@ -434,6 +434,8 @@ def review():
     trade_date = request.args.get('date', None)  # 支持 ?date=20260612
     try:
         report = DailyReport(tdx, ak_fetcher).generate(trade_date)
+        if request.args.get('llm') == '1':
+            report['llm_summary'] = DailyReport(tdx, ak_fetcher).generate_llm_summary(trade_date)
     except Exception as e:
         import traceback
         traceback.print_exc()
