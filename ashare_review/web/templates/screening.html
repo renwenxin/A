@@ -108,14 +108,11 @@ let _loading = false;
 async function screen(strategy) {
     if (_loading) return;
     _loading = true;
-
     const el = document.getElementById('results');
     const buttons = document.querySelectorAll('.btn-screener-card');
-
     el.innerHTML = '<div class="loading-container"><span class="loading-spinner"></span><p>正在运行 ' + strategyName(strategy) + ' 筛选...</p></div>';
     el.classList.add('loading');
     buttons.forEach(b => { b.disabled = true; });
-
     try {
         const resp = await fetch('/api/screen/' + strategy);
         const data = await resp.json();
@@ -145,86 +142,141 @@ function strategyName(key) {
     return map[key] || key;
 }
 
-function renderStrategyBlock(strategyName, data) {
-    if (!data.total) {
-        return '<div class="empty-hint">当前无符合条件的标的</div>';
-    }
-
-    let html = '<div class="strategy-header"><h2>' + strategyName + '</h2>';
-    html += '<span class="result-count">共 ' + data.total + ' 只标的';
-    if (data.data_freshness) html += ' · ' + data.data_freshness;
-    html += '</span></div>';
-
-    if (data.note) {
-        html += '<div class="summary-note">' + data.note + '</div>';
-    }
-
-    // Top 3 精选卡片
+function renderStrategyBlock(name, data) {
+    if (!data.total) return '<div class="empty-result"><p class="empty-icon">📭</p><h3>' + name + '</h3><p>无匹配结果</p></div>';
+    let html = '<div class="strategy-result">';
+    html += '<div class="strategy-bar"><h2>' + name + '</h2><span class="count-badge">共' + data.total + '只</span></div>';
+    if (data.note) { html += '<p class="summary-note">📋 ' + data.note + '</p>'; }
     if (data.top_3 && data.top_3.length > 0) {
         html += '<div class="pick-cards">';
-        for (const item of data.top_3) {
-            html += renderPickCard(item, strategyName);
-        }
+        data.top_3.forEach((r, i) => { html += buildPickCard(r, i + 1); });
         html += '</div>';
     }
-
-    // 完整列表
-    html += renderFullTable(data.results);
-
+    html += '<details class="full-list"><summary>查看全部 ' + data.total + ' 个结果</summary>';
+    html += buildTable(data.results);
+    html += '</details></div>';
     return html;
 }
 
-function renderPickCard(item, strategyName) {
-    const detail = item.detail || {};
-    const analysis = item.analysis || {};
+function buildPickCard(r, rank) {
+    const detail = r.detail || {};
+    const analysis = r.analysis || {};
     const tech = analysis.tech || {};
-    const suggestion = analysis.suggestion || {};
+    const sug = analysis.suggestion || {};
+    const rankColors = ['#e94560', '#ff6b35', '#f0c040'];
+    const sector = detail.board_type || detail.sector || '';
+    const isSummary = detail.match_count !== undefined;
 
-    const scoreColor = item.score >= 70 ? '#e94560' : item.score >= 50 ? '#f0c040' : '#999';
     let card = '<div class="pick-card">';
-    card += '<div class="pick-card-header">';
-    card += '<span class="pick-code">' + item.code + '</span>';
-    card += '<span class="pick-name">' + item.name + '</span>';
-    card += '<span class="pick-score" style="color:' + scoreColor + '">' + item.score + '分</span>';
+    card += '<div class="pick-rank" style="background:' + (rankColors[rank - 1] || '#999') + '">#' + rank + '</div>';
+    card += '<div class="pick-header">';
+    card += '<a href="/stock/' + r.code + '" class="pick-code">' + r.code + '</a>';
+    card += '<span class="pick-name">' + r.name + '</span>';
+    if (sector) card += '<span class="pick-sector">' + sector + '</span>';
+    card += '</div>';
+
+    if (isSummary) {
+        card += '<div class="pick-score">🔥 匹配' + detail.match_count + '战法 | 均分' + r.score;
+        if (detail.today_change !== undefined && detail.today_change !== null) {
+            const cls = detail.today_change > 0 ? 'up' : (detail.today_change < 0 ? 'down' : '');
+            card += ' | <span class="' + cls + '">当日 ' + (detail.today_change > 0 ? '+' : '') + detail.today_change + '%</span>';
+        }
+        if (detail.today_price) { card += ' | 现价 ' + detail.today_price; }
+        card += '</div>';
+        if (detail.match_detail && detail.match_detail.length) {
+            card += '<div class="match-strategies">';
+            detail.match_detail.forEach(m => {
+                card += '<div class="match-row"><span class="match-strategy">' + m.strategy + '</span>';
+                card += '<span class="match-score">' + m.score + '分</span>';
+                if (m.reasons && m.reasons.length) { card += '<span class="match-reasons">' + m.reasons.slice(0, 2).join(', ') + '</span>'; }
+                card += '</div>';
+            });
+            card += '</div>';
+        }
+    } else {
+        card += '<div class="pick-score">' + '⭐ '.repeat(Math.min(5, Math.ceil(r.score / 20))) + ' ' + r.score + '分</div>';
+    }
+
+    // 技术面速览
+    card += '<div class="pick-section"><div class="section-label">📊 技术面</div><div class="tech-grid">';
+    if (tech.ma_status && tech.ma_status.length) {
+        let maHTML = '<div class="tech-item"><span class="tech-key">均线</span>';
+        tech.ma_status.forEach(m => {
+            const cls = m.above ? 'ma-above' : 'ma-below';
+            maHTML += '<span class="ma-chip ' + cls + '">MA' + m.period + ' ' + m.pct_from_ma + '%</span>';
+        });
+        maHTML += '<span class="ma-summary ' + (tech.above_ma_count >= 3 ? 'ma-bull' : '') + '">站上' + tech.above_ma_count + '线</span></div>';
+        card += maHTML;
+    }
+    card += '<div class="tech-item"><span class="tech-key">MACD</span><span class="macd-state">' + (tech.macd_state || '') + '</span><span class="macd-zone">' + (tech.macd_zone || '') + '</span></div>';
+    card += '<div class="tech-item"><span class="tech-key">量价</span><span class="vol-state">' + (tech.vol_state || '') + '</span><span class="vol-ratio">量比 ' + (tech.vol_ratio || '-') + '</span></div>';
+    card += '<div class="tech-item"><span class="tech-key">关键位</span><span class="spr">支撑 <b>' + (tech.support || '-') + '</b></span><span class="spr">压力 <b>' + (tech.resistance || '-') + '</b></span></div>';
+    card += '</div></div>';
+
+    // 操作建议
+    card += '<div class="pick-section"><div class="section-label">🎯 操作建议</div><div class="sug-grid">';
+    card += '<div class="sug-item"><span class="sug-key">入场</span><span class="sug-val">' + (sug.entry_zone || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">止损</span><span class="sug-val stop">' + (sug.stop_loss || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">目标</span><span class="sug-val target">' + (sug.target || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">仓位</span><span class="sug-val position">' + (sug.position || '-') + '</span></div>';
+    if (sug.rr_ratio) { card += '<div class="sug-item"><span class="sug-key">盈亏比</span><span class="sug-val ' + (sug.rr_ratio >= 2 ? 'good' : '') + '">1:' + sug.rr_ratio + '</span></div>'; }
+    card += '</div>';
+    if (sug.risk_note) { card += '<div class="risk-note">⚠ ' + sug.risk_note + '</div>'; }
+    if (sug.strategy_tip) { card += '<div class="strategy-tip">💡 ' + sug.strategy_tip + '</div>'; }
     card += '</div>';
 
     // 理由
-    if (item.reasons && item.reasons.length > 0) {
+    if (r.reasons && r.reasons.length) {
         card += '<div class="pick-reasons">';
-        for (const r of item.reasons.slice(0, 3)) {
-            card += '<span class="reason-tag">' + r + '</span>';
-        }
+        r.reasons.slice(0, 4).forEach(rs => { card += '<span class="reason-tag">' + rs + '</span>'; });
         card += '</div>';
     }
-
-    // AI 分析按钮
-    card += '<button class="btn-ai-analyze" onclick="event.stopPropagation();analyzeWithAI(\'' + item.code + '\',\'' + (item.detail && item.detail.strategy_key || '') + '\')">🤖 AI分析</button>';
-
+    // AI分析按钮
+    card += '<button class="btn-ai-analyze" onclick="event.stopPropagation();analyzeWithAI(\'' + r.code + '\', \'' + (r.strategies ? r.strategies[0] : 'leader') + '\')">🤖 AI分析</button>';
     card += '</div>';
     return card;
 }
 
-function renderFullTable(results) {
-    if (!results || results.length === 0) return '';
-    let html = '<details><summary style="cursor:pointer;padding:8px 0;color:#6c5ce7;font-weight:bold">展开完整结果 (' + results.length + ' 只)</summary>';
-    html += '<table><tr><th>代码</th><th>名称</th><th>评分</th><th>理由</th></tr>';
-    for (const r of results) {
-        html += '<tr><td>' + r.code + '</td><td>' + (r.name || '') + '</td><td>' + (r.score || '') + '</td><td>' + (r.reasons || []).slice(0, 2).join('; ') + '</td></tr>';
-    }
-    html += '</table></details>';
-    return html;
+function buildTable(data) {
+    if (!data || !data.length) return '<p>无匹配结果</p>';
+    let html = '<table><tr><th>#</th><th>代码</th><th>名称</th><th>得分</th><th>板块</th>';
+    const hasToday = data[0] && data[0].today_change !== undefined;
+    if (hasToday) html += '<th>今日涨跌</th>';
+    html += '<th>理由</th></tr>';
+    data.forEach((r, i) => {
+        const detail = r.detail || {};
+        const sector = detail.board_type || detail.sector || '-';
+        const strategies = r.strategies ? r.strategies.join('+') : '';
+        const sectorDisplay = strategies || sector;
+        html += '<tr><td>' + (i + 1) + '</td><td><a href="/stock/' + r.code + '">' + r.code + '</a></td><td>' + r.name + '</td><td>' + r.score + '</td><td class="sector-cell">' + sectorDisplay + '</td>';
+        if (hasToday) {
+            const tc = r.today_change;
+            const cls = tc > 0 ? 'up' : (tc < 0 ? 'down' : '');
+            html += '<td class="' + cls + '">' + (tc != null ? (tc > 0 ? '+' : '') + tc + '%' : '-') + '</td>';
+        }
+        html += '<td>' + (r.reasons || []).join('; ') + '</td></tr>';
+    });
+    return html + '</table>';
 }
+</script>
 
-// ---- AI Modal ----
+<!-- ====== AI 分析弹窗 ====== -->
+<div id="ai-modal" class="ai-modal" style="display:none">
+    <div class="ai-modal-content">
+        <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
+        <h3 id="ai-modal-title">AI 分析中...</h3>
+        <div id="ai-modal-body"></div>
+    </div>
+</div>
+
+<script>
 let aiEventSource = null;
 
 function analyzeWithAI(code, strategy) {
-    document.getElementById('ai-modal').style.display = 'flex';
-    document.getElementById('ai-modal-title').textContent = 'AI分析 ' + code;
-    document.getElementById('ai-modal-body').innerHTML = '<p>调用7个AI分析师并行分析...</p>';
-
+    document.getElementById('ai-modal').style.display = 'block';
+    document.getElementById('ai-modal-title').textContent = '🤖 AI分析 ' + code;
+    document.getElementById('ai-modal-body').innerHTML = '<p>正在调用7个AI分析师...</p>';
     if (aiEventSource) aiEventSource.close();
-
     fetch('/api/agent/analyze', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -237,7 +289,7 @@ function analyzeWithAI(code, strategy) {
             aiEventSource.onmessage = function(e) {
                 const msg = JSON.parse(e.data);
                 if (msg.type === 'status') {
-                    document.getElementById('ai-modal-body').innerHTML += '<p style="color:#888">' + msg.data.msg + '</p>';
+                    document.getElementById('ai-modal-body').innerHTML += '<p>' + msg.data.msg + '</p>';
                 } else if (msg.type === 'trading_plan') {
                     showTradingPlanInModal(msg.data);
                 } else if (msg.type === 'done') {
@@ -253,26 +305,13 @@ function analyzeWithAI(code, strategy) {
 function showTradingPlanInModal(data) {
     const actions = {buy: '买入', sell: '卖出', hold: '持有', watch: '观望'};
     const risks = {low: '低风险', medium: '中风险', high: '高风险'};
-    let html = '<div class="plan-result">';
-    html += '<h3 style="color:#e94560">' + (actions[data.action] || '观望') + '</h3>';
-    html += '<p>风险等级: ' + (risks[data.risk_level] || '未知') + '</p>';
-    if (data.action === 'buy') {
-        html += '<p>入场区: ' + (data.entry_zone || []).join(' - ') + '</p>';
-        html += '<p>止损: ' + data.stop_loss + '</p>';
-        html += '<p>目标: ' + (data.targets || []).join(', ') + '</p>';
-        html += '<p>建议仓位: ' + ((data.position_pct || 0) * 100).toFixed(0) + '%</p>';
-    }
-    html += '<div class="plan-rationale">' + (data.rationale || '') + '</div>';
-    if (data.agent_opinions) {
-        html += '<div style="margin-top:10px">';
-        for (const o of data.agent_opinions) {
-            const dirEmoji = o.direction === 'bullish' ? '🔴' : o.direction === 'bearish' ? '🟢' : '⚪';
-            html += '<span class="opinion-chip">' + dirEmoji + ' ' + o.agent + ': ' + o.score + '分</span> ';
-        }
-        html += '</div>';
-    }
-    html += '</div>';
-    document.getElementById('ai-modal-body').innerHTML = html;
+    document.getElementById('ai-modal-body').innerHTML =
+        '<div class="plan-result"><h3>' + (actions[data.action] || '观望') + '</h3>' +
+        '<p>风险等级: ' + (risks[data.risk_level] || '未知') + '</p>' +
+        (data.action === 'buy' ? '<p>入场区: ' + (data.entry_zone || []).join(' - ') + '</p><p>止损: ' + data.stop_loss + '</p><p>目标: ' + (data.targets || []).join(', ') + '</p><p>建议仓位: ' + ((data.position_pct || 0) * 100).toFixed(0) + '%</p>' : '') +
+        '<div class="rationale">' + (data.rationale || '') + '</div>' +
+        (data.agent_opinions || []).map(function(o) { return '<div class="opinion-chip"><strong>' + o.agent + '</strong>: ' + o.direction + ' (' + o.score + '分)</div>'; }).join('') +
+        '</div>';
 }
 
 function closeAIModal() {
@@ -280,13 +319,4 @@ function closeAIModal() {
     if (aiEventSource) aiEventSource.close();
 }
 </script>
-
-<!-- AI Modal -->
-<div id="ai-modal" class="ai-modal" style="display:none">
-    <div class="ai-modal-content">
-        <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
-        <h3 id="ai-modal-title">AI 分析中...</h3>
-        <div id="ai-modal-body"></div>
-    </div>
-</div>
 {% endblock %}
