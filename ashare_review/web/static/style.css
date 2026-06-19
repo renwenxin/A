@@ -360,15 +360,6 @@ th { background: #1a1a2e; color: white; }
 }
 .btn-auction:hover { border-color: #e67e22; background: #fffaf5; }
 .btn-intraday:hover { border-color: #2563eb; background: #f5f8ff; }
-.btn-summary { border-left: 3px solid #e94560; }
-.btn-summary:hover { border-color: #e94560; background: #fff5f5; }
-.btn-summary .btn-icon { color: #e94560; }
-
-/* 列内分隔线 */
-.column-divider {
-    border-top: 1px dashed #e0e0e0;
-    margin: 6px 0;
-}
 
 /* 总筛选备注 */
 .summary-note {
@@ -973,6 +964,7 @@ button:disabled,
 .ai-review { line-height: 1.7; }
 
 /* Factor Screening */
-.column-factor { background: linear-gradient(135deg, #1a1a2e, #2d2d44); }
+.column-factor { }
+.column-factor h3 { color: #6c5ce7; }
 .btn-factor { border-left: 3px solid #6c5ce7 !important; }
 .btn-factor:hover { background: #f8f7ff !important; border-color: #6c5ce7 !important; }
