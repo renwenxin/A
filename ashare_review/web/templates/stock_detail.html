@@ -1,16 +1,280 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>个股详情 — {{ code }}</h1>
-{% if error %}<p class="error">{{ error }}</p>
+
+{% if error %}
+<div class="error-box"><span class="error-icon">!</span>{{ error }}</div>
+<a href="javascript:history.back()">← 返回</a>
+
 {% else %}
-<table>
-<tr><th>最新价</th><td>{{ latest.get('close', '-') }}</td></tr>
-<tr><th>最高</th><td>{{ latest.get('high', '-') }}</td></tr>
-<tr><th>最低</th><td>{{ latest.get('low', '-') }}</td></tr>
-<tr><th>成交量</th><td>{{ latest.get('volume', '-') }}</td></tr>
-<tr><th>MACD DIF</th><td>{{ latest.get('macd_dif', '-') }}</td></tr>
-<tr><th>MA5</th><td>{{ latest.get('ma5', '-') }}</td></tr>
-</table>
+<!-- ====== 头部：代码 + 名称 + 实时涨跌 ====== -->
+<div class="stock-header">
+    <div class="stock-title">
+        <span class="stock-code">{{ code }}</span>
+        {% if name %}<span class="stock-name">{{ name }}</span>{% endif %}
+        <span class="freshness-badge">● {{ data_freshness }}</span>
+    </div>
+
+    <!-- 当日实时价格 + 涨跌幅 -->
+    <div class="stock-price-row">
+        {% if spot and spot.price %}
+        <span class="stock-price-now">{{ '%.2f' % spot.price }}</span>
+        {% else %}
+        <span class="stock-price-now">{{ '%.2f' % latest.close }}</span>
+        {% endif %}
+        {% set chg = tech.change_pct %}
+        <span class="stock-change {% if chg > 0 %}change-up{% elif chg < 0 %}change-down{% endif %}">
+            {{ '%+.1f' % chg }}%
+        </span>
+    </div>
+
+    <!-- 当日行情概要 -->
+    <div class="stock-subtitle">
+        {% if spot and spot.open %}
+        今开 <strong>{{ '%.2f' % spot.open }}</strong> |
+        最高 <strong>{{ '%.2f' % spot.high }}</strong> |
+        最低 <strong>{{ '%.2f' % spot.low }}</strong>
+        {% else %}
+        昨收 <strong>{{ '%.2f' % latest.close }}</strong> |
+        最高 <strong>{{ '%.2f' % latest.high }}</strong> |
+        最低 <strong>{{ '%.2f' % latest.low }}</strong>
+        {% endif %}
+        {% if tech.tdx_close and spot %}
+        <span class="tdx-ref">| 昨收 {{ '%.2f' % tech.tdx_close }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stock-dashboard">
+
+<!-- ====== 左列：核心指标 ====== -->
+<div class="stock-col">
+
+    <!-- 当日行情快照 -->
+    <div class="stock-card">
+        <h3>📊 当日行情 <span class="card-badge">{{ data_freshness }}</span></h3>
+        <div class="metric-grid">
+            <div class="metric-item">
+                <span class="metric-label">最新价</span>
+                <span class="metric-value">{{ '%.2f' % (spot.price if spot and spot.price else latest.close) }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">涨跌幅</span>
+                <span class="metric-value {% if chg > 0 %}up{% elif chg < 0 %}down{% endif %}">
+                    {{ '%+.1f' % chg }}%
+                </span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">成交额</span>
+                <span class="metric-value">{{ '%.1f' % tech.amount_yi }}亿</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">成交量</span>
+                <span class="metric-value">
+                    {% if spot and spot.volume > 0 %}
+                    {{ '{:,}'.format(spot.volume) }}
+                    {% else %}
+                    {{ '{:,}'.format(tech.volume) }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">今开</span>
+                <span class="metric-value">{{ '%.2f' % (spot.open if spot and spot.open else latest.open) }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">昨收</span>
+                <span class="metric-value">{{ '%.2f' % tech.tdx_close }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 均线体系（基于TDX，以当日价判断站上/跌破） -->
+    <div class="stock-card">
+        <h3>📏 均线体系 <span class="card-badge">TDX</span></h3>
+        {% if ma_status %}
+        <div class="ma-list">
+            {% for m in ma_status %}
+            <div class="ma-row {% if m.above %}ma-row-above{% else %}ma-row-below{% endif %}">
+                <span class="ma-period">MA{{ m.period }}</span>
+                <span class="ma-price">{{ '%.2f' % m.ma_price }}</span>
+                <span class="ma-pct {% if m.above %}up{% else %}down{% endif %}">
+                    {{ '%+.1f' % m.pct_from_ma }}%
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-hint">均线数据不足</p>
+        {% endif %}
+    </div>
+
+    <!-- MACD -->
+    <div class="stock-card">
+        <h3>📈 MACD <span class="card-badge">TDX</span></h3>
+        <div class="metric-grid">
+            <div class="metric-item">
+                <span class="metric-label">DIF</span>
+                <span class="metric-value">{{ '%.3f' % tech.macd_dif }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">DEA</span>
+                <span class="metric-value">{{ '%.3f' % tech.macd_dea }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">柱</span>
+                <span class="metric-value {% if tech.macd_bar > 0 %}up{% else %}down{% endif %}">
+                    {{ '%+.3f' % tech.macd_bar }}
+                </span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">状态</span>
+                <span class="metric-value">{{ '🔴 金叉' if tech.macd_golden else '🟢 死叉' }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">位置</span>
+                <span class="metric-value">{{ '零轴上' if tech.macd_above_zero else '零轴下' }}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ====== 右列：筹码 + 历史K线 ====== -->
+<div class="stock-col">
+
+    <!-- 筹码分布 -->
+    {% if chip and chip.concentration %}
+    <div class="stock-card">
+        <h3>🎯 筹码分布 <span class="card-badge">TDX</span></h3>
+        <div class="metric-grid">
+            <div class="metric-item">
+                <span class="metric-label">集中度</span>
+                <span class="metric-value">{{ '%.0f' % (chip.concentration * 100) }}%</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">获利盘</span>
+                <span class="metric-value">{{ '%.0f' % chip.above_ratio }}%</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">平均成本</span>
+                <span class="metric-value">{{ '%.2f' % chip.avg_cost }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">筹码峰价</span>
+                <span class="metric-value">{{ '%.2f' % chip.peak_price }}</span>
+            </div>
+        </div>
+        {% if chip.patterns %}
+        <div class="chip-signals">
+            {% for p in chip.patterns %}
+            <div class="chip-signal chip-{{ p.signal }}">
+                <strong>{{ p.signal }}</strong> {{ p.pattern }}
+                <p class="chip-desc">{{ p.description }}</p>
+                <p class="chip-action">→ {{ p.action }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- 最近行情（含当日实时行） -->
+    {% if recent_bars %}
+    <div class="stock-card">
+        <h3>📅 最近行情 <span class="card-badge">{{ data_freshness }}</span></h3>
+        <div class="bar-table-wrap">
+        <table class="bar-table">
+            <tr>
+                <th>日期</th>
+                <th>开盘</th>
+                <th>最高</th>
+                <th>最低</th>
+                <th>收盘</th>
+                <th>涨跌幅</th>
+                <th>量比</th>
+                <th>成交量</th>
+            </tr>
+            {% for bar in recent_bars|reverse %}
+            <tr class="{% if bar.change_pct is defined and bar.change_pct == tech.change_pct and spot %}bar-today{% endif %}">
+                <td class="bar-date">{{ bar.date }}</td>
+                <td>{{ '%.2f' % bar.open }}</td>
+                <td>{{ '%.2f' % bar.high }}</td>
+                <td>{{ '%.2f' % bar.low }}</td>
+                <td><strong>{{ '%.2f' % bar.close }}</strong></td>
+                <td class="{% if bar.change_pct > 0 %}up{% elif bar.change_pct < 0 %}down{% endif %}">
+                    {{ '%+.1f' % bar.change_pct }}%
+                </td>
+                <td>{{ '%.1f' % bar.volume_ratio if bar.volume_ratio else '-' }}</td>
+                <td class="bar-vol">{{ '{:,}'.format(bar.volume) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+</div>
+
+<div class="back-link">
+    <a href="javascript:history.back()">← 返回</a>
+</div>
+
+<!-- AI 多空观点 -->
+<div style="margin-top:20px;background:white;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+    <h3>🤖 AI 多空观点
+        <button onclick="loadAIOpinions('{{ code }}')"
+                style="float:right;padding:6px 16px;background:#6c5ce7;color:white;border:none;border-radius:4px;cursor:pointer">
+            分析
+        </button>
+    </h3>
+    <div id="ai-opinions">点击"分析"按钮触发多Agent分析</div>
+</div>
+
+<script>
+function loadAIOpinions(code) {
+    document.getElementById('ai-opinions').innerHTML = '<p>分析中...</p>';
+    fetch('/api/agent/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({code: code, strategy: 'leader'})
+    })
+    .then(r => r.json())
+    .then(data => {
+        let es = new EventSource('/api/chat/stream/' + data.task_id);
+        let opinions = [];
+        es.onmessage = function(e) {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'agent_result') {
+                opinions.push(msg.data);
+                renderOpinions(opinions);
+            } else if (msg.type === 'trading_plan') {
+                renderOpinions(opinions, msg.data);
+            } else if (msg.type === 'done') {
+                es.close();
+            }
+        };
+    });
+}
+
+function renderOpinions(opinions, plan) {
+    const el = document.getElementById('ai-opinions');
+    let html = opinions.map(o => `
+        <div class="opinion-row">
+            <span class="op-agent">${o.agent}</span>
+            <span class="op-dir ${o.direction === 'bullish' ? 'up' : o.direction === 'bearish' ? 'down' : ''}">${o.direction}</span>
+            <span>评分: ${o.score}</span>
+            <span>信心: ${(o.confidence * 100).toFixed(0)}%</span>
+        </div>`).join('');
+    if (plan) {
+        html += `<div class="plan-summary"><strong>综合建议:</strong> ${plan.action} | 风险: ${plan.risk_level}
+                 | 仓位: ${(plan.position_pct * 100).toFixed(0)}%</div>`;
+        html += `<div class="plan-text">${plan.rationale || ''}</div>`;
+    }
+    el.innerHTML = html;
+}
+</script>
+
 {% endif %}
-<a href="/screening">← 返回选股</a>
 {% endblock %}

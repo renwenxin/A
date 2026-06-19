@@ -12,6 +12,7 @@ from ..data.tdx_reader import TdxReader
 from ..data.akshare_fetcher import AkshareFetcher
 from ..analysis.pick_analysis import analyze_pick
 import json
+import asyncio
 
 # ---- SSE Streaming Support (added for Vibe-Trading integration) ----
 import queue
@@ -87,6 +88,171 @@ SCREENERS = {
     'sector_divergence': SectorDivergenceScreener(tdx, ak_fetcher),
     'auction': AuctionScreener(tdx, ak_fetcher),
 }
+
+
+# ---- Chat API (Vibe-Trading integration) ----
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    body = request.get_json(silent=True) or {}
+    message = body.get('message', '')
+    if not message:
+        return jsonify({'error': 'message is required'}), 400
+    task_id = _create_task()
+    def run():
+        try:
+            from ..agents.orchestrator import SwarmOrchestrator
+            orch = SwarmOrchestrator()
+            _emit_event(task_id, 'status', {'msg': f'开始分析...'})
+            import re
+            codes = re.findall(r'\b(\d{6})\b', message)
+            if codes:
+                loop = asyncio.new_event_loop()
+                for code in codes[:3]:
+                    _emit_event(task_id, 'status', {'msg': f'正在分析 {code}...'})
+                    plan = loop.run_until_complete(orch.analyze_stock(code, '', message))
+                    _emit_event(task_id, 'agent_result', plan.to_dict())
+                    _emit_event(task_id, 'trading_plan', plan.to_dict())
+                loop.close()
+            else:
+                loop = asyncio.new_event_loop()
+                plan = loop.run_until_complete(orch.analyze_stock('000001', '上证指数', message))
+                loop.close()
+                _emit_event(task_id, 'trading_plan', plan.to_dict())
+            _complete_task(task_id, {'done': True})
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            _fail_task(task_id, str(e))
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    return jsonify({'task_id': task_id, 'status': 'processing'})
+
+@app.route('/api/chat/stream/<task_id>')
+def api_chat_stream(task_id):
+    return _sse_stream(task_id)
+
+@app.route('/api/chat/history')
+def api_chat_history():
+    return jsonify({'history': []})
+
+@app.route('/api/agent/analyze', methods=['POST'])
+def api_agent_analyze():
+    body = request.get_json(silent=True) or {}
+    code = body.get('code', '')
+    strategy = body.get('strategy', 'leader')
+    if not code:
+        return jsonify({'error': 'code is required'}), 400
+    task_id = _create_task()
+    def run():
+        try:
+            from ..agents.orchestrator import SwarmOrchestrator
+            orch = SwarmOrchestrator()
+            name = ''
+            if strategy in SCREENERS:
+                name = SCREENERS[strategy]._get_name(code)
+            _emit_event(task_id, 'status', {'msg': f'AI分析 {name}({code})...'})
+            loop = asyncio.new_event_loop()
+            plan = loop.run_until_complete(orch.analyze_stock(code, name, json.dumps({'strategy': strategy}, ensure_ascii=False)))
+            loop.close()
+            _emit_event(task_id, 'trading_plan', plan.to_dict())
+            _complete_task(task_id, plan.to_dict())
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            _fail_task(task_id, str(e))
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    return jsonify({'task_id': task_id, 'status': 'processing'})
+
+# ---- Alpha API (Vibe-Trading integration) ----
+@app.route('/api/alpha/list')
+def api_alpha_list():
+    zoo = request.args.get('zoo', '')
+    from ..alpha.registry import get_registry
+    r = get_registry()
+    factors = r.list_by_zoo(zoo) if zoo else r.list_all()
+    return jsonify({'total': len(factors), 'factors': r.summary()})
+
+@app.route('/api/alpha/eval', methods=['POST'])
+def api_alpha_eval():
+    body = request.get_json(silent=True) or {}
+    factor_id = body.get('factor_id', '')
+    code = body.get('code', '600519')
+    from ..alpha.registry import get_registry
+    from ..alpha.evaluator import evaluate_factor
+    r = get_registry()
+    factor = r.get(factor_id)
+    if factor is None:
+        return jsonify({'error': f'Factor {factor_id} not found'}), 404
+    market = 'sh' if code.startswith('6') else 'sz'
+    if code.startswith('8') or code.startswith('4'):
+        market = 'bj'
+    df = tdx.read_daily(code, market)
+    if df.empty:
+        return jsonify({'error': f'No data for {code}'}), 404
+    report = evaluate_factor(factor, df)
+    return jsonify(report.to_dict())
+
+@app.route('/api/alpha/compare', methods=['POST'])
+def api_alpha_compare():
+    body = request.get_json(silent=True) or {}
+    factor_ids = body.get('factor_ids', [])
+    code = body.get('code', '600519')
+    from ..alpha.compare import compare_factors
+    market = 'sh' if code.startswith('6') else 'sz'
+    if code.startswith('8') or code.startswith('4'):
+        market = 'bj'
+    df = tdx.read_daily(code, market)
+    if df.empty:
+        return jsonify({'error': f'No data for {code}'}), 404
+    results = compare_factors(factor_ids, df)
+    return jsonify({'factors': results})
+
+# ---- Strategy API (Vibe-Trading integration) ----
+@app.route('/api/strategy/templates')
+def api_strategy_templates():
+    from ..nl_strategy.templates import BUILTIN_TEMPLATES
+    data = {k: {'name': v.name, 'description': v.description, 'conditions_count': len(v.conditions)} for k, v in BUILTIN_TEMPLATES.items()}
+    return jsonify({'templates': data})
+
+@app.route('/api/strategy/parse', methods=['POST'])
+def api_strategy_parse():
+    body = request.get_json(silent=True) or {}
+    description = body.get('description', '')
+    if not description:
+        return jsonify({'error': 'description is required'}), 400
+    from ..nl_strategy.parser import parse_strategy
+    result = parse_strategy(description)
+    if result['success']:
+        return jsonify({'success': True, 'spec': result['spec'].to_dict()})
+    return jsonify({'success': False, 'error': result.get('error', 'Parse failed')})
+
+@app.route('/api/strategy/execute', methods=['POST'])
+def api_strategy_execute():
+    body = request.get_json(silent=True) or {}
+    spec_dict = body.get('spec', {})
+    template_id = body.get('template', '')
+    from ..nl_strategy.spec import StrategySpec
+    from ..nl_strategy.templates import BUILTIN_TEMPLATES
+    from ..nl_strategy.executor import execute_strategy
+    if template_id and template_id in BUILTIN_TEMPLATES:
+        spec = BUILTIN_TEMPLATES[template_id]
+    elif spec_dict:
+        spec = StrategySpec.from_dict(spec_dict)
+    else:
+        return jsonify({'error': 'spec or template required'}), 400
+    results = execute_strategy(spec)
+    return jsonify({'strategy': spec.name, 'total': len(results), 'results': results})
+
+@app.route('/api/strategy/backtest', methods=['POST'])
+def api_strategy_backtest():
+    body = request.get_json(silent=True) or {}
+    spec_dict = body.get('spec', {})
+    days = body.get('days', 60)
+    from ..nl_strategy.spec import StrategySpec
+    from ..nl_strategy.executor import execute_strategy
+    spec = StrategySpec.from_dict(spec_dict)
+    results = execute_strategy(spec)
+    return jsonify({'strategy': spec.name, 'days': days, 'results_count': len(results), 'note': '完整回测需接入 backtest 引擎'})
 
 
 def _enrich_top_3(data: list, strategy: str) -> list:
@@ -437,6 +603,19 @@ def stock_detail(code):
         import traceback
         traceback.print_exc()
         return render_template('stock_detail.html', code=code, error=str(e))
+
+
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
+@app.route('/alpha')
+def alpha_page():
+    return render_template('alpha.html')
+
+@app.route('/strategies')
+def strategies_page():
+    return render_template('strategies.html')
 
 
 def run(host='127.0.0.1', port=5000, debug=True):

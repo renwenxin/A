@@ -1,0 +1,87 @@
+<!-- ashare_review/web/templates/strategies.html -->
+{% extends "base.html" %}
+{% block content %}
+<h1>📝 智能策略</h1>
+
+<div class="strategy-section">
+    <h3>预设模板</h3>
+    <div id="template-grid" class="template-grid"></div>
+</div>
+
+<div class="strategy-section">
+    <h3>自定义策略</h3>
+    <textarea id="nl-input" rows="3"
+        placeholder="描述你的选股思路...&#10;例如: 找今天涨停时间在上午10点前，封单金额超过1亿，流通市值小于100亿，且属于今天热点板块的股票"></textarea>
+    <div class="strategy-actions">
+        <button onclick="parseStrategy()">🤖 AI解析策略</button>
+        <button onclick="executeTemplate()">▶ 立即筛选</button>
+    </div>
+</div>
+
+<div id="strategy-result"></div>
+
+<script>
+function loadTemplates() {
+    fetch('/api/strategy/templates')
+        .then(r => r.json())
+        .then(data => {
+            const grid = document.getElementById('template-grid');
+            grid.innerHTML = Object.entries(data.templates).map(([id, t]) => `
+                <div class="template-card" onclick="selectTemplate('${id}')">
+                    <h4>${t.name}</h4>
+                    <p>${t.description}</p>
+                    <span>${t.conditions_count} 条件</span>
+                </div>`).join('');
+        });
+}
+
+let currentTemplate = '';
+
+function selectTemplate(id) {
+    currentTemplate = id;
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    event.target.closest('.template-card').classList.add('selected');
+}
+
+function executeTemplate() {
+    if (!currentTemplate) { alert('请先选择一个模板'); return; }
+    fetch('/api/strategy/execute', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({template: currentTemplate})
+    })
+    .then(r => r.json())
+    .then(data => showResults(data));
+}
+
+function parseStrategy() {
+    const desc = document.getElementById('nl-input').value.trim();
+    if (!desc) return;
+    fetch('/api/strategy/parse', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({description: desc})
+    })
+    .then(r => r.json())
+    .then(data => {
+        const el = document.getElementById('strategy-result');
+        if (data.success) {
+            el.innerHTML = '<h4>解析成功: ' + data.spec.name + '</h4>' +
+                '<pre>' + JSON.stringify(data.spec.conditions, null, 2) + '</pre>';
+        } else {
+            el.innerHTML = '<p class="error">解析失败: ' + data.error + '</p>';
+        }
+    });
+}
+
+function showResults(data) {
+    const el = document.getElementById('strategy-result');
+    el.innerHTML = '<h4>' + data.strategy + ' (共' + data.total + '只)</h4>' +
+        '<table><tr><th>代码</th><th>名称</th><th>评分</th></tr>' +
+        data.results.map(r => `<tr><td>${r.code}</td><td>${r.name}</td><td>${r.score}</td></tr>`).join('') +
+        '</table>';
+}
+
+loadTemplates();
+</script>
+{% endblock %}
