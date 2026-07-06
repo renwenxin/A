@@ -27,6 +27,14 @@ export const state = {
     period: 'daily',
 };
 
+// ====== 主题切换 ======
+function toggleTheme() {
+    const page = document.getElementById('chartPage');
+    if (!page) return;
+    const isLight = page.classList.toggle('theme-light');
+    try { localStorage.setItem('chart_theme', isLight ? 'light' : 'dark'); } catch (e) {}
+}
+
 // ====== 初始化入口 ======
 async function init() {
     const params = new URLSearchParams(window.location.search);
@@ -78,6 +86,65 @@ async function init() {
     });
 
     console.log('[chart] Initialization complete');
+
+    // ====== 键盘快捷键 ======
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        const key = e.key.toLowerCase();
+        if (key === '1' || key === '2' || key === '4') {
+            if (e.ctrlKey || e.metaKey) return;
+            const count = parseInt(key);
+            document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+            const layoutBtn = document.querySelector(`.layout-btn[data-layout="${count}"]`);
+            if (layoutBtn) layoutBtn.classList.add('active');
+            import('/static/chart/chart-core.js').then(m => {
+                m.setPaneLayout(count);
+                if (state.code) {
+                    // 重新触发加载
+                    import('/static/chart/chart-data.js').then(dm => dm.loadData(state.code, state.period));
+                }
+            });
+        } else if (key === ' ') {
+            e.preventDefault();
+            if (state.period === 'intra') {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                const dailyBtn = document.querySelector('.period-btn[data-period="daily"]');
+                if (dailyBtn) dailyBtn.classList.add('active');
+                bus.emit('period:changed', { period: 'daily' });
+            } else {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                const intraBtn = document.querySelector('.period-btn[data-period="intra"]');
+                if (intraBtn) intraBtn.classList.add('active');
+                import('/static/chart/chart-data.js').then(m => m.loadIntraData(state.code));
+            }
+        } else if (key === 't' && !e.ctrlKey && !e.metaKey) {
+            toggleTheme();
+        }
+    });
+
+    // ====== 加载保存的主题 ======
+    try {
+        if (localStorage.getItem('chart_theme') === 'light') {
+            document.getElementById('chartPage')?.classList.add('theme-light');
+        }
+    } catch (e) {}
+
+    // ====== 布局按钮事件 ======
+    document.getElementById('layoutBtns')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.layout-btn');
+        if (!btn) return;
+        const count = parseInt(btn.dataset.layout);
+        document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        import('/static/chart/chart-core.js').then(m => {
+            m.setPaneLayout(count);
+            import('/static/chart/chart-data.js').then(dm => dm.loadData(state.code, state.period));
+        });
+    });
+
+    // ====== 主题按钮 ======
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
 }
 
 // 画线工具栏
