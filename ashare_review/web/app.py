@@ -1276,5 +1276,56 @@ def api_chart_intra():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/chart/intra/stream')
+def api_chart_intra_stream():
+    """分时图实时SSE推送 — 每5秒推送最新价格"""
+    code = request.args.get('code', '')
+    if not code or len(code) != 6:
+        return jsonify({'error': 'code is required'}), 400
+
+    from datetime import datetime
+    from ..data.akshare_fetcher import _clean_proxy
+    import akshare as ak
+
+    def generate():
+        last_price = None
+        count = 0
+        while count < 360:  # max ~30 min (360 * 5s)
+            try:
+                _clean_proxy()
+                today_str = datetime.now().strftime('%Y%m%d')
+                df = ak.stock_zh_a_hist_min_em(
+                    symbol=code, period='5', adjust='qfq',
+                    start_date=today_str, end_date=today_str)
+                if df is not None and not df.empty:
+                    # 取最后一行的 close 列
+                    row = df.iloc[-1]
+                    cols = df.columns.tolist()
+                    close_col = next((c for c in cols if c in ('收盘', 'close')), cols[-2] if len(cols) >= 2 else cols[0])
+                    vol_col = next((c for c in cols if c in ('成交量', 'volume')), cols[-1])
+                    price = float(row[close_col])
+                    volume = int(row[vol_col]) if vol_col and row[vol_col] else 0
+                    changed = last_price is None or abs(price - (last_price or 0)) > 0.001
+                    last_price = price
+                    d = {
+                        'time': datetime.now().strftime('%H:%M:%S'),
+                        'price': round(price, 2),
+                        'volume': volume,
+                        'changed': changed,
+                        'cum_volume': int(df[vol_col].sum()) if vol_col else 0,
+                    }
+                    yield f"data: {json.dumps(d, ensure_ascii=False)}\n\n"
+                else:
+                    yield f"data: {json.dumps({'status': 'no_data'})}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                break  # stop on persistent error
+
+            count += 1
+            time.sleep(5)
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+
 def run(host='127.0.0.1', port=5000, debug=True):
     app.run(host=host, port=port, debug=debug)
