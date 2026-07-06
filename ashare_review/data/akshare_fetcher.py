@@ -15,6 +15,9 @@ from datetime import datetime, date, timedelta
 from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .models import LimitUpInfo, AuctionInfo, LhbInfo, StockInfo
+from ..utils.log import get_logger
+
+logger = get_logger(__name__)
 
 
 def _clean_proxy():
@@ -97,7 +100,7 @@ class AkshareFetcher:
             return []
 
         cols = list(df.columns)
-        print(f"[akshare] 涨停池列名: {cols}")
+        logger.info(f"涨停池列名: {cols}")
 
         # ----- 字段自适应映射 -----
         # 代码
@@ -972,3 +975,92 @@ class AkshareFetcher:
         from collections import Counter
         sector_count = Counter(lu.board_type for lu in limit_ups if lu.board_type)
         return [{'名称': s, '涨停数': c} for s, c in sector_count.most_common(15)]
+
+    # ------------------------------------------------------------------
+    # 分钟K线
+    # ------------------------------------------------------------------
+    def get_min_kline(self, code: str, period: str = '60', days: int = 30) -> pd.DataFrame:
+        """获取分钟K线数据
+
+        Args:
+            code: 股票代码 (6位)
+            period: 周期 '5','15','30','60'
+            days: 获取近多少天的数据，默认30天
+
+        Returns:
+            DataFrame with columns: time, open, high, low, close, volume
+            空DataFrame表示获取失败
+        """
+        import akshare as ak
+
+        # 确定市场前缀
+        if code.startswith('6'):
+            symbol = f'{code}'
+        elif code.startswith('0') or code.startswith('3'):
+            symbol = f'{code}'
+        elif code.startswith('8') or code.startswith('4'):
+            symbol = f'{code}'
+        else:
+            symbol = code
+
+        cache_key = f'min_kline_{code}_{period}_{days}'
+        cached = self._cache_get(cache_key, ttl_minutes=10)
+        if cached:
+            import json
+            records = json.loads(cached)
+            return pd.DataFrame(records)
+
+        try:
+            _clean_proxy()
+            df = ak.stock_zh_a_hist_min_em(
+                symbol=symbol,
+                period=period,
+                adjust='qfq',
+                start_date=(datetime.now() - timedelta(days=days)).strftime('%Y%m%d'),
+                end_date=datetime.now().strftime('%Y%m%d'),
+            )
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            return pd.DataFrame()
+
+        if df is None or df.empty:
+            return pd.DataFrame()
+
+        # 标准化列名：akshare 返回列名可能是中文
+        col_map = {}
+        for c in df.columns:
+            if c in ('时间', 'time'):
+                col_map[c] = 'time'
+            elif c in ('开盘', 'open'):
+                col_map[c] = 'open'
+            elif c in ('最高', 'high'):
+                col_map[c] = 'high'
+            elif c in ('最低', 'low'):
+                col_map[c] = 'low'
+            elif c in ('收盘', 'close'):
+                col_map[c] = 'close'
+            elif c in ('成交量', 'volume'):
+                col_map[c] = 'volume'
+            elif c in ('成交额', 'amount'):
+                col_map[c] = 'amount'
+
+        df = df.rename(columns=col_map)
+
+        # 确保必要列存在
+        required = ['time', 'open', 'high', 'low', 'close', 'volume']
+        missing = [c for c in required if c not in df.columns]
+        if missing:
+            return pd.DataFrame()
+
+        # 缓存
+        records = df[required].to_dict(orient='records')
+        # Convert time to string for JSON serialization
+        for r in records:
+            if hasattr(r['time'], 'strftime'):
+                r['time'] = r['time'].strftime('%Y-%m-%d %H:%M:%S')
+            elif not isinstance(r['time'], str):
+                r['time'] = str(r['time'])
+        self._cache_set(cache_key, json.dumps(records, ensure_ascii=False, default=str))
+
+        return df[required]
