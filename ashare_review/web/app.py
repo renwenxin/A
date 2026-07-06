@@ -1039,27 +1039,52 @@ db.close()
 
 @app.route('/api/watchlist')
 def api_watchlist():
-    """自选列表查询"""
+    """自选列表查询 — 支持分组/搜索/分页"""
     group = request.args.get('group', '')
+    search = request.args.get('search', '')
+    limit = request.args.get('limit', '200', type=int)
+    offset = request.args.get('offset', '0', type=int)
+
     db = _get_watchlist_db()
+    base = 'SELECT id, code, name, group_name, sort_order FROM watchlist'
+    params = []
+    where_clauses = []
+
     if group:
-        rows = db.execute('SELECT id, code, name, group_name, sort_order FROM watchlist WHERE group_name=? ORDER BY sort_order', (group,)).fetchall()
-    else:
-        rows = db.execute('SELECT id, code, name, group_name, sort_order FROM watchlist ORDER BY group_name, sort_order').fetchall()
+        where_clauses.append('group_name=?')
+        params.append(group)
+    if search:
+        where_clauses.append('(code LIKE ? OR name LIKE ?)')
+        params.extend([f'%{search}%', f'%{search}%'])
+
+    if where_clauses:
+        base += ' WHERE ' + ' AND '.join(where_clauses)
+
+    # Count total
+    count_sql = base.replace('SELECT id, code, name, group_name, sort_order', 'SELECT COUNT(*)')
+    total = db.execute(count_sql, params).fetchone()[0]
+
+    base += ' ORDER BY group_name, sort_order LIMIT ? OFFSET ?'
+    params.extend([limit, offset])
+    rows = db.execute(base, params).fetchall()
     db.close()
+
     items = [{'id': r[0], 'code': r[1], 'name': r[2], 'group': r[3], 'sort_order': r[4]} for r in rows]
-    # 附加实时涨跌幅
-    try:
-        spot_df = ak_fetcher.get_spot_df()
-        if spot_df is not None and not spot_df.empty:
-            for item in items:
-                row = spot_df[spot_df['代码'] == item['code']]
-                if not row.empty:
-                    item['price'] = float(row.iloc[0].get('最新价', 0) or 0)
-                    item['change_pct'] = float(row.iloc[0].get('涨跌幅', 0) or 0)
-    except Exception:
-        pass
-    return jsonify({'total': len(items), 'items': items})
+
+    # 仅在结果较少时附加实时涨跌幅
+    if len(items) <= 200:
+        try:
+            spot_df = ak_fetcher.get_spot_df()
+            if spot_df is not None and not spot_df.empty:
+                for item in items:
+                    row = spot_df[spot_df['代码'] == item['code']]
+                    if not row.empty:
+                        item['price'] = float(row.iloc[0].get('最新价', 0) or 0)
+                        item['change_pct'] = float(row.iloc[0].get('涨跌幅', 0) or 0)
+        except Exception:
+            pass
+
+    return jsonify({'total': total, 'limit': limit, 'offset': offset, 'items': items})
 
 
 @app.route('/api/watchlist', methods=['POST'])
