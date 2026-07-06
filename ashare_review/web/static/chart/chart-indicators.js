@@ -141,3 +141,100 @@ export function removeIndicatorSeries(chart) {
     removeMASeries(chart);
     removeMACDPane(chart);
 }
+
+// ====== RSI (14) ======
+let rsiSeries = null;
+
+export function addRSI(chart, period = 14) {
+    try {
+        removeRSI(chart);
+        rsiSeries = chart.addLineSeries({
+            color: '#ffeb3b',
+            lineWidth: 1,
+            priceScaleId: 'rsi',
+        });
+        chart.priceScale('rsi').applyOptions({ scaleMargins: { top: 0.92, bottom: 0 } });
+
+        import('/static/chart/chart-core.js').then(({ getCandleSeries }) => {
+            const cs = getCandleSeries();
+            if (!cs || !cs.data) return;
+            const bars = cs.data();
+            const closes = bars.map(b => b.close).filter(v => v != null);
+            if (closes.length <= period) return;
+            const rsiData = calcRSI(closes, period);
+            const offset = bars.length - rsiData.length;
+            rsiSeries.setData(rsiData.map((v, i) => ({
+                time: bars[offset + i]?.time,
+                value: v,
+            })).filter(d => d.time != null && d.value != null));
+        });
+    } catch (e) { console.error('[RSI] Error:', e); }
+}
+
+export function removeRSI(chart) {
+    if (rsiSeries) { try { chart.removeSeries(rsiSeries); } catch (e) {} rsiSeries = null; }
+}
+
+function calcRSI(closes, period = 14) {
+    const result = [];
+    let gains = 0, losses = 0;
+    for (let i = 1; i <= period; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff >= 0) gains += diff; else losses -= diff;
+    }
+    let avgGain = gains / period, avgLoss = losses / period;
+    result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss));
+    for (let i = period + 1; i < closes.length; i++) {
+        const diff = closes[i] - closes[i - 1];
+        avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
+        avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
+        result.push(avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss));
+    }
+    return result;
+}
+
+// ====== 布林带 (20, 2) ======
+let bollUpper = null, bollMiddle = null, bollLower = null;
+
+export function addBollinger(chart, period = 20, stdDev = 2) {
+    try {
+        removeBollinger(chart);
+        bollUpper = chart.addLineSeries({ color: 'rgba(255,152,0,0.6)', lineWidth: 1, priceScaleId: 'right' });
+        bollMiddle = chart.addLineSeries({ color: 'rgba(255,152,0,0.3)', lineWidth: 1, priceScaleId: 'right' });
+        bollLower = chart.addLineSeries({ color: 'rgba(255,152,0,0.6)', lineWidth: 1, priceScaleId: 'right' });
+
+        import('/static/chart/chart-core.js').then(({ getCandleSeries }) => {
+            const cs = getCandleSeries();
+            if (!cs || !cs.data) return;
+            const bars = cs.data();
+            const closes = bars.map(b => b.close).filter(v => v != null);
+            if (closes.length < period) return;
+            const { upper, middle, lower } = calcBollinger(closes, period, stdDev);
+            const offset = bars.length - upper.length;
+            bollUpper.setData(upper.map((v, i) => ({ time: bars[offset + i]?.time, value: v })).filter(d => d.time != null && d.value != null));
+            bollMiddle.setData(middle.map((v, i) => ({ time: bars[offset + i]?.time, value: v })).filter(d => d.time != null && d.value != null));
+            bollLower.setData(lower.map((v, i) => ({ time: bars[offset + i]?.time, value: v })).filter(d => d.time != null && d.value != null));
+        });
+    } catch (e) { console.error('[BOLL] Error:', e); }
+}
+
+export function removeBollinger(chart) {
+    [bollUpper, bollMiddle, bollLower].forEach(s => {
+        if (s) { try { chart.removeSeries(s); } catch (e) {} }
+    });
+    bollUpper = bollMiddle = bollLower = null;
+}
+
+function calcBollinger(closes, period = 20, stdDev = 2) {
+    const upper = [], middle = [], lower = [];
+    for (let i = period - 1; i < closes.length; i++) {
+        const slice = closes.slice(i - period + 1, i + 1);
+        const avg = slice.reduce((a, b) => a + b, 0) / period;
+        const variance = slice.reduce((a, b) => a + (b - avg) ** 2, 0) / period;
+        const std = Math.sqrt(variance);
+        upper.push(avg + stdDev * std);
+        middle.push(avg);
+        lower.push(avg - stdDev * std);
+    }
+    return { upper, middle, lower };
+}
