@@ -1139,5 +1139,142 @@ def api_chart_depth():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/chart/events')
+def api_chart_events():
+    """策略事件标注 — 涨停日/龙虎榜/炸板"""
+    code = request.args.get('code', '')
+    if not code or len(code) != 6:
+        return jsonify({'error': 'code is required'}), 400
+
+    events = []
+    try:
+        # 1. 涨停日标记
+        limit_ups = ak_fetcher.get_limit_up_pool()
+        if limit_ups:
+            for lu in limit_ups:
+                if lu.code == code:
+                    events.append({
+                        'type': 'limit_up',
+                        'date': str(lu.trade_date) if hasattr(lu, 'trade_date') else '',
+                        'label': '涨停',
+                        'detail': '',
+                    })
+
+        # 2. 龙虎榜标记（最近30天，限制查询次数）
+        from datetime import date, timedelta
+        checked = 0
+        for i in range(30):
+            d = date.today() - timedelta(days=i)
+            if d.weekday() >= 5:
+                continue
+            checked += 1
+            if checked > 5:  # 最多查5个交易日
+                break
+            try:
+                lhb_list = ak_fetcher.get_lhb(d.strftime('%Y%m%d'))
+                for l in lhb_list:
+                    if l.code == code:
+                        net = l.net_amount or 0
+                        events.append({
+                            'type': 'lhb',
+                            'date': d.isoformat(),
+                            'label': '龙虎榜',
+                            'detail': f'净买:{net/10000:.0f}万' if net else '',
+                        })
+            except Exception:
+                continue
+
+        # 3. 炸板标记
+        try:
+            auctions = ak_fetcher.get_auction_data()
+            if auctions:
+                for a in auctions:
+                    if a.code == code and getattr(a, 'broken', 0) > 0:
+                        events.append({
+                            'type': 'broken',
+                            'date': str(getattr(a, 'date', date.today())),
+                            'label': '炸板',
+                            'detail': f'炸板{getattr(a, "broken", "")}次',
+                        })
+        except Exception:
+            pass
+
+    except Exception:
+        pass
+
+    return jsonify({'code': code, 'total': len(events), 'events': events})
+
+
+@app.route('/api/chart/intra')
+def api_chart_intra():
+    """当日分时图数据 — 5分钟K线模拟分时"""
+    code = request.args.get('code', '')
+    if not code or len(code) != 6:
+        return jsonify({'error': 'code is required'}), 400
+    try:
+        from ..data.akshare_fetcher import _clean_proxy
+        _clean_proxy()
+        import akshare as ak
+        today_str = datetime.now().strftime('%Y%m%d')
+        df = ak.stock_zh_a_hist_min_em(
+            symbol=code, period='5', adjust='qfq',
+            start_date=today_str, end_date=today_str)
+        if df is None or df.empty:
+            return jsonify({'error': 'No intraday data for today', 'code': code}), 404
+
+        # 标准化列名
+        col_map = {}
+        for c in df.columns:
+            if c in ('时间', 'time'): col_map[c] = 'time'
+            elif c in ('开盘', 'open'): col_map[c] = 'open'
+            elif c in ('最高', 'high'): col_map[c] = 'high'
+            elif c in ('最低', 'low'): col_map[c] = 'low'
+            elif c in ('收盘', 'close'): col_map[c] = 'close'
+            elif c in ('成交量', 'volume'): col_map[c] = 'volume'
+        df = df.rename(columns={c: col_map[c] for c in df.columns if c in col_map})
+
+        prev_close = None
+        # Try to get prev close from daily data
+        try:
+            if code.startswith('6'): market = 'sh'
+            elif code.startswith('0') or code.startswith('3'): market = 'sz'
+            else: market = 'bj'
+            daily = tdx.read_daily(code, market)
+            if not daily.empty:
+                prev_close = float(daily.iloc[-1]['close'])
+        except Exception:
+            pass
+
+        points = []
+        cum_vol = 0
+        cum_amt = 0
+        for _, row in df.iterrows():
+            t = row.get('time')
+            ts = t.isoformat() if hasattr(t, 'isoformat') else str(t)
+            price = float(row.get('close', 0))
+            cum_vol += int(row.get('volume', 0))
+            if prev_close and prev_close > 0:
+                avg_price = price  # simplified
+            else:
+                avg_price = price
+            points.append({
+                'time': ts,
+                'price': round(price, 2),
+                'volume': cum_vol,
+                'avg_price': round(avg_price, 2),
+            })
+
+        return jsonify({
+            'code': code,
+            'total': len(points),
+            'points': points,
+            'prev_close': round(prev_close or 0, 2),
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 def run(host='127.0.0.1', port=5000, debug=True):
     app.run(host=host, port=port, debug=debug)
