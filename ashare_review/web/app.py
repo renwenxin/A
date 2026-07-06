@@ -14,6 +14,8 @@ from ..data.akshare_fetcher import AkshareFetcher
 from ..analysis.pick_analysis import analyze_pick
 import json
 import asyncio
+import sqlite3
+import os
 
 # ---- SSE Streaming Support (added for Vibe-Trading integration) ----
 import queue
@@ -997,6 +999,144 @@ def api_chart_kline():
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e), 'code': code}), 500
+
+
+# ---- 自选股 CRUD ----
+
+def _get_watchlist_db():
+    return sqlite3.connect(os.path.join(os.path.dirname(__file__), '..', 'watchlist.db'))
+
+def _init_watchlist():
+    db = _get_watchlist_db()
+    db.execute('''CREATE TABLE IF NOT EXISTS watchlist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL,
+        name TEXT DEFAULT '',
+        group_name TEXT DEFAULT '默认',
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(code)
+    )''')
+    db.commit()
+    db.close()
+
+# 添加默认数据（首次初始化）
+_init_watchlist()
+db = _get_watchlist_db()
+if db.execute('SELECT COUNT(*) FROM watchlist').fetchone()[0] == 0:
+    defaults = [
+        ('000001', '上证指数', '指数'),
+        ('600519', '贵州茅台', '默认'),
+        ('300750', '宁德时代', '默认'),
+        ('000858', '五粮液', '默认'),
+    ]
+    for i, (code, name, grp) in enumerate(defaults):
+        db.execute('INSERT OR IGNORE INTO watchlist (code, name, group_name, sort_order) VALUES (?,?,?,?)',
+                   (code, name, grp, i))
+    db.commit()
+db.close()
+
+
+@app.route('/api/watchlist')
+def api_watchlist():
+    """自选列表查询"""
+    group = request.args.get('group', '')
+    db = _get_watchlist_db()
+    if group:
+        rows = db.execute('SELECT id, code, name, group_name, sort_order FROM watchlist WHERE group_name=? ORDER BY sort_order', (group,)).fetchall()
+    else:
+        rows = db.execute('SELECT id, code, name, group_name, sort_order FROM watchlist ORDER BY group_name, sort_order').fetchall()
+    db.close()
+    items = [{'id': r[0], 'code': r[1], 'name': r[2], 'group': r[3], 'sort_order': r[4]} for r in rows]
+    # 附加实时涨跌幅
+    try:
+        spot_df = ak_fetcher.get_spot_df()
+        if spot_df is not None and not spot_df.empty:
+            for item in items:
+                row = spot_df[spot_df['代码'] == item['code']]
+                if not row.empty:
+                    item['price'] = float(row.iloc[0].get('最新价', 0) or 0)
+                    item['change_pct'] = float(row.iloc[0].get('涨跌幅', 0) or 0)
+    except Exception:
+        pass
+    return jsonify({'total': len(items), 'items': items})
+
+
+@app.route('/api/watchlist', methods=['POST'])
+def api_watchlist_add():
+    """添加自选"""
+    body = request.get_json(silent=True) or {}
+    code = body.get('code', '')
+    name = body.get('name', '')
+    group = body.get('group', '默认')
+    if not code or len(code) != 6:
+        return jsonify({'error': 'code is required'}), 400
+    db = _get_watchlist_db()
+    try:
+        db.execute('INSERT OR IGNORE INTO watchlist (code, name, group_name) VALUES (?,?,?)', (code, name, group))
+        db.commit()
+        return jsonify({'ok': True, 'code': code})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/watchlist/<int:item_id>', methods=['DELETE'])
+def api_watchlist_delete(item_id):
+    """删除自选"""
+    db = _get_watchlist_db()
+    db.execute('DELETE FROM watchlist WHERE id=?', (item_id,))
+    db.commit()
+    db.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/watchlist/<int:item_id>', methods=['PUT'])
+def api_watchlist_update(item_id):
+    """更新自选（分组/排序）"""
+    body = request.get_json(silent=True) or {}
+    db = _get_watchlist_db()
+    if 'group' in body:
+        db.execute('UPDATE watchlist SET group_name=? WHERE id=?', (body['group'], item_id))
+    if 'sort_order' in body:
+        db.execute('UPDATE watchlist SET sort_order=? WHERE id=?', (body['sort_order'], item_id))
+    db.commit()
+    db.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/chart/depth')
+def api_chart_depth():
+    """盘口五档数据"""
+    code = request.args.get('code', '')
+    if not code or len(code) != 6:
+        return jsonify({'error': 'code is required'}), 400
+    try:
+        spot_df = ak_fetcher.get_spot_df()
+        if spot_df is None or spot_df.empty:
+            return jsonify({'error': 'No depth data available'}), 404
+        row = spot_df[spot_df['代码'] == code]
+        if row.empty:
+            return jsonify({'error': f'No data for {code}'}), 404
+        r = row.iloc[0]
+        depth = {
+            'code': code,
+            'price': float(r.get('最新价', 0) or 0),
+            'open': float(r.get('今开', 0) or 0),
+            'high': float(r.get('最高', 0) or 0),
+            'low': float(r.get('最低', 0) or 0),
+            'volume': int(r.get('成交量', 0) or 0),
+            'amount': float(r.get('成交额', 0) or 0),
+            'change_pct': float(r.get('涨跌幅', 0) or 0),
+            'change': float(r.get('涨跌额', 0) or 0),
+            'turnover': float(r.get('换手率', 0) or 0) if '换手率' in r.index else 0,
+        }
+        return jsonify(depth)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 def run(host='127.0.0.1', port=5000, debug=True):
