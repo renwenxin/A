@@ -126,3 +126,39 @@ export function destroyChart() {
 export function getChart() { return chart; }
 export function getCandleSeries() { return candleSeries; }
 export function getVolumeSeries() { return volumeSeries; }
+
+// ====== 分时图模式 ======
+let intraLineSeries = null;
+
+export function switchToIntraMode() {
+    if (!chart) return;
+    if (candleSeries) candleSeries.applyOptions({ visible: false });
+    if (volumeSeries) volumeSeries.applyOptions({ visible: false });
+    if (!intraLineSeries) {
+        intraLineSeries = chart.addLineSeries({
+            color: '#2962ff',
+            lineWidth: 1,
+            priceScaleId: 'right',
+        });
+    } else {
+        intraLineSeries.applyOptions({ visible: true });
+    }
+    chart.timeScale().fitContent();
+}
+
+export function switchToKlineMode() {
+    if (candleSeries) candleSeries.applyOptions({ visible: true });
+    if (volumeSeries) volumeSeries.applyOptions({ visible: true });
+    if (intraLineSeries) intraLineSeries.applyOptions({ visible: false });
+}
+
+export function renderIntraData(points) {
+    switchToIntraMode();
+    if (!intraLineSeries) return;
+    const data = points.map(p => ({
+        time: formatTime(p.time),
+        value: p.price,
+    }));
+    intraLineSeries.setData(data);
+    if (chart) chart.timeScale().fitContent();
+}
