@@ -121,6 +121,35 @@ export async function loadData(code, period) {
     }
 }
 
+// ====== 分时图数据加载 ======
+export async function loadIntraData(code) {
+    try {
+        const resp = await fetch(`/api/chart/intra?code=${code}`);
+        const data = await resp.json();
+        if (data.points && data.points.length > 0) {
+            const { renderIntraData } = await import('/static/chart/chart-core.js');
+            renderIntraData(data.points);
+            const lastPoint = data.points[data.points.length - 1];
+            const change = data.prev_close ? ((lastPoint.price - data.prev_close) / data.prev_close * 100) : 0;
+            bus.emit('toolbar:update', {
+                code,
+                name: state.name || code,
+                price: lastPoint.price,
+                change,
+            });
+        }
+    } catch (e) {
+        console.error('[chart-data] Intra load failed:', e);
+    }
+}
+
+// ====== 切换回K线模式 ======
+export async function reloadKlineData(code, period) {
+    const { switchToKlineMode } = await import('/static/chart/chart-core.js');
+    switchToKlineMode();
+    await loadData(code, period);
+}
+
 // 工具栏更新监听
 bus.on('toolbar:update', ({ code, name, price, change }) => {
     if (code != null) document.getElementById('toolbarCode').textContent = code;
