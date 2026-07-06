@@ -40,6 +40,10 @@ async function init() {
     import('/static/chart/watchlist.js').then(m => m.initWatchlist());
     import('/static/chart/toolbar.js').then(m => m.initToolbar());
 
+    // 初始化画线 + 策略事件 (Phase 3)
+    import('/static/chart/chart-drawings.js').then(m => m.initDrawings());
+    import('/static/chart/strategy-overlay.js').then(m => m.initStrategyOverlay());
+
     const [{ initChart }, { loadData }] = await Promise.all([
         import('/static/chart/chart-core.js'),
         import('/static/chart/chart-data.js'),
@@ -66,10 +70,43 @@ async function init() {
         const period = btn.dataset.period;
         document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        if (period === 'intra') {
+            import('/static/chart/chart-data.js').then(m => m.loadIntraData(state.code));
+            return;
+        }
         bus.emit('period:changed', { period });
     });
 
     console.log('[chart] Initialization complete');
+}
+
+// 画线工具栏
+const dtEl = document.getElementById('drawingTools');
+if (dtEl) {
+    dtEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.dt-btn');
+        if (!btn) return;
+        const tool = btn.dataset.tool;
+
+        if (btn.id === 'dtUndo') {
+            import('/static/chart/chart-drawings.js').then(m => m.undoDrawing());
+            return;
+        }
+        if (btn.id === 'dtClear') {
+            import('/static/chart/chart-drawings.js').then(m => m.clearAllDrawings());
+            return;
+        }
+
+        // tool selection
+        document.querySelectorAll('.dt-btn[data-tool]').forEach(b => b.classList.remove('active'));
+        if (tool) btn.classList.add('active');
+        bus.emit('drawing:selected', { tool: tool || null });
+
+        // Also switch back to kline mode when selecting a drawing tool
+        if (tool) {
+            import('/static/chart/chart-core.js').then(m => m.switchToKlineMode());
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', init);

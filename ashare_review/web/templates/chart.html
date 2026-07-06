@@ -9,12 +9,23 @@
         <span class="stock-price" id="toolbarPrice">--</span>
         <span class="stock-change" id="toolbarChange">--</span>
 
+        <div class="drawing-tools" id="drawingTools">
+            <button class="dt-btn" data-tool="trend" title="趋势线">↗</button>
+            <button class="dt-btn" data-tool="horizontal" title="水平线">━</button>
+            <button class="dt-btn" data-tool="rectangle" title="矩形">▭</button>
+            <button class="dt-btn" data-tool="fibonacci" title="斐波那契">%</button>
+            <button class="dt-btn" data-tool="" title="取消">✕</button>
+            <button class="dt-btn" id="dtUndo" title="撤销">↩</button>
+            <button class="dt-btn" id="dtClear" title="清除">🗑</button>
+        </div>
+
         <div class="period-switcher" id="periodSwitcher">
             <button class="period-btn" data-period="5min">5分</button>
             <button class="period-btn" data-period="15min">15分</button>
             <button class="period-btn" data-period="30min">30分</button>
             <button class="period-btn" data-period="60min">60分</button>
             <button class="period-btn active" data-period="daily">日线</button>
+            <button class="period-btn" data-period="intra">分时</button>
         </div>
     </div>
 
@@ -29,7 +40,12 @@
         </main>
 
         <!-- 右列: 工具面板 (Phase 2 实现) -->
-        <aside class="chart-sidebar-right" id="sidebarRight"></aside>
+        <aside class="chart-sidebar-right" id="sidebarRight">
+            <div class="tb-section" id="strategyMarkers">
+                <div class="tb-section-title">🎯 策略事件</div>
+                <p class="placeholder-text">加载中...</p>
+            </div>
+        </aside>
     </div>
 </div>
 

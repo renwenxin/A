@@ -192,3 +192,26 @@
 .tb-depth-row .value { color: #d1d4dc; font-weight: 500; font-family: monospace; }
 .tb-toggle { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 11px; color: #d1d4dc; cursor: pointer; }
 .tb-toggle input { accent-color: #2962ff; }
+
+/* ---- 画线工具栏 ---- */
+.drawing-tools {
+    display: flex; gap: 2px; margin-left: 8px;
+    background: #2a2e39; border-radius: 4px; padding: 2px;
+}
+.dt-btn {
+    padding: 3px 8px; font-size: 14px; color: #787b86;
+    background: transparent; border: none; cursor: pointer; border-radius: 3px;
+    line-height: 1;
+}
+.dt-btn:hover { color: #d1d4dc; background: #363a45; }
+.dt-btn.active { color: #ff9800; background: rgba(255,152,0,0.15); }
+
+/* ---- 策略事件 ---- */
+#strategyMarkers { padding: 10px 12px; }
+.strategy-event {
+    display: flex; align-items: center; gap: 5px; padding: 3px 0 3px 8px;
+    font-size: 10px; margin: 2px 0;
+}
+.se-label { color: #d1d4dc; font-weight: 500; }
+.se-date { color: #787b86; margin-left: auto; font-family: monospace; font-size: 9px; }
+.se-detail { color: #8b949e; font-size: 9px; }

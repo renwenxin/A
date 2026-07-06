@@ -1,100 +1,73 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>选股面板</h1>
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>选股面板</span>
+    </div>
+    <div class="page-date">📅 <strong>策略筛选器</strong></div>
+</div>
+<div class="content-area">
 
-<!-- ====== 使用流程指引（始终可见） ====== -->
+<!-- ====== 使用流程指引 ====== -->
 <div class="guide-banner">
     <div class="guide-steps">
         <div class="guide-step">
             <span class="step-icon">🌙</span>
-            <span class="step-label">前日收盘</span>
-            <span class="step-desc">复盘报告 + 1进2初筛</span>
+            <span class="step-label">前日收盘 22:00</span>
+            <span class="step-desc">1进2初筛 → 低价小盘+热点板块+封单强度+封成比</span>
         </div>
         <span class="step-arrow">→</span>
         <div class="guide-step">
             <span class="step-icon">⏰</span>
             <span class="step-label">次日 9:15-9:25</span>
-            <span class="step-desc">竞价抢筹 + 1进2确认</span>
+            <span class="step-desc">竞价异动 → 爆量高开→抢筹确认 → 弱转强判断</span>
         </div>
         <span class="step-arrow">→</span>
         <div class="guide-step">
-            <span class="step-icon">📈</span>
-            <span class="step-label">9:30-15:00</span>
-            <span class="step-desc">龙头/突破/分歧介入</span>
+            <span class="step-icon">🎯</span>
+            <span class="step-label">9:25-9:30 决策</span>
+            <span class="step-desc">低吸/半路/扫板 → 炸板减半仓 → 严格执行卖出纪律</span>
         </div>
     </div>
 </div>
 
-<!-- ====== 筛选器面板 ====== -->
-<div class="screener-panel">
-    <!-- 左：竞价确认型 -->
-    <div class="screener-column">
+<!-- ====== 筛选器面板：竞价确认型四种策略 ====== -->
+<div class="screener-panel" style="grid-template-columns:1fr 1fr">
+    <div class="screener-column" id="auction-pre">
         <div class="column-header column-auction">
-            <h3>⏰ 竞价确认型</h3>
-            <span class="column-badge">9:15-9:30 决策</span>
+            <h3>🌙 盘后筛选（前日22:00）</h3>
+            <span class="column-badge">T-1日收盘后选股 → T日竞价确认</span>
         </div>
-        <p class="column-desc">T+1下竞价买入当天不可卖出，必须严格确认条件。</p>
+        <p class="column-desc">
+            <strong>1进2筛选条件：</strong>主板 · 股价3-15元 · 流通市值10-100亿 · 热点板块 · 封成比>0.5 · 封单强度>0.015<br>
+            <strong>龙虎榜预筛：</strong>T-1龙虎榜净买入标的 → T日竞价需验证
+        </p>
         <button onclick="screen('one_two')" class="btn-screener-card btn-auction">
             <span class="btn-icon">🎯</span>
-            <span class="btn-text"><span class="btn-label">1进2筛选</span><span class="btn-desc">前日首板 → 次日竞价确认接力</span></span>
+            <span class="btn-text"><span class="btn-label">1进2筛选</span><span class="btn-desc">盘后：昨日首板按质量打分（封单+封成比+时间+股性+市值）→ 竞价预期预判</span></span>
         </button>
+    </div>
+    <div class="screener-column" id="auction-live">
+        <div class="column-header column-auction">
+            <h3>⏰ 竞价决策（9:15-9:25）</h3>
+            <span class="column-badge">竞价实时确认 → 9:25-9:30下单</span>
+        </div>
+        <p class="column-desc">
+            <strong>竞价抢筹：</strong>四维量价形势分析 → 爆量高开确认 → 弱转强/超预期<br>
+            <strong>优化总筛选：</strong>多因子精选Top3（竞价50%+龙虎榜25%+涨停基因15%+量比10%）<br>
+            <strong>龙虎榜竞价：</strong>T-1机构净买 + 竞价抢筹 = 共振确认信号
+        </p>
         <button onclick="screen('auction')" class="btn-screener-card btn-auction">
             <span class="btn-icon">🔍</span>
-            <span class="btn-text"><span class="btn-label">竞价抢筹</span><span class="btn-desc">9:25竞价结束 → 四维量价形势分析</span></span>
+            <span class="btn-text"><span class="btn-label">竞价抢筹</span><span class="btn-desc">9:25：四维量价形势分析 → 爆量高开抢筹确认 → 选出Top标的</span></span>
         </button>
-        <button onclick="screen('summary')" class="btn-screener-card btn-auction">
-            <span class="btn-icon">🎯</span>
-            <span class="btn-text"><span class="btn-label">总筛选</span><span class="btn-desc">龙头+突破+分歧+机构+全因子 → 重叠标的汇总</span></span>
+        <button onclick="screen('optimized')" class="btn-screener-card btn-optimized">
+            <span class="btn-icon">⭐</span>
+            <span class="btn-text"><span class="btn-label">优化总筛选</span><span class="btn-desc">多因子精选Top3：竞价量价+龙虎榜+涨停基因+量比综合评分</span></span>
         </button>
-    </div>
-
-    <!-- 中：盘中观察型 -->
-    <div class="screener-column">
-        <div class="column-header column-intraday">
-            <h3>📈 盘中观察型</h3>
-            <span class="column-badge">9:30-15:00 决策</span>
-        </div>
-        <p class="column-desc">盘中任何时段都可介入，有充分时间观察确认。</p>
-        <button onclick="screen('leader')" class="btn-screener-card btn-intraday">
+        <button onclick="screen('lhb_auction')" class="btn-screener-card btn-lhb">
             <span class="btn-icon">🐉</span>
-            <span class="btn-text"><span class="btn-label">龙头筛选</span><span class="btn-desc">5条件体系 + 连板接力 + 筹码分析</span></span>
-        </button>
-        <button onclick="screen('breakout')" class="btn-screener-card btn-intraday">
-            <span class="btn-icon">📊</span>
-            <span class="btn-text"><span class="btn-label">突破形态</span><span class="btn-desc">箱体/W底/量炮 + 均线量价验证</span></span>
-        </button>
-        <button onclick="screen('sector_divergence')" class="btn-screener-card btn-intraday">
-            <span class="btn-icon">🔄</span>
-            <span class="btn-text"><span class="btn-label">板块分歧介入</span><span class="btn-desc">昨日涨停潮 → 今日分歧 → 找抗跌标的低吸</span></span>
-        </button>
-        <button onclick="screen('institution')" class="btn-screener-card btn-intraday">
-            <span class="btn-icon">🏛</span>
-            <span class="btn-text"><span class="btn-label">机构票筛选</span><span class="btn-desc">机构持股>50家 + 年涨停>3次 + 大市值</span></span>
-        </button>
-    </div>
-
-    <!-- 右：因子筛选 -->
-    <div class="screener-column">
-        <div class="column-header column-factor">
-            <h3>📐 Alpha 因子筛选</h3>
-            <span class="column-badge">全市场横截面排名</span>
-        </div>
-        <p class="column-desc">对全市场股票计算因子值 → 横截面排名 → 加权评分 → Top N。计算时间约 10-30 秒。</p>
-        <button onclick="screen('factor_momentum')" class="btn-screener-card btn-factor">
-            <span class="btn-icon">📈</span>
-            <span class="btn-text"><span class="btn-label">趋势动量</span><span class="btn-desc">5日/20日动量 + 价格位置 + RSI</span></span>
-        </button>
-        <button onclick="screen('factor_reversal')" class="btn-screener-card btn-factor">
-            <span class="btn-icon">🔄</span>
-            <span class="btn-text"><span class="btn-label">均值回归</span><span class="btn-desc">均线偏离 + 涨停基因 + 换手强度</span></span>
-        </button>
-        <button onclick="screen('factor_quality')" class="btn-screener-card btn-factor">
-            <span class="btn-icon">🐉</span>
-            <span class="btn-text"><span class="btn-label">龙哥特色</span><span class="btn-desc">涨停基因 + 筹码集中 + 均线排列</span></span>
-        </button>
-        <button onclick="screen('factor_all')" class="btn-screener-card btn-factor">
-            <span class="btn-icon">🎯</span>
-            <span class="btn-text"><span class="btn-label">全因子综合</span><span class="btn-desc">10因子等权排名 Top 30</span></span>
+            <span class="btn-text"><span class="btn-label">龙虎榜竞价</span><span class="btn-desc">T-1龙虎榜净买 ∩ T日竞价抢筹 → 机构+游资共振确认</span></span>
         </button>
     </div>
 </div>
@@ -105,16 +78,22 @@
 <script>
 let _loading = false;
 
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 async function screen(strategy) {
     if (_loading) return;
     _loading = true;
     const el = document.getElementById('results');
     const buttons = document.querySelectorAll('.btn-screener-card');
     el.innerHTML = '<div class="loading-container"><span class="loading-spinner"></span><p>正在运行 ' + strategyName(strategy) + ' 筛选...</p></div>';
-    el.classList.add('loading');
     buttons.forEach(b => { b.disabled = true; });
     try {
         const resp = await fetch('/api/screen/' + strategy);
+        if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
         const data = await resp.json();
         if (data.error) {
             el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>' + data.error + '</div>';
@@ -125,7 +104,6 @@ async function screen(strategy) {
         el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>请求失败: ' + e.message + '</div>';
     } finally {
         _loading = false;
-        el.classList.remove('loading');
         buttons.forEach(b => { b.disabled = false; });
     }
 }
@@ -135,9 +113,10 @@ function strategyName(key) {
         'one_two': '1进2筛选', 'auction': '竞价抢筹',
         'leader': '龙头筛选', 'breakout': '突破形态',
         'sector_divergence': '板块分歧介入', 'institution': '机构票筛选',
-        'summary': '总筛选(重叠标的)',
+        'optimized': '优化总筛选（多因子精选）',
+        'lhb_auction': '龙虎榜竞价',
         'factor_momentum': '趋势动量因子', 'factor_reversal': '均值回归因子',
-        'factor_quality': '龙哥特色因子', 'factor_all': '全因子综合',
+        'factor_quality': '龙哥五条件', 'factor_all': '全因子综合',
     };
     return map[key] || key;
 }
@@ -171,6 +150,7 @@ function buildPickCard(r, rank) {
     card += '<div class="pick-rank" style="background:' + (rankColors[rank - 1] || '#999') + '">#' + rank + '</div>';
     card += '<div class="pick-header">';
     card += '<a href="/stock/' + r.code + '" class="pick-code">' + r.code + '</a>';
+    card += '<a href="/chart?code=' + r.code + '" style="color:#2962ff;text-decoration:none;font-size:14px;" title="查看K线图" target="_blank">📈</a>';
     card += '<span class="pick-name">' + r.name + '</span>';
     if (sector) card += '<span class="pick-sector">' + sector + '</span>';
     card += '</div>';
@@ -194,10 +174,9 @@ function buildPickCard(r, rank) {
             card += '</div>';
         }
     } else {
-        card += '<div class="pick-score">' + '⭐ '.repeat(Math.min(5, Math.ceil(r.score / 20))) + ' ' + r.score + '分</div>';
+        card += '<div class="pick-score">' + '⭐ '.repeat(Math.min(5, Math.max(0, Math.ceil(r.score / 20)))) + ' ' + r.score + '分</div>';
     }
 
-    // 技术面速览
     card += '<div class="pick-section"><div class="section-label">📊 技术面</div><div class="tech-grid">';
     if (tech.ma_status && tech.ma_status.length) {
         let maHTML = '<div class="tech-item"><span class="tech-key">均线</span>';
@@ -213,7 +192,6 @@ function buildPickCard(r, rank) {
     card += '<div class="tech-item"><span class="tech-key">关键位</span><span class="spr">支撑 <b>' + (tech.support || '-') + '</b></span><span class="spr">压力 <b>' + (tech.resistance || '-') + '</b></span></div>';
     card += '</div></div>';
 
-    // 操作建议
     card += '<div class="pick-section"><div class="section-label">🎯 操作建议</div><div class="sug-grid">';
     card += '<div class="sug-item"><span class="sug-key">入场</span><span class="sug-val">' + (sug.entry_zone || '-') + '</span></div>';
     card += '<div class="sug-item"><span class="sug-key">止损</span><span class="sug-val stop">' + (sug.stop_loss || '-') + '</span></div>';
@@ -225,13 +203,11 @@ function buildPickCard(r, rank) {
     if (sug.strategy_tip) { card += '<div class="strategy-tip">💡 ' + sug.strategy_tip + '</div>'; }
     card += '</div>';
 
-    // 理由
     if (r.reasons && r.reasons.length) {
         card += '<div class="pick-reasons">';
         r.reasons.slice(0, 4).forEach(rs => { card += '<span class="reason-tag">' + rs + '</span>'; });
         card += '</div>';
     }
-    // AI分析按钮
     card += '<button class="btn-ai-analyze" onclick="event.stopPropagation();analyzeWithAI(\'' + r.code + '\', \'' + (r.strategies ? r.strategies[0] : 'leader') + '\')">🤖 AI分析</button>';
     card += '</div>';
     return card;
@@ -239,7 +215,7 @@ function buildPickCard(r, rank) {
 
 function buildTable(data) {
     if (!data || !data.length) return '<p>无匹配结果</p>';
-    let html = '<table><tr><th>#</th><th>代码</th><th>名称</th><th>得分</th><th>板块</th>';
+    let html = '<div class="table-wrap"><table><tr><th>#</th><th>代码</th><th>名称</th><th>得分</th><th>板块</th>';
     const hasToday = data[0] && data[0].today_change !== undefined;
     if (hasToday) html += '<th>今日涨跌</th>';
     html += '<th>理由</th></tr>';
@@ -248,7 +224,7 @@ function buildTable(data) {
         const sector = detail.board_type || detail.sector || '-';
         const strategies = r.strategies ? r.strategies.join('+') : '';
         const sectorDisplay = strategies || sector;
-        html += '<tr><td>' + (i + 1) + '</td><td><a href="/stock/' + r.code + '">' + r.code + '</a></td><td>' + r.name + '</td><td>' + r.score + '</td><td class="sector-cell">' + sectorDisplay + '</td>';
+        html += '<tr><td>' + (i + 1) + '</td><td><a href="/stock/' + r.code + '">' + r.code + '</a> <a href="/chart?code=' + r.code + '" style="color:#2962ff;text-decoration:none;font-size:13px;" title="查看K线图" target="_blank">📈</a></td><td>' + r.name + '</td><td>' + r.score + '</td><td class="sector-cell">' + sectorDisplay + '</td>';
         if (hasToday) {
             const tc = r.today_change;
             const cls = tc > 0 ? 'up' : (tc < 0 ? 'down' : '');
@@ -256,25 +232,16 @@ function buildTable(data) {
         }
         html += '<td>' + (r.reasons || []).join('; ') + '</td></tr>';
     });
-    return html + '</table>';
+    return html + '</table></div>';
 }
 </script>
 
 <!-- ====== AI 分析弹窗 ====== -->
-<div id="ai-modal" class="ai-modal" style="display:none">
-    <div class="ai-modal-content">
-        <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
-        <h3 id="ai-modal-title">AI 分析中...</h3>
-        <div id="ai-modal-body"></div>
-    </div>
-</div>
-
 <script>
 let aiEventSource = null;
-
 function analyzeWithAI(code, strategy) {
     document.getElementById('ai-modal').style.display = 'block';
-    document.getElementById('ai-modal-title').textContent = '🤖 AI分析 ' + code;
+    document.getElementById('ai-modal-title').textContent = 'AI分析 ' + code;
     document.getElementById('ai-modal-body').innerHTML = '<p>正在调用7个AI分析师...</p>';
     if (aiEventSource) aiEventSource.close();
     fetch('/api/agent/analyze', {
@@ -287,18 +254,26 @@ function analyzeWithAI(code, strategy) {
         if (data.task_id) {
             aiEventSource = new EventSource('/api/chat/stream/' + data.task_id);
             aiEventSource.onmessage = function(e) {
-                const msg = JSON.parse(e.data);
-                if (msg.type === 'status') {
-                    document.getElementById('ai-modal-body').innerHTML += '<p>' + msg.data.msg + '</p>';
-                } else if (msg.type === 'trading_plan') {
-                    showTradingPlanInModal(msg.data);
-                } else if (msg.type === 'done') {
-                    aiEventSource.close();
-                } else if (msg.type === 'error') {
-                    document.getElementById('ai-modal-body').innerHTML += '<p class="error">' + msg.data.message + '</p>';
-                }
+                try {
+                    const msg = JSON.parse(e.data);
+                    if (msg.type === 'status') {
+                        document.getElementById('ai-modal-body').innerHTML += '<p>' + escapeHtml(msg.data.msg || '') + '</p>';
+                    } else if (msg.type === 'trading_plan') {
+                        showTradingPlanInModal(msg.data);
+                    } else if (msg.type === 'done') { aiEventSource.close(); }
+                    else if (msg.type === 'error') {
+                        document.getElementById('ai-modal-body').innerHTML += '<p class="error">' + escapeHtml(msg.data.message || '') + '</p>';
+                    }
+                } catch (err) {}
+            };
+            aiEventSource.onerror = function() {
+                document.getElementById('ai-modal-body').innerHTML += '<p class="error">连接中断</p>';
+                aiEventSource.close();
             };
         }
+    })
+    .catch(e => {
+        document.getElementById('ai-modal-body').innerHTML = '<p class="error">请求失败: ' + escapeHtml(e.message) + '</p>';
     });
 }
 
@@ -313,10 +288,7 @@ function showTradingPlanInModal(data) {
         (data.agent_opinions || []).map(function(o) { return '<div class="opinion-chip"><strong>' + o.agent + '</strong>: ' + o.direction + ' (' + o.score + '分)</div>'; }).join('') +
         '</div>';
 }
-
-function closeAIModal() {
-    document.getElementById('ai-modal').style.display = 'none';
-    if (aiEventSource) aiEventSource.close();
-}
 </script>
+
+</div>
 {% endblock %}
