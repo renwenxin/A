@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="/static/chart/style.css">
+<div class="chart-page" id="chartPage">
+    <!-- 顶部股票标题栏 -->
+    <div class="chart-toolbar" id="chartToolbar">
+        <span class="stock-code" id="toolbarCode">{{ default_code }}</span>
+        <span class="stock-name" id="toolbarName">--</span>
+        <span class="stock-price" id="toolbarPrice">--</span>
+        <span class="stock-change" id="toolbarChange">--</span>
+
+        <div class="period-switcher" id="periodSwitcher">
+            <button class="period-btn" data-period="5min">5分</button>
+            <button class="period-btn" data-period="15min">15分</button>
+            <button class="period-btn" data-period="30min">30分</button>
+            <button class="period-btn" data-period="60min">60分</button>
+            <button class="period-btn active" data-period="daily">日线</button>
+        </div>
+    </div>
+
+    <!-- 三列布局 -->
+    <div class="chart-layout">
+        <!-- 左列: 自选列表 (Phase 2 实现) -->
+        <aside class="chart-sidebar-left" id="sidebarLeft">
+            <div class="panel-header">📋 自选股</div>
+            <p class="placeholder-text">自选列表将在 Phase 2 实现<br>当前可直接修改URL参数切换标的:<br><code>/chart?code=600519</code></p>
+        </aside>
+
+        <!-- 中列: 图表 -->
+        <main class="chart-main" id="chartMain">
+            <!-- lightweight-charts 动态创建 chart div -->
+        </main>
+
+        <!-- 右列: 工具面板 (Phase 2 实现) -->
+        <aside class="chart-sidebar-right" id="sidebarRight">
+            <div class="panel-header">🔧 工具 & 盘口</div>
+            <p class="placeholder-text">盘口五档 / 策略信号<br>将在 Phase 2 实现</p>
+        </aside>
+    </div>
+</div>
+
+<!-- lightweight-charts CDN -->
+<script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+
+<!-- ES 模块入口 -->
+<script type="module" src="/static/chart/app.js"></script>
+{% endblock %}
