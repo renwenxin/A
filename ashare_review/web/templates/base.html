@@ -7,12 +7,78 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <nav>
-        <a href="/">首页</a>
-        <a href="/screening">选股面板</a>
-        <a href="/review">复盘报告</a>
-        <a href="/chat">💬 AI投研</a>
-    </nav>
-    <main>{% block content %}{% endblock %}</main>
+    <!-- ====== 左侧导航栏 ====== -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon">📊</span>
+            <div class="brand-text">
+                <span class="brand-title">A股复盘系统</span>
+                <span class="brand-sub">Short-term Trading</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">系统首页</span>
+            </a>
+            <span class="nav-section">竞价交易流程</span>
+            <a href="/screening" class="nav-item {% if request.endpoint == 'screening' %}active{% endif %}">
+                <span class="nav-icon">⏰</span>
+                <span class="nav-label">盘前准备</span>
+                <span class="nav-badge">9:15</span>
+            </a>
+            <a href="/review" class="nav-item {% if request.endpoint == 'review' %}active{% endif %}">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">复盘分析</span>
+            </a>
+            <span class="nav-section">数据与工具</span>
+            <a href="/events" class="nav-item {% if request.endpoint == 'events_page' %}active{% endif %}">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">事件驱动</span>
+            </a>
+            <a href="/chart" class="nav-item {% if request.endpoint == 'chart_page' %}active{% endif %}">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">看盘</span>
+                <span class="nav-badge">NEW</span>
+            </a>
+            <a href="/chat" class="nav-item {% if request.endpoint == 'chat' %}active{% endif %}">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">AI分析</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="footer-status">● 系统就绪</span>
+            <span class="footer-version">v2.0</span>
+        </div>
+    </aside>
+
+    <!-- ====== 主内容区 ====== -->
+    <div class="main-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- AI 分析弹窗 (全局) -->
+    <div id="ai-modal" class="ai-modal" style="display:none">
+        <div class="ai-modal-content">
+            <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
+            <h3 id="ai-modal-title">AI 分析中...</h3>
+            <div id="ai-modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    let aiEventSource = null;
+    function closeAIModal() {
+        document.getElementById('ai-modal').style.display = 'none';
+        if (aiEventSource) aiEventSource.close();
+    }
+    </script>
 </body>
 </html>
