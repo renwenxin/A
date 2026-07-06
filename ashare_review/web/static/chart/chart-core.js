@@ -103,6 +103,11 @@ export function renderData(bars) {
 
     chart.timeScale().fitContent();
 
+    // 如果有多面板也同步渲染
+    if (activePaneCount > 1) {
+        renderDataToAllPanes(bars);
+    }
+
     console.log(`[chart-core] Rendered ${bars.length} bars`);
 }
 
@@ -162,3 +167,97 @@ export function renderIntraData(points) {
     intraLineSeries.setData(data);
     if (chart) chart.timeScale().fitContent();
 }
+
+// ====== 多面板分屏支持 ======
+let panes = {};
+let activePaneCount = 1;
+
+export function setPaneLayout(count) {
+    const main = document.getElementById('chartMain');
+    if (!main) return;
+
+    if (Object.keys(panes).length > 0) {
+        destroyAllPanes();
+    }
+
+    activePaneCount = count;
+    const cols = count <= 2 ? count : 2;
+    const rows = count <= 2 ? 1 : Math.ceil(count / 2);
+    main.innerHTML = '';
+    main.style.display = 'grid';
+    main.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    main.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    main.style.gap = '2px';
+
+    for (let i = 0; i < count; i++) {
+        const cell = document.createElement('div');
+        cell.id = `chartPane${i}`;
+        cell.style.cssText = 'min-width:0;min-height:0;position:relative;overflow:hidden;';
+        main.appendChild(cell);
+
+        const ch = LightweightCharts.createChart(cell, {
+            layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
+            grid: { vertLines: { color: '#1e222d' }, horzLines: { color: '#1e222d' } },
+            crosshair: { mode: 1 },
+            rightPriceScale: { borderColor: '#2a2e39' },
+            timeScale: { borderColor: '#2a2e39', timeVisible: count <= 2 },
+            width: cell.clientWidth,
+            height: cell.clientHeight,
+        });
+
+        const candle = ch.addCandlestickSeries({
+            upColor: '#26a69a', downColor: '#ef5350',
+            borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+            wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+        });
+        const volScaleId = `vol_pane${i}`;
+        const vol = ch.addHistogramSeries({
+            priceFormat: { type: 'volume' }, priceScaleId: volScaleId,
+        });
+        ch.priceScale(volScaleId).applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+
+        panes[`pane${i}`] = { chart: ch, candle, volume, element: cell };
+    }
+
+    // 更新主引用到 pane0
+    chart = panes['pane0']?.chart || null;
+    candleSeries = panes['pane0']?.candle || null;
+    volumeSeries = panes['pane0']?.volume || null;
+
+    // resize handler
+    const onResize = () => {
+        Object.values(panes).forEach(p => {
+            try {
+                p.chart.applyOptions({ width: p.element.clientWidth, height: p.element.clientHeight });
+            } catch (e) {}
+        });
+    };
+    window.addEventListener('resize', onResize);
+}
+
+export function renderDataToAllPanes(bars) {
+    Object.keys(panes).forEach((key, i) => {
+        const pane = panes[key];
+        if (!pane || !bars || bars.length === 0) return;
+        const candleData = bars.map(b => ({
+            time: typeof b.time === 'string' && b.time.length === 10 ? b.time
+                 : (typeof b.time === 'number' ? b.time : Math.floor(new Date(b.time).getTime() / 1000)),
+            open: b.open, high: b.high, low: b.low, close: b.close,
+        }));
+        const volData = bars.map(b => ({
+            time: typeof b.time === 'string' && b.time.length === 10 ? b.time
+                 : (typeof b.time === 'number' ? b.time : Math.floor(new Date(b.time).getTime() / 1000)),
+            value: b.volume, color: b.close >= b.open ? 'rgba(38,166,154,0.5)' : 'rgba(239,83,80,0.5)',
+        }));
+        pane.candle.setData(candleData);
+        pane.volume.setData(volData);
+        pane.chart.timeScale().fitContent();
+    });
+}
+
+export function destroyAllPanes() {
+    Object.values(panes).forEach(p => { try { p.chart.remove(); } catch (e) {} });
+    panes = {};
+}
+
+export function getActivePaneCount() { return activePaneCount; }
