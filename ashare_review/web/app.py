@@ -112,17 +112,13 @@ def api_chat():
             import re
             codes = re.findall(r'\b(\d{6})\b', message)
             if codes:
-                loop = asyncio.new_event_loop()
                 for code in codes[:3]:
                     _emit_event(task_id, 'status', {'msg': f'正在分析 {code}...'})
-                    plan = loop.run_until_complete(orch.analyze_stock(code, '', message))
+                    plan = asyncio.run(orch.analyze_stock(code, '', message))
                     _emit_event(task_id, 'agent_result', plan.to_dict())
                     _emit_event(task_id, 'trading_plan', plan.to_dict())
-                loop.close()
             else:
-                loop = asyncio.new_event_loop()
-                plan = loop.run_until_complete(orch.analyze_stock('000001', '上证指数', message))
-                loop.close()
+                plan = asyncio.run(orch.analyze_stock('000001', '上证指数', message))
                 _emit_event(task_id, 'trading_plan', plan.to_dict())
             _complete_task(task_id, {'done': True})
         except Exception as e:
@@ -156,9 +152,8 @@ def api_agent_analyze():
             if strategy in SCREENERS:
                 name = SCREENERS[strategy]._get_name(code)
             _emit_event(task_id, 'status', {'msg': f'AI分析 {name}({code})...'})
-            loop = asyncio.new_event_loop()
-            plan = loop.run_until_complete(orch.analyze_stock(code, name, json.dumps({'strategy': strategy}, ensure_ascii=False)))
-            loop.close()
+            plan = asyncio.run(orch.analyze_stock(
+                code, name, json.dumps({'strategy': strategy}, ensure_ascii=False)))
             _emit_event(task_id, 'trading_plan', plan.to_dict())
             _complete_task(task_id, plan.to_dict())
         except Exception as e:
@@ -337,13 +332,15 @@ def api_screen(strategy):
 
 
 
-@app.route('/api/screen/summary')
-def api_screen_summary():
-    """总筛选: 对龙头/突破/板块分歧/机构票做汇总，找出重叠标的
+@app.route('/api/screen/optimized')
+def api_screen_optimized():
+    """优化总筛选: 多因子竞价精选（竞价量价50% + 龙虎榜25% + 涨停基因15% + 量比10%）
 
-    注入当日实时行情快照（spot_df），确保盘中也能看到当天可介入机会。
+    候选池: 竞价高开2%-6%标的 + T-1龙虎榜净买入标的
+    每日竞价阶段精选Top3
     """
-    strategies = ['leader', 'breakout', 'sector_divergence', 'institution', 'factor_all']
+    from datetime import datetime, time, date, timedelta
+    from collections import defaultdict
 
     # ---- 当日实时行情快照 ----
     spot_map = {}
@@ -351,7 +348,6 @@ def api_screen_summary():
     try:
         spot_df = ak_fetcher.get_spot_df()
         if spot_df is not None and not spot_df.empty:
-            from datetime import datetime, time
             now = datetime.now()
             is_trading = (now.weekday() < 5 and
                           time(9, 30) <= now.time() <= time(15, 0))
@@ -378,90 +374,217 @@ def api_screen_summary():
     except Exception:
         pass
 
-    all_by_code = {}
-    strategy_names = {}
+    # ---- Step 1: 竞价抢筹基础筛选 ----
+    if 'auction' not in SCREENERS:
+        return jsonify({'error': '竞价抢筹筛选器未就绪'}), 500
+    try:
+        auction_results = SCREENERS['auction'].screen()
+    except Exception as e:
+        return jsonify({'error': f'竞价筛选失败: {e}'}), 500
 
-    for name in strategies:
-        if name not in SCREENERS:
-            continue
-        screener = SCREENERS[name]
-        try:
-            results = screener.screen()
-            strategy_names[name] = screener.name
-            for r in results:
-                if r.code not in all_by_code:
-                    all_by_code[r.code] = {
-                        'code': r.code, 'name': r.name,
-                        'strategies': [], 'scores': {}, 'reasons': {},
-                    }
-                all_by_code[r.code]['strategies'].append(name)
-                all_by_code[r.code]['scores'][name] = r.score
-                all_by_code[r.code]['reasons'][name] = r.reasons[:3]
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
+    # ---- Step 2: 龙虎榜数据（T-1日） ----
+    lhb_codes = set()
+    lhb_detail = {}
+    yesterday = date.today() - timedelta(days=1)
+    while yesterday.weekday() >= 5:
+        yesterday -= timedelta(days=1)
+    try:
+        lhb_list = ak_fetcher.get_lhb(yesterday.strftime('%Y%m%d'))
+        for l in lhb_list:
+            if l.net_amount and l.net_amount > 0:
+                lhb_codes.add(l.code)
+                lhb_detail[l.code] = {
+                    'net_amount': l.net_amount,
+                    'buy_amount': l.buy_amount,
+                    'sell_amount': l.sell_amount,
+                    'reason': l.reason,
+                }
+    except Exception:
+        pass
 
-    # ---- 当日行情注入 + 汇总 ----
-    summary = []
-    for code, info in all_by_code.items():
-        match_count = len(info['strategies'])
-        if match_count < 2:
-            continue
-        avg_score = sum(info['scores'].values()) / match_count
-        strategy_labels = [strategy_names.get(s, s) for s in info['strategies']]
-        match_detail = []
-        for s in info['strategies']:
-            match_detail.append({
-                'strategy': strategy_names.get(s, s),
-                'strategy_key': s,
-                'score': round(info['scores'].get(s, 0)),
-                'reasons': info['reasons'].get(s, []),
-            })
+    # ---- Step 3: 多因子综合评分 ----
+    optimized = []
+    for r in auction_results:
+        code = r.code
+        mf_score = r.score * 0.5
+        bonuses = []
 
-        spot = spot_map.get(code, {})
-        summary.append({
-            'code': info['code'],
-            'name': info['name'],
-            'match_count': match_count,
-            'avg_score': round(avg_score),
-            'strategies': strategy_labels,
-            'match_detail': match_detail,
-            'today_price': spot.get('price', 0),
-            'today_change': spot.get('change_pct', None),
-            'today_amount': spot.get('amount_yi', 0),
+        # 龙虎榜因子（25%）
+        if code in lhb_codes:
+            lhb = lhb_detail[code]
+            net_amt = lhb['net_amount']
+            if net_amt > 10000:
+                mf_score += 25
+                bonuses.append(f'龙虎榜净买{net_amt:.0f}万(强力)')
+            elif net_amt > 5000:
+                mf_score += 18
+                bonuses.append(f'龙虎榜净买{net_amt:.0f}万')
+            elif net_amt > 1000:
+                mf_score += 10
+                bonuses.append(f'龙虎榜净买{net_amt:.0f}万')
+            else:
+                mf_score += 5
+                bonuses.append('龙虎榜净买入')
+
+        # 涨停基因因子（15%）
+        lu_count = r.detail.get('limit_up_count', 0) if isinstance(r.detail, dict) else 0
+        if lu_count >= 5:
+            mf_score += 15
+            bonuses.append(f'涨停基因活跃({lu_count}次)')
+        elif lu_count >= 2:
+            mf_score += min(lu_count * 3, 12)
+            bonuses.append(f'涨停基因({lu_count}次)')
+
+        # 量比因子（10%）
+        for reason in r.reasons:
+            if '爆量' in reason or '巨量' in reason:
+                mf_score += 10
+                break
+            elif '放量' in reason:
+                mf_score += 6
+                break
+
+        # 量价配合加分
+        has_vol_price = any('量价齐升' in rr for rr in r.reasons)
+        if has_vol_price:
+            mf_score += 5
+            bonuses.append('量价齐升')
+
+        optimized.append({
+            'code': code, 'name': r.name,
+            'score': min(round(mf_score), 100),
+            'reasons': r.reasons + bonuses,
+            'detail': r.detail,
         })
 
-    summary.sort(key=lambda x: (x['match_count'], x['avg_score']), reverse=True)
+    optimized.sort(key=lambda x: x['score'], reverse=True)
+    top_3 = _enrich_top_3(optimized[:3], 'optimized')
 
-    # Top 3 enriched cards (use today_change from spot)
-    top_3_enriched = []
-    for s in summary[:3]:
-        detail = {
-            'match_count': s['match_count'],
-            'strategies': s['strategies'],
-            'match_detail': s['match_detail'],
-            'today_change': s['today_change'],
-            'today_price': s['today_price'],
-            'today_amount': s['today_amount'],
-        }
-        analysis = analyze_pick(s['code'], tdx, 'leader', detail)
-        top_3_enriched.append({
-            'code': s['code'], 'name': s['name'],
-            'score': s['avg_score'],
-            'reasons': [f'匹配{s["match_count"]}个战法: {", ".join(s["strategies"])}'],
-            'detail': detail,
-            'analysis': analysis,
-        })
+    # 注入龙虎榜详情和当日行情
+    for item in top_3:
+        if item['code'] in lhb_detail:
+            item['lhb'] = lhb_detail[item['code']]
+        spot = spot_map.get(item['code'])
+        if spot:
+            item['today_change'] = spot['change_pct']
+            item['today_price'] = spot['price']
 
     return jsonify({
-        'strategy': 'summary',
-        'strategy_name': '总筛选(重叠标的)',
-        'total': len(summary),
-        'top_3': top_3_enriched,
-        'results': summary,
-        'strategy_names': {k: v for k, v in strategy_names.items()},
-        'data_freshness': data_freshness,
-        'note': f'数据: {data_freshness} | 扫描{len(strategies)}个策略，发现{len(summary)}个重叠标的（≥2战法）',
+        'strategy': 'optimized',
+        'strategy_name': '优化总筛选（多因子竞价精选）',
+        'total': len(optimized),
+        'top_3': top_3,
+        'results': optimized,
+        'note': f'数据: {data_freshness} | 多因子: 竞价50%+龙虎榜25%+涨停基因15%+量比10% | 龙虎榜: {len(lhb_codes)}只净买',
+    })
+
+
+@app.route('/api/screen/lhb_auction')
+def api_screen_lhb_auction():
+    """龙虎榜竞价: T-1龙虎榜净买入 ∩ T日竞价抢筹（机构+游资共振确认）"""
+    from datetime import datetime, time, date, timedelta
+
+    # ---- 当日行情 ----
+    spot_map = {}
+    data_freshness = '收盘数据'
+    try:
+        spot_df = ak_fetcher.get_spot_df()
+        if spot_df is not None and not spot_df.empty:
+            now = datetime.now()
+            is_trading = (now.weekday() < 5 and
+                          time(9, 30) <= now.time() <= time(15, 0))
+            data_freshness = '盘中实时' if is_trading else '当日收盘'
+            for _, row in spot_df.iterrows():
+                c = str(row.get('代码', '')).zfill(6)
+                try:
+                    pct = float(row.get('涨跌幅', 0))
+                except (ValueError, TypeError):
+                    pct = 0
+                try:
+                    price = float(row.get('最新价', 0))
+                except (ValueError, TypeError):
+                    price = 0
+                spot_map[c] = {'price': round(price, 2), 'change_pct': round(pct, 1)}
+    except Exception:
+        pass
+
+    # ---- Step 1: T-1龙虎榜净买入 ----
+    yesterday = date.today() - timedelta(days=1)
+    while yesterday.weekday() >= 5:
+        yesterday -= timedelta(days=1)
+    lhb_codes = set()
+    lhb_detail = {}
+    try:
+        lhb_list = ak_fetcher.get_lhb(yesterday.strftime('%Y%m%d'))
+        for l in lhb_list:
+            if l.net_amount and l.net_amount > 0:
+                lhb_codes.add(l.code)
+                lhb_detail[l.code] = {
+                    'name': l.name,
+                    'net_amount': l.net_amount,
+                    'buy_amount': l.buy_amount,
+                    'sell_amount': l.sell_amount,
+                    'reason': l.reason,
+                }
+    except Exception:
+        pass
+
+    if not lhb_codes:
+        return jsonify({
+            'strategy': 'lhb_auction',
+            'strategy_name': '龙虎榜竞价',
+            'total': 0, 'top_3': [], 'results': [],
+            'note': f'龙虎榜: T-1({yesterday})暂无净买入标的',
+        })
+
+    # ---- Step 2: T日竞价抢筹 ----
+    if 'auction' not in SCREENERS:
+        return jsonify({'error': '竞价抢筹筛选器未就绪'}), 500
+    try:
+        auction_results = SCREENERS['auction'].screen()
+    except Exception as e:
+        return jsonify({'error': f'竞价筛选失败: {e}'}), 500
+
+    # ---- Step 3: 交叉筛选 ----
+    auc_codes = {r.code: r for r in auction_results}
+    overlap = lhb_codes & set(auc_codes.keys())
+
+    results = []
+    for code in overlap:
+        auc_r = auc_codes[code]
+        lhb = lhb_detail[code]
+        bonus = 5 if lhb['net_amount'] > 10000 else (3 if lhb['net_amount'] > 5000 else 0)
+        results.append({
+            'code': code, 'name': auc_r.name,
+            'score': min(auc_r.score + bonus, 100),
+            'reasons': auc_r.reasons + [
+                f'龙虎榜净买{lhb["net_amount"]:.0f}万',
+                f'上榜: {lhb.get("reason", "机构游资介入")}',
+            ],
+            'detail': {**auc_r.detail,
+                       'lhb_net_amount': lhb['net_amount'],
+                       'lhb_buy': lhb['buy_amount'],
+                       'lhb_sell': lhb['sell_amount']},
+        })
+
+    results.sort(key=lambda x: x['score'], reverse=True)
+    top_3 = _enrich_top_3(results[:3], 'lhb_auction')
+
+    for item in top_3:
+        if item['code'] in lhb_detail:
+            item['lhb'] = lhb_detail[item['code']]
+        spot = spot_map.get(item['code'])
+        if spot:
+            item['today_change'] = spot['change_pct']
+            item['today_price'] = spot['price']
+
+    return jsonify({
+        'strategy': 'lhb_auction',
+        'strategy_name': '龙虎榜竞价（机构+游资共振）',
+        'total': len(results),
+        'top_3': top_3,
+        'results': results,
+        'note': f'数据: {data_freshness} | 龙虎榜T-1({yesterday}): {len(lhb_codes)}只净买 | 竞价确认: {len(results)}只共振',
     })
 
 
@@ -477,6 +600,121 @@ def review():
         traceback.print_exc()
         report = {'date': 'N/A', 'total_limit_ups': 0, 'error': str(e)}
     return render_template('review.html', report=report)
+
+
+@app.route('/events')
+def events_page():
+    """事件驱动专题页"""
+    from datetime import date
+    from ..report.events import get_events_for_period, search_events
+
+    trade_date = request.args.get('date', None)
+    ref_date = date.today()
+    if trade_date:
+        try:
+            ref_date = date.fromisoformat(trade_date)
+        except ValueError:
+            pass
+
+    events_data = get_events_for_period(ref_date)
+    return render_template('events.html', events=events_data, ref_date=ref_date.isoformat())
+
+
+@app.route('/api/events/search')
+def api_events_search():
+    """搜索事件 + 实时新闻"""
+    from datetime import date, datetime
+    from ..report.events import search_events, match_event_stocks
+
+    keyword = request.args.get('q', '').strip()
+    source = request.args.get('source', 'events')  # events | news | all
+
+    result = {
+        'events': [],
+        'news': [],
+        'keyword': keyword,
+        'searched_at': datetime.now().isoformat(),
+    }
+
+    if not keyword:
+        return jsonify(result)
+
+    # 搜索事件
+    if source in ('events', 'all'):
+        matched = search_events(keyword)
+        result['events'] = matched
+
+    # 搜索实时新闻（akshare）
+    if source in ('news', 'all'):
+        try:
+            import akshare as ak
+            # 使用akshare的财联社电报/新闻接口
+            news_list = []
+            try:
+                # 财联社电报
+                df = ak.stock_info_global_cls()
+                if df is not None and not df.empty:
+                    cols = list(df.columns)
+                    title_col = next((c for c in cols if 'title' in c.lower() or '标题' in c), cols[0] if cols else None)
+                    time_col = next((c for c in cols if 'time' in c.lower() or '时间' in c), None)
+                    for _, row in df.head(50).iterrows():
+                        title = str(row.get(title_col, '')) if title_col else ''
+                        if keyword.lower() in title.lower():
+                            news_list.append({
+                                'title': title,
+                                'time': str(row.get(time_col, '')) if time_col else '',
+                                'source': '财联社',
+                            })
+            except Exception:
+                pass
+
+            # 备用：东方财富新闻
+            if not news_list:
+                try:
+                    df2 = ak.stock_zh_ah_name()
+                    # 此接口不一定有新闻，使用其他方式
+                except Exception:
+                    pass
+
+            # 如果akshare新闻接口不可用，返回提示
+            if not news_list:
+                news_list = [{
+                    'title': f'实时新闻接口暂不可用，请在财经网站搜索「{keyword}」获取最新资讯',
+                    'time': datetime.now().strftime('%H:%M'),
+                    'source': '提示',
+                    'is_placeholder': True,
+                }]
+
+            result['news'] = news_list[:20]
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            result['news'] = [{
+                'title': f'新闻获取失败: {str(e)}',
+                'time': '',
+                'source': '错误',
+                'is_placeholder': True,
+            }]
+
+    result['total'] = len(result['events']) + len(result['news'])
+    return jsonify(result)
+
+
+@app.route('/api/events/data')
+def api_events_data():
+    """获取事件数据JSON（用于动态加载/刷新）"""
+    from datetime import date
+    from ..report.events import get_events_for_period
+
+    ref_date = date.today()
+    trade_date = request.args.get('date', None)
+    if trade_date:
+        try:
+            ref_date = date.fromisoformat(trade_date)
+        except ValueError:
+            pass
+
+    return jsonify(get_events_for_period(ref_date))
 
 
 @app.route('/stock/<code>')
@@ -630,13 +868,23 @@ def stock_detail(code):
             'tdx_close': round(float(latest['close']), 2),
         }
 
+        # ---- 入场/止损/止盈（基于完整技术分析） ----
+        suggestion = {}
+        try:
+            from ..analysis.pick_analysis import analyze_pick
+            pick = analyze_pick(code, tdx, 'leader', {})
+            suggestion = pick.get('suggestion', {})
+        except Exception:
+            pass
+
         return render_template('stock_detail.html',
                              code=code, name=name,
                              latest=latest, tech=tech_summary,
                              ma_status=ma_status, chip=chip,
                              recent_bars=recent_bars,
                              data_freshness=data_freshness,
-                             spot=spot)
+                             spot=spot,
+                             suggestion=suggestion)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -646,6 +894,110 @@ def stock_detail(code):
 @app.route('/chat')
 def chat():
     return render_template('chat.html')
+
+
+@app.route('/chart')
+def chart_page():
+    """看盘页面 — TradingView 风格K线图"""
+    code = request.args.get('code', '000001')
+    return render_template('chart.html', default_code=code)
+
+
+@app.route('/api/chart/kline')
+def api_chart_kline():
+    """K线数据接口 — 多周期支持
+
+    Query params:
+        code: 股票代码 (6位), 必填
+        period: 周期 daily/60min/30min/15min/5min, 默认 daily
+    """
+    code = request.args.get('code', '')
+    period = request.args.get('period', 'daily')
+
+    if not code or len(code) != 6:
+        return jsonify({'error': 'code is required (6 digits)'}), 400
+
+    # 确定市场
+    if code.startswith('6'):
+        market = 'sh'
+    elif code.startswith('0') or code.startswith('3'):
+        market = 'sz'
+    elif code.startswith('8') or code.startswith('4'):
+        market = 'bj'
+    else:
+        return jsonify({'error': f'Unknown market for code: {code}'}), 400
+
+    try:
+        if period == 'daily':
+            # 日线 — 通达信本地数据
+            df = tdx.read_daily(code, market)
+            if df.empty:
+                return jsonify({'error': f'No daily data for {code}', 'code': code}), 404
+
+            # 转成 lightweight-charts 需要的格式
+            bars = []
+            for _, row in df.iterrows():
+                d = row['trade_date']
+                bars.append({
+                    'time': d.isoformat() if hasattr(d, 'isoformat') else str(d),
+                    'open': round(float(row['open']), 2),
+                    'high': round(float(row['high']), 2),
+                    'low': round(float(row['low']), 2),
+                    'close': round(float(row['close']), 2),
+                    'volume': int(row['volume']),
+                })
+        else:
+            # 分钟线 — akshare 在线获取
+            period_map = {'60min': '60', '30min': '30', '15min': '15', '5min': '5'}
+            ak_period = period_map.get(period, '60')
+
+            df = ak_fetcher.get_min_kline(code, period=ak_period)
+            if df.empty:
+                return jsonify({
+                    'error': f'No minute data for {code} period={period}',
+                    'code': code,
+                    'fallback': True,
+                }), 404
+
+            bars = []
+            for _, row in df.iterrows():
+                t = row['time']
+                bars.append({
+                    'time': t.isoformat() if hasattr(t, 'isoformat') else str(t),
+                    'open': round(float(row['open']), 2),
+                    'high': round(float(row['high']), 2),
+                    'low': round(float(row['low']), 2),
+                    'close': round(float(row['close']), 2),
+                    'volume': int(row['volume']),
+                })
+
+        # 获取股票名称（从行情快照查找）
+        name = ''
+        try:
+            spot_df = ak_fetcher.get_spot_df()
+            if spot_df is not None and not spot_df.empty:
+                row = spot_df[spot_df['代码'] == code]
+                if not row.empty:
+                    name = str(row.iloc[0].get('名称', ''))
+        except Exception:
+            pass
+
+        return jsonify({
+            'code': code,
+            'name': name,
+            'period': period,
+            'market': market,
+            'total': len(bars),
+            'bars': bars,
+        })
+
+    except FileNotFoundError as e:
+        return jsonify({'error': str(e), 'code': code}), 404
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'code': code}), 500
+
 
 def run(host='127.0.0.1', port=5000, debug=True):
     app.run(host=host, port=port, debug=debug)
