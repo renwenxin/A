@@ -36,6 +36,10 @@ async function init() {
 
     console.log('[chart] Initializing with code:', code);
 
+    // 初始化左右面板 (Phase 2)
+    import('/static/chart/watchlist.js').then(m => m.initWatchlist());
+    import('/static/chart/toolbar.js').then(m => m.initToolbar());
+
     const [{ initChart }, { loadData }] = await Promise.all([
         import('/static/chart/chart-core.js'),
         import('/static/chart/chart-data.js'),
