@@ -1732,6 +1732,122 @@ def api_review_article():
         return jsonify({'success': False, 'error': f'生成失败: {e}'}), 500
 
 
+# ── 消息雷达（事件驱动分析） ──
+
+@app.route('/event_radar')
+def event_radar():
+    """事件驱动分析页面。"""
+    from ..event_radar.presets import seed_default_themes
+    from ..event_radar.themes import ThemesStore
+    store = ThemesStore()
+    seed_default_themes(store)
+    weekday_cn = '一二三四五六日'
+    now = datetime.now()
+    today = now.strftime('%Y-%m-%d') + ' 周' + weekday_cn[now.weekday()]
+    return render_template('event_radar.html', today=today)
+
+
+@app.route('/api/radar/themes', methods=['GET', 'POST'])
+def api_radar_themes():
+    from ..event_radar.themes import Theme, ChainNode, ThemesStore
+    store = ThemesStore()
+    if request.method == 'GET':
+        # 首次访问自动写入预置主题
+        from ..event_radar.presets import seed_default_themes
+        seed_default_themes(store)
+        themes = [{'id': t.id, 'name': t.name, 'last_event': t.last_event, 'updated': t.updated,
+                   'chain_nodes': [{'node': n.node, 'concept_name': n.concept_name,
+                                    'manual_codes': n.manual_codes} for n in t.chain_nodes]}
+                  for t in store.load()]
+        return jsonify({'themes': themes, 'total': len(themes)})
+    body = request.get_json(silent=True) or {}
+    t = Theme(
+        id=str(body.get('id', '')).strip(),
+        name=str(body.get('name', '')).strip(),
+        chain_nodes=[ChainNode(node=str(n.get('node', '')).strip(),
+                               concept_name=str(n.get('concept_name', '')).strip(),
+                               manual_codes=[str(c) for c in (n.get('manual_codes') or [])])
+                     for n in (body.get('chain_nodes') or [])],
+    )
+    if not t.id or not t.name:
+        return jsonify({'success': False, 'error': 'id 和 name 必填'}), 400
+    return jsonify({'success': store.add(t)})
+
+
+@app.route('/api/radar/themes/<theme_id>', methods=['PUT', 'DELETE'])
+def api_radar_theme_item(theme_id):
+    from ..event_radar.themes import Theme, ChainNode, ThemesStore
+    store = ThemesStore()
+    if request.method == 'DELETE':
+        return jsonify({'success': store.delete(theme_id)})
+    body = request.get_json(silent=True) or {}
+    t = Theme(id=theme_id, name=str(body.get('name', '')),
+              chain_nodes=[ChainNode(node=str(n.get('node', '')).strip(),
+                                     concept_name=str(n.get('concept_name', '')).strip(),
+                                     manual_codes=[str(c) for c in (n.get('manual_codes') or [])])
+                           for n in (body.get('chain_nodes') or [])])
+    return jsonify({'success': store.update(theme_id, t)})
+
+
+@app.route('/api/radar/analyze', methods=['POST'])
+def api_radar_analyze():
+    """生成分析。body: {date?: str, events: [{theme_id, description}]}"""
+    from ..event_radar.themes import ThemesStore
+    from ..event_radar.events import RadarEvent, EventsStore
+    from ..event_radar.analyze import analyze_event
+    from ..event_radar.report import build_result, save_result
+
+    body = request.get_json(silent=True) or {}
+    trade_date = (body.get('date') or '').strip() or datetime.now().strftime('%Y-%m-%d')
+    ev_inputs = body.get('events') or []
+    if not ev_inputs:
+        return jsonify({'success': False, 'error': '请至少选择一个事件'}), 400
+
+    store = ThemesStore()
+    estore = EventsStore()
+    analyzed = []
+    for item in ev_inputs:
+        theme = store.get(str(item.get('theme_id', '')))
+        if theme is None:
+            continue
+        desc = str(item.get('description', '')).strip()
+        estore.add(RadarEvent(date=trade_date, theme_id=theme.id, description=desc))
+        analyzed.append(analyze_event(theme, desc, tdx, ak_fetcher, trade_date))
+    if not analyzed:
+        return jsonify({'success': False, 'error': '未找到有效主题'}), 400
+    result = build_result(trade_date, analyzed)
+    save_result(result, trade_date)
+    return jsonify({'success': True, 'result': result})
+
+
+@app.route('/api/radar/results')
+def api_radar_results():
+    from ..event_radar.report import load_result
+    d = (request.args.get('date') or '').strip() or datetime.now().strftime('%Y-%m-%d')
+    return jsonify({'date': d, 'result': load_result(d)})
+
+
+@app.route('/api/radar/export')
+def api_radar_export():
+    from ..event_radar.report import load_result, to_markdown
+    d = (request.args.get('date') or '').strip() or datetime.now().strftime('%Y-%m-%d')
+    r = load_result(d)
+    if r is None:
+        return jsonify({'error': f'{d} 无分析结果'}), 404
+    md = to_markdown(r)
+    saved = None
+    try:
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'outputs')
+        os.makedirs(out_dir, exist_ok=True)
+        p = os.path.join(out_dir, f'事件雷达_{d}.md')
+        with open(p, 'w', encoding='utf-8') as f:
+            f.write(md)
+        saved = p
+    except Exception:
+        saved = None
+    return jsonify({'success': True, 'markdown': md, 'saved': saved})
+
+
 def run(host='127.0.0.1', port=5000, debug=None):
     # debug 默认 False（生产安全）；开发环境通过环境变量 ASHARE_DEBUG=1 或显式参数开启
     if debug is None:
