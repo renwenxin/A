@@ -1,0 +1,123 @@
+{
+  "_cached_date": "2026-08-15",
+  "_cached_at": "18:07:12",
+  "_namespace": "v4_pool_state",
+  "_payload": {
+    "date": "2026-08-15",
+    "last_update": "2026-08-13",
+    "market_mood": {
+      "date": "2026-08-14",
+      "zt_count": 63,
+      "multi_board": 11,
+      "max_consecutive": 5,
+      "mood": "中性",
+      "advice": "谨慎开仓 · 精选核心标的",
+      "color": "#4f46e5",
+      "note": "",
+      "sh_close": 3927.18,
+      "sh_ma60": 3985.82,
+      "is_bull": false
+    },
+    "sim_buy_today": [
+      {
+        "code": "000506",
+        "name": "招金黄金",
+        "signal_date": "2026-08-13",
+        "buy_date": "2026-08-14",
+        "buy_price": 17.55,
+        "shares": 5600,
+        "close": 17.55,
+        "top_line": 15.7,
+        "break_pct": 11.8,
+        "vol_ratio": 2.6,
+        "score": 100,
+        "limit_count": 22,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 17.02,
+        "buy_range_high": 18.6,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "rejected",
+          "reason": "低开-3.8% > 3%"
+        }
+      },
+      {
+        "code": "600162",
+        "name": "香江控股",
+        "signal_date": "2026-08-13",
+        "buy_date": "2026-08-14",
+        "buy_price": 4.57,
+        "shares": 21800,
+        "close": 4.57,
+        "top_line": 4.15,
+        "break_pct": 10.1,
+        "vol_ratio": 3.6,
+        "score": 100,
+        "limit_count": 23,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 4.43,
+        "buy_range_high": 4.84,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "passed",
+          "reason": "高开0.0%"
+        }
+      }
+    ],
+    "sim_sell_today": [
+      {
+        "code": "000603",
+        "name": "盛达资源",
+        "signal_date": "2026-08-12",
+        "buy_date": "2026-08-13",
+        "buy_price": 35.27,
+        "shares": 2800,
+        "close": 34.41,
+        "top_line": 26.69,
+        "break_pct": 28.9,
+        "vol_ratio": 2.2,
+        "score": 95,
+        "limit_count": 16,
+        "mode": "v3",
+        "market_bull": false,
+        "status": "holding",
+        "had_zt": false,
+        "highest_close": 35.27,
+        "awaiting_reversal": false,
+        "sell_price_today": 32.09,
+        "estimated_net_ret": -9.37,
+        "exit_reason": "止损-6%",
+        "days_held": 2,
+        "sell_range_basis": "止损-6%附近",
+        "sell_range_low": 32.82,
+        "sell_range_high": 33.49
+      }
+    ],
+    "summary": {
+      "total_trades": 7,
+      "wins": 10,
+      "losses": -3,
+      "win_rate": 142.9,
+      "total_return": 62.39,
+      "avg_return": 8.91,
+      "watch_count": 115,
+      "buy_count": 2,
+      "sell_count": 1,
+      "holding_count": 2,
+      "ready_count": 2,
+      "pending_sell_count": 1,
+      "cash": 395063.86,
+      "positions_value": 190560.0,
+      "portfolio_value": 585623.86,
+      "initial_capital": 1000000.0,
+      "cumulative_return": -41.44,
+      "max_drawdown": 50.22,
+      "max_positions": 10,
+      "market_bull": false,
+      "sh_close": 3927.18,
+      "sh_ma60": 3985.82
+    }
+  }
+}

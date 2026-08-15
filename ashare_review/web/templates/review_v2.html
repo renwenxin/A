@@ -2,7 +2,7 @@
 {% block content %}
 <!-- ==================================================================
      复盘分析 V2 — 融合龙哥复盘体系 + 1进2竞价数据
-     新增：竞价量能跟踪 · 昨日标的验证 · 盘面回顾编辑 · 竞价操作清单
+     新增：竞价量能跟踪 · 昨日标的验证 · 竞价操作清单
      ================================================================== -->
 <div class="content-area">
 <div class="page-header">
@@ -55,9 +55,6 @@
         🏆 一进二精选
         <span class="tab-badge">{{ report.sentiment.picks|length if report.sentiment and report.sentiment.picks else 0 }}</span>
     </button>
-    <button class="v2-tab" onclick="switchV2Tab('review')" data-tab="review">
-        📝 盘面分析
-    </button>
     <button class="v2-tab" onclick="switchV2Tab('ladder')" data-tab="ladder">
         🪜 连板梯队
         <span class="tab-badge">{{ report.multi_board_list|length }}</span>
@@ -78,15 +75,20 @@
 <div class="card">
     <div class="card-body">
         <div class="breadth-dashboard">
-            <!-- 可视化条 -->
+            <!-- 统计数字（独立行，避免条内文字被遮挡） -->
+            <div class="breadth-counts">
+                <span class="breadth-count up"><span class="b-dot"></span>{{ mkt.up_count }}家上涨</span>
+                <span class="breadth-count down"><span class="b-dot"></span>{{ mkt.down_count }}家下跌</span>
+            </div>
+            <!-- 可视化条（纯色块，无文字） -->
             <div class="breadth-bar-wrap">
                 <div class="breadth-bar">
                     {% set total_adv_dec = mkt.up_count + mkt.down_count %}
                     {% set denom = total_adv_dec if total_adv_dec > 0 else 1 %}
                     {% set up_pct = (mkt.up_count / denom * 100)|int %}
                     {% set down_pct = 100 - up_pct %}
-                    <div class="breadth-up" style="width:{{ up_pct }}%">{{ mkt.up_count }}家上涨</div>
-                    <div class="breadth-down" style="width:{{ down_pct }}%">{{ mkt.down_count }}家下跌</div>
+                    <div class="breadth-up" style="width:{{ up_pct }}%"></div>
+                    <div class="breadth-down" style="width:{{ down_pct }}%"></div>
                 </div>
             </div>
             <!-- 判断信号 -->
@@ -141,15 +143,6 @@
     </div>
     <p class="cycle-desc">{{ report.cycle.stage_desc }}</p>
     <p class="cycle-action"><strong>💡 操作建议：</strong>{{ report.cycle.action }}</p>
-    {% if report.cycle.metrics %}
-    <div class="cycle-metrics">
-        <span>涨停{{ report.cycle.metrics.total_zt }}只</span>
-        <span>封板率{{ report.cycle.metrics.seal_rate }}%</span>
-        <span>最高{{ report.cycle.metrics.max_consecutive }}连板</span>
-        <span>一字板{{ report.cycle.metrics.yizi_ratio }}%</span>
-        <span>{{ report.cycle.metrics.height_trend }}</span>
-    </div>
-    {% endif %}
 </div>
 {% endif %}
 
@@ -510,43 +503,6 @@
      ================================================================== -->
 <div class="v2-tab-content" id="tab-review" style="display:none;">
 
-<!-- ---- 盘面回顾编辑器 ---- -->
-<div class="section-title">📝 盘面回顾</div>
-<div class="card">
-    <div class="card-body">
-        <p class="section-note">写下今日盘面回顾：指数走势、板块轮动、技术分析、操作反思——内容自动保存在浏览器本地。</p>
-        <textarea id="market-review-editor" class="review-editor" placeholder="按照你的复盘习惯：
-
-【市场总览】大盘走势、成交额、涨跌家数
-【板块分析】今日最强/最弱板块、板块轮动逻辑、催化新闻
-【技术面】关键支撑/压力位、均线状态、MACD信号
-【最高板情绪】最高板状态、断板影响、情绪传导
-【操作反思】今天的操作得失、需要改进的地方
-【明日预判】对明天走势的预判和策略规划" style="min-height:350px;resize:vertical;"></textarea>
-        <div style="display:flex;gap:12px;margin-top:10px;align-items:center;">
-            <button onclick="saveMarketReview()" class="btn btn-primary">💾 保存复盘</button>
-            <button onclick="loadMarketReview()" class="btn btn-secondary">📂 加载上次</button>
-            <button onclick="clearMarketReview()" class="btn btn-danger">🗑 清空</button>
-            <span id="review-save-status" class="crit"></span>
-        </div>
-    </div>
-</div>
-
-<!-- ---- 快速模板 ---- -->
-<div class="section-title">📋 快速模板</div>
-<div class="card">
-    <div class="card-body">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="insertTemplate('market')" class="template-btn">📊 市场总览模板</button>
-            <button onclick="insertTemplate('sector')" class="template-btn">🔥 板块分析模板</button>
-            <button onclick="insertTemplate('tech')" class="template-btn">🔧 技术面模板</button>
-            <button onclick="insertTemplate('sentiment')" class="template-btn">🌡 情绪判断模板</button>
-            <button onclick="insertTemplate('strategy')" class="template-btn">🎯 操作策略模板</button>
-            <button onclick="insertTemplate('full')" class="template-btn">📝 完整模板</button>
-        </div>
-    </div>
-</div>
-
 <!-- ---- AI 生成复盘文章（本地 qwen2.5） ---- -->
 <div class="section-title">🤖 AI生成复盘文章</div>
 <div class="card">
@@ -855,153 +811,6 @@ function switchV2Tab(tabName) {
         switchV2Tab(saved);
     }
 })();
-
-// ===================================================================
-// 盘面回顾编辑器 — localStorage
-// ===================================================================
-function getReviewKey() {
-    return 'market_review_{{ report.date }}';
-}
-
-function saveMarketReview() {
-    const text = document.getElementById('market-review-editor').value;
-    localStorage.setItem(getReviewKey(), text);
-    document.getElementById('review-save-status').textContent = '✅ 已保存 ' + new Date().toLocaleTimeString();
-    document.getElementById('review-save-status').style.color = '#059669';
-}
-
-function loadMarketReview() {
-    const saved = localStorage.getItem(getReviewKey());
-    if (saved) {
-        document.getElementById('market-review-editor').value = saved;
-        document.getElementById('review-save-status').textContent = '📂 已加载上次保存';
-        document.getElementById('review-save-status').style.color = '#2563eb';
-    } else {
-        document.getElementById('review-save-status').textContent = '📭 暂无保存记录';
-        document.getElementById('review-save-status').style.color = '#888';
-    }
-}
-
-function clearMarketReview() {
-    if (confirm('确定清空当前复盘内容？此操作不可恢复！')) {
-        document.getElementById('market-review-editor').value = '';
-        localStorage.removeItem(getReviewKey());
-        document.getElementById('review-save-status').textContent = '🗑 已清空';
-        document.getElementById('review-save-status').style.color = '#ef4444';
-    }
-}
-
-// 自动加载
-(function() {
-    const saved = localStorage.getItem(getReviewKey());
-    if (saved) {
-        document.getElementById('market-review-editor').value = saved;
-    }
-})();
-
-// ===================================================================
-// 快速模板插入
-// ===================================================================
-const TEMPLATES = {
-    market: `【市场总览】
-今日大盘整体走势：
-沪指：
-深成指：
-创业板指：
-科创板：
-总成交额：{{ report.market_overview.total_volume|int }}亿
-涨跌家数：涨{{ report.market_overview.up_count }} / 跌{{ report.market_overview.down_count }}
-整体判断：
-`,
-
-    sector: `【板块分析】
-今日最强板块：
-1.
-2.
-3.
-
-今日最弱板块：
-1.
-2.
-
-板块轮动逻辑：
-
-催化新闻：
-
-涨停潮板块：`,
-
-    tech: `【技术面分析】
-关键支撑位：
-关键压力位：
-均线状态：
-MACD信号：
-量价配合：
-技术面判断：`,
-
-    sentiment: `【情绪判断】
-最高板状态：
-情绪周期阶段：{{ report.cycle.stage if report.cycle else 'N/A' }}
-赚钱效应：{{ '强' if report.market_overview.up_count > 3000 else '偏弱' if report.market_overview.up_count < 1000 else '中性' }}
-断板影响：
-情绪预判：`,
-
-    strategy: `【操作策略】
-今日操作回顾：
-做得好的地方：
-需要改进的地方：
-仓位情况：
-明日关注标的：
-明日操作计划：`,
-
-    full: `【市场总览】
-今日大盘整体走势：
-沪指：
-深成指：
-创业板指：
-科创板：
-总成交额：{{ report.market_overview.total_volume|int }}亿
-涨跌家数：涨{{ report.market_overview.up_count }} / 跌{{ report.market_overview.down_count }}
-整体判断：
-
-【板块分析】
-今日最强板块：
-今日最弱板块：
-板块轮动逻辑：
-催化新闻：
-
-【技术面】
-关键支撑位：
-关键压力位：
-均线状态：
-MACD信号：
-量价配合：
-
-【情绪判断】
-最高板状态：{{ report.max_consecutive }}连板
-情绪周期阶段：{{ report.cycle.stage if report.cycle else 'N/A' }}
-赚钱效应：
-断板影响：
-
-【操作策略】
-今日操作回顾：
-明日关注标的：
-明日操作计划：
-风险提示：`
-};
-
-function insertTemplate(type) {
-    const editor = document.getElementById('market-review-editor');
-    const template = TEMPLATES[type] || '';
-    const cursorPos = editor.selectionStart;
-    const textBefore = editor.value.substring(0, cursorPos);
-    const textAfter = editor.value.substring(cursorPos);
-    editor.value = textBefore + template + textAfter;
-    editor.focus();
-    editor.selectionStart = cursorPos + template.length;
-    editor.selectionEnd = cursorPos + template.length;
-    document.getElementById('review-save-status').textContent = '📝 模板已插入，记得保存';
-    document.getElementById('review-save-status').style.color = '#d97706';
-}
 
 // ===================================================================
 // 竞价量能输入 — localStorage 存储

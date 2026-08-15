@@ -552,6 +552,13 @@ table a:hover { text-decoration: underline; }
 .breadth-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--bg-subtle); }
 .breadth-up { background: var(--up); }
 .breadth-down { background: var(--down); }
+.breadth-counts { display: flex; gap: var(--sp-5); flex-wrap: wrap; margin-bottom: var(--sp-3); font-size: var(--fs-15); font-weight: 700; }
+.breadth-count { display: inline-flex; align-items: center; gap: 6px; }
+.breadth-count .b-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.breadth-count.up { color: var(--up); }
+.breadth-count.down { color: var(--down); }
+.breadth-count.up .b-dot { background: var(--up); }
+.breadth-count.down .b-dot { background: var(--down); }
 .breadth-signals { display: flex; gap: var(--sp-4); flex-wrap: wrap; font-size: var(--fs-13); }
 
 .cycle-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-3); }
