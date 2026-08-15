@@ -23,8 +23,7 @@ class EventsStore:
     def add(self, ev: RadarEvent) -> None:
         ev.created_at = ev.created_at or datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         with open(self.path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps(asdict(ev), ensure_ascii=False) + '
-')
+            f.write(json.dumps(asdict(ev), ensure_ascii=False) + '\n')
 
     def list_by_date(self, d: str) -> list:
         if not os.path.exists(self.path):
