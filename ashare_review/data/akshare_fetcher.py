@@ -726,6 +726,46 @@ class AkshareFetcher:
             self._cache_set(cache_key, df.to_json())
         return df if df is not None else pd.DataFrame()
 
+    def get_concept_cons(self, concept_name: str, timeout: float = 4.0) -> list:
+        """东财概念板块成分股代码列表（带缓存 + 超时兜底）。
+
+        Args:
+            concept_name: 概念板块名（如 '光模块'）
+
+        Returns:
+            list[str]: 成分股 6 位代码；失败返回 []（调用方降级 manual_codes）
+        """
+        import threading
+        import queue as _queue
+        import json as _json
+        cache_key = f'concept_cons_{concept_name}'
+        cached = self._cache_get(cache_key, ttl_minutes=60 * 24)  # 成分股日级缓存
+        if cached:
+            try:
+                return _json.loads(cached)
+            except Exception:
+                pass
+
+        def _fetch():
+            try:
+                df = ak.stock_board_concept_cons_em(symbol=concept_name)
+                return sorted(df['代码'].astype(str).str.zfill(6).tolist())
+            except Exception:
+                return []
+
+        q = _queue.Queue(maxsize=1)
+        threading.Thread(target=lambda: q.put(_fetch()), daemon=True).start()
+        try:
+            codes = q.get(timeout=timeout)
+        except Exception:
+            codes = []
+        if codes:
+            try:
+                self._cache_set(cache_key, _json.dumps(codes))
+            except Exception:
+                pass
+        return codes
+
     def _try_fetch_board(self, kind: str, timeout: float = 4.0) -> Optional[pd.DataFrame]:
         """
         尝试获取板块行情（仅 eastmoney）:
