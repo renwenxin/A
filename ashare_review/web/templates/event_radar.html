@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}消息雷达 · 竞价交易系统{% endblock %}
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <div class="page-title">📡 消息雷达</div>
+            <div class="page-date">事件 → 产业 → 公司 → 资金 → 股价 · {{ today }}</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="loadThemes()">🔄 刷新主题</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadResult()">📂 今日结果</button>
+            <button class="btn btn-primary" onclick="runAnalyze()">⚡ 生成分析</button>
+            <button class="btn btn-secondary" onclick="exportReport()">📄 导出</button>
+        </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+        <!-- 左：主题库 -->
+        <div class="card">
+            <div class="card-header">🗂 主题库 <span class="card-badge" id="theme-count">0</span></div>
+            <div class="card-body" id="theme-list" style="max-height:72vh;overflow-y:auto;"></div>
+        </div>
+        <!-- 右：分析结果 -->
+        <div class="card">
+            <div class="card-header">📊 分析结果 <span class="card-badge" id="result-date"></span></div>
+            <div class="card-body" id="result-panel">
+                <div class="empty-result">
+                    <div class="empty-icon">📡</div>
+                    <h3>尚未生成分析</h3>
+                    <p>左侧勾选今日事件 → 点击「生成分析」</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// XSS 纵深防御：HTML 转义
+function esc(s) {
+    if (s == null) return '';
+    var d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
+let SELECTED = {};   // theme_id -> description
+
+async function loadThemes() {
+    try {
+        const resp = await fetch('/api/radar/themes');
+        const data = await resp.json();
+        document.getElementById('theme-count').textContent = data.total;
+        document.getElementById('theme-list').innerHTML = data.themes.map(function (t) {
+            const nodes = (t.chain_nodes || []).map(function (n) {
+                return '<span class="reason-tag">' + esc(n.node) + '</span>';
+            }).join('');
+            const checked = SELECTED[t.id] !== undefined ? 'checked' : '';
+            return '<div class="card" style="margin-bottom:10px;">' +
+                '<div class="card-body" style="padding:12px 14px;">' +
+                '<label style="display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;">' +
+                '<input type="checkbox" data-theme="' + esc(t.id) + '" ' + checked + '> ' + esc(t.name) + '</label>' +
+                '<div style="margin:8px 0 4px;">' + nodes + '</div>' +
+                '<input type="text" placeholder="今日事件描述（可选）" data-desc="' + esc(t.id) + '" value="' + esc(SELECTED[t.id] || '') + '" ' +
+                'style="width:100%;padding:6px 10px;font-size:0.85em;min-height:30px;">' +
+                '</div></div>';
+        }).join('');
+        bindThemeEvents();
+    } catch (e) {
+        document.getElementById('theme-list').innerHTML = '<div class="error-box">加载主题失败: ' + esc(String(e.message || e)) + '</div>';
+    }
+}
+
+function bindThemeEvents() {
+    document.querySelectorAll('#theme-list input[data-theme]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            const id = cb.dataset.theme;
+            if (cb.checked) { SELECTED[id] = SELECTED[id] || ''; }
+            else { delete SELECTED[id]; }
+        });
+    });
+    document.querySelectorAll('#theme-list input[data-desc]').forEach(function (inp) {
+        inp.addEventListener('input', function () { SELECTED[inp.dataset.desc] = inp.value; });
+    });
+}
+
+async function runAnalyze() {
+    const ids = Object.keys(SELECTED);
+    if (!ids.length) { alert('请先勾选今日事件主题'); return; }
+    const btn = document.querySelector('.btn-primary');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 分析中…'; }
+    try {
+        const events = ids.map(function (id) { return {theme_id: id, description: SELECTED[id] || ''}; });
+        const resp = await fetch('/api/radar/analyze', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({events: events})
+        });
+        const data = await resp.json();
+        if (!data.success) { alert(data.error || '分析失败'); return; }
+        renderResult(data.result);
+    } catch (e) {
+        alert('分析出错: ' + String(e.message || e));
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ 生成分析'; }
+    }
+}
+
+function renderResult(result) {
+    document.getElementById('result-date').textContent = result.date;
+    const html = result.events.map(function (ev) {
+        const chains = (ev.chains || []).map(function (ch) {
+            return '<tr><td>' + esc(ch.node) + '</td><td>' + (ch.codes || []).length + ' 只</td><td>' + esc(ch.source) + '</td></tr>';
+        }).join('');
+        const leaders = (ev.leaders || []).map(function (s) {
+            return '<tr><td><a href="/stock/' + esc(s.code) + '">' + esc(s.code) + '</a></td><td>' + esc(s.name || '') +
+                '</td><td class="up">' + s.pct + '%</td><td>' + s.vol_ratio + '</td><td>' + (s.is_zt ? '✅' : '') + '</td></tr>';
+        }).join('');
+        const pots = (ev.potentials || []).map(function (s) {
+            return '<tr><td><a href="/stock/' + esc(s.code) + '">' + esc(s.code) + '</a></td><td>' + esc(s.name || '') +
+                '</td><td class="up">' + s.pct + '%</td><td>' + s.vol_ratio + '</td></tr>';
+        }).join('');
+        const lhb = (ev.lhb || []).map(function (x) {
+            return '<tr><td><a href="/stock/' + esc(x.code) + '">' + esc(x.code) + '</a></td><td>' + esc(x.name || '') +
+                '</td><td>' + x.net_buy + '</td><td>' + esc(x.type || '') + '</td></tr>';
+        }).join('');
+        const notes = ev.next_day_notes ? '<div class="notice-banner" style="margin-top:12px;">🎯 ' + esc(ev.next_day_notes) + '</div>' : '';
+        return '<div class="card" style="margin-bottom:14px;">' +
+            '<div class="card-header">' + esc(ev.theme) + (ev.description ? ' — ' + esc(ev.description) : '') + '</div>' +
+            '<div class="card-body">' +
+            '<div class="section-label">产业链</div>' +
+            '<div class="table-wrap"><table><tr><th>节点</th><th>成分</th><th>来源</th></tr>' + chains + '</table></div>' +
+            '<div class="section-label" style="margin-top:12px;">🚀 龙头股</div>' +
+            '<div class="table-wrap"><table><tr><th>代码</th><th>名称</th><th>涨幅</th><th>量比</th><th>涨停</th></tr>' + leaders + '</table></div>' +
+            '<div class="section-label" style="margin-top:12px;">⚡ 潜力股（未大涨但资金启动）</div>' +
+            '<div class="table-wrap"><table><tr><th>代码</th><th>名称</th><th>涨幅</th><th>量比</th></tr>' + pots + '</table></div>' +
+            (lhb ? '<div class="section-label" style="margin-top:12px;">💰 龙虎榜</div>' +
+                '<div class="table-wrap"><table><tr><th>代码</th><th>名称</th><th>净买(万)</th><th>类型</th></tr>' + lhb + '</table></div>' : '') +
+            notes +
+            '</div></div>';
+    }).join('');
+    document.getElementById('result-panel').innerHTML = html || '<div class="empty-result"><p>无结果</p></div>';
+}
+
+async function loadResult() {
+    try {
+        const resp = await fetch('/api/radar/results');
+        const data = await resp.json();
+        if (data.result) { renderResult(data.result); }
+        else { document.getElementById('result-panel').innerHTML = '<div class="empty-result"><p>今日暂无分析结果</p></div>'; }
+    } catch (e) {
+        alert('读取失败: ' + String(e.message || e));
+    }
+}
+
+async function exportReport() {
+    const resp = await fetch('/api/radar/export');
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+    alert(data.saved ? '已导出：' + data.saved : '已生成 Markdown 内容');
+}
+
+document.addEventListener('DOMContentLoaded', loadThemes);
+</script>
+{% endblock %}

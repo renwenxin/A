@@ -68,6 +68,10 @@
                 <span class="nav-icon">💰</span>
                 <span class="nav-label">基金挑选</span>
             </a>
+            <a href="/event_radar" class="nav-item {% if request.endpoint == 'event_radar' %}active{% endif %}">
+                <span class="nav-icon">📡</span>
+                <span class="nav-label">消息雷达</span>
+            </a>
             <a href="/stock/000001" class="nav-item {% if request.endpoint == 'stock_detail' %}active{% endif %}">
                 <span class="nav-icon">📈</span>
                 <span class="nav-label">个股分析</span>

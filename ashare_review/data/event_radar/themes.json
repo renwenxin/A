@@ -1,0 +1,325 @@
+{
+  "themes": [
+    {
+      "id": "ai_compute",
+      "name": "AI算力",
+      "chain_nodes": [
+        {
+          "node": "液冷服务器",
+          "concept_name": "液冷服务器",
+          "manual_codes": []
+        },
+        {
+          "node": "光模块",
+          "concept_name": "光模块",
+          "manual_codes": []
+        },
+        {
+          "node": "PCB",
+          "concept_name": "PCB",
+          "manual_codes": []
+        },
+        {
+          "node": "铜缆高速连接",
+          "concept_name": "铜缆高速连接",
+          "manual_codes": []
+        },
+        {
+          "node": "电源设备",
+          "concept_name": "电源设备",
+          "manual_codes": []
+        },
+        {
+          "node": "MLCC",
+          "concept_name": "MLCC",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "low_altitude",
+      "name": "低空经济",
+      "chain_nodes": [
+        {
+          "node": "低空经济",
+          "concept_name": "低空经济",
+          "manual_codes": []
+        },
+        {
+          "node": "eVTOL",
+          "concept_name": "eVTOL",
+          "manual_codes": []
+        },
+        {
+          "node": "无人机",
+          "concept_name": "无人机",
+          "manual_codes": []
+        },
+        {
+          "node": "碳纤维",
+          "concept_name": "碳纤维",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "humanoid_robot",
+      "name": "人形机器人",
+      "chain_nodes": [
+        {
+          "node": "减速器",
+          "concept_name": "减速器",
+          "manual_codes": []
+        },
+        {
+          "node": "伺服电机",
+          "concept_name": "伺服电机",
+          "manual_codes": []
+        },
+        {
+          "node": "丝杠",
+          "concept_name": "丝杠",
+          "manual_codes": []
+        },
+        {
+          "node": "传感器",
+          "concept_name": "传感器",
+          "manual_codes": []
+        },
+        {
+          "node": "机器人概念",
+          "concept_name": "机器人概念",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "solid_battery",
+      "name": "固态电池",
+      "chain_nodes": [
+        {
+          "node": "固态电池",
+          "concept_name": "固态电池",
+          "manual_codes": []
+        },
+        {
+          "node": "锂电池",
+          "concept_name": "锂电池",
+          "manual_codes": []
+        },
+        {
+          "node": "锂电设备",
+          "concept_name": "锂电设备",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "innovative_drug",
+      "name": "创新药",
+      "chain_nodes": [
+        {
+          "node": "创新药",
+          "concept_name": "创新药",
+          "manual_codes": []
+        },
+        {
+          "node": "CRO",
+          "concept_name": "CRO",
+          "manual_codes": []
+        },
+        {
+          "node": "减肥药",
+          "concept_name": "减肥药",
+          "manual_codes": []
+        },
+        {
+          "node": "ADC",
+          "concept_name": "ADC",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "satellite_net",
+      "name": "卫星互联网",
+      "chain_nodes": [
+        {
+          "node": "卫星互联网",
+          "concept_name": "卫星互联网",
+          "manual_codes": []
+        },
+        {
+          "node": "卫星导航",
+          "concept_name": "卫星导航",
+          "manual_codes": []
+        },
+        {
+          "node": "北斗导航",
+          "concept_name": "北斗导航",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "commercial_space",
+      "name": "商业航天",
+      "chain_nodes": [
+        {
+          "node": "商业航天",
+          "concept_name": "商业航天",
+          "manual_codes": []
+        },
+        {
+          "node": "航空发动机",
+          "concept_name": "航空发动机",
+          "manual_codes": []
+        },
+        {
+          "node": "军工电子",
+          "concept_name": "军工电子",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "semiconductor",
+      "name": "半导体",
+      "chain_nodes": [
+        {
+          "node": "半导体设备",
+          "concept_name": "半导体设备",
+          "manual_codes": []
+        },
+        {
+          "node": "半导体材料",
+          "concept_name": "半导体材料",
+          "manual_codes": []
+        },
+        {
+          "node": "先进封装",
+          "concept_name": "先进封装",
+          "manual_codes": []
+        },
+        {
+          "node": "存储芯片",
+          "concept_name": "存储芯片",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "data_element",
+      "name": "数据要素",
+      "chain_nodes": [
+        {
+          "node": "数据要素",
+          "concept_name": "数据要素",
+          "manual_codes": []
+        },
+        {
+          "node": "数据确权",
+          "concept_name": "数据确权",
+          "manual_codes": []
+        },
+        {
+          "node": "国资云",
+          "concept_name": "国资云",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "military",
+      "name": "军工",
+      "chain_nodes": [
+        {
+          "node": "军工",
+          "concept_name": "军工",
+          "manual_codes": []
+        },
+        {
+          "node": "航空发动机",
+          "concept_name": "航空发动机",
+          "manual_codes": []
+        },
+        {
+          "node": "国防军工",
+          "concept_name": "国防军工",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "power_grid",
+      "name": "电力设备",
+      "chain_nodes": [
+        {
+          "node": "特高压",
+          "concept_name": "特高压",
+          "manual_codes": []
+        },
+        {
+          "node": "电网设备",
+          "concept_name": "电网设备",
+          "manual_codes": []
+        },
+        {
+          "node": "充电桩",
+          "concept_name": "充电桩",
+          "manual_codes": []
+        },
+        {
+          "node": "虚拟电厂",
+          "concept_name": "虚拟电厂",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    },
+    {
+      "id": "ai_glasses",
+      "name": "AI眼镜",
+      "chain_nodes": [
+        {
+          "node": "AI眼镜",
+          "concept_name": "AI眼镜",
+          "manual_codes": []
+        },
+        {
+          "node": "消费电子",
+          "concept_name": "消费电子",
+          "manual_codes": []
+        },
+        {
+          "node": "光学元件",
+          "concept_name": "光学元件",
+          "manual_codes": []
+        }
+      ],
+      "last_event": "",
+      "updated": "2026-08-15"
+    }
+  ]
+}
