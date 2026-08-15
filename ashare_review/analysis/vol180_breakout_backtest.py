@@ -203,12 +203,27 @@ class Vol180BreakoutBacktest:
         t0 = time.time()
 
         for i, code in enumerate(sorted(codes_to_load)):
-            cache_path = os.path.join(STOCK_CACHE_DIR, f'{code}.pkl')
+            cache_path = os.path.join(STOCK_CACHE_DIR, f'{code}.parquet')
             if os.path.exists(cache_path):
-                # 已有缓存，直接加载
+                # 已有 parquet 缓存，直接加载（安全格式，无任意代码执行风险）
                 try:
-                    with open(cache_path, 'rb') as f:
-                        self._stock_cache[code] = pickle.load(f)
+                    self._stock_cache[code] = pd.read_parquet(cache_path)
+                    loaded += 1
+                    continue
+                except Exception:
+                    pass
+            # 兼容旧版 pickle 缓存：加载并自动迁移到 parquet
+            legacy_path = os.path.join(STOCK_CACHE_DIR, f'{code}.pkl')
+            if os.path.exists(legacy_path):
+                try:
+                    with open(legacy_path, 'rb') as f:
+                        df_legacy = pickle.load(f)
+                    self._stock_cache[code] = df_legacy
+                    try:
+                        df_legacy.to_parquet(cache_path)
+                        os.remove(legacy_path)
+                    except Exception:
+                        pass
                     loaded += 1
                     continue
                 except Exception:
@@ -259,10 +274,9 @@ class Vol180BreakoutBacktest:
 
                 self._stock_cache[code] = df
 
-                # 保存到磁盘缓存
+                # 保存到磁盘缓存（parquet 安全格式）
                 try:
-                    with open(cache_path, 'wb') as f:
-                        pickle.dump(df, f, protocol=pickle.HIGHEST_PROTOCOL)
+                    df.to_parquet(cache_path)
                 except Exception:
                     pass
 
