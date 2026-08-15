@@ -284,6 +284,11 @@ function escapeHtml(str) {
     return d.innerHTML;
 }
 
+// esc()：XSS 纵深防御统一转义入口。文件已有 escapeHtml()，直接复用，不重复实现。
+function esc(s) {
+    return escapeHtml(s);
+}
+
 function loadAIOpinions(code) {
     var el = document.getElementById('ai-opinions');
     el.innerHTML = '<p style="color:#888;">AI 多 Agent 分析依赖后端 LLM 服务，暂未部署。以下为本地技术指标快速诊断。</p>';
@@ -318,10 +323,6 @@ function loadAIOpinions(code) {
         '</div>';
     html += '<div style="font-size:0.85em;color:#666;margin-top:8px;line-height:1.8;">' + trends.join('<br>') + '</div>';
 
-    el.innerHTML = html;
-}
-</script>
-    }
     el.innerHTML = html;
 }
 </script>

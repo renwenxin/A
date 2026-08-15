@@ -760,6 +760,14 @@
 <script>
 let _v4Busy = false;
 
+// ── XSS 纵深防御：HTML 转义助手（用于 innerHTML 中拼接的 API 字符串数据） ──
+function esc(s) {
+    if (s == null) return '';
+    var d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
 // ── 运行扫描：清空候选池并重新全量筛选 ──
 async function v4RunScan() {
     if (_v4Busy) return;
@@ -825,21 +833,21 @@ function v4RenderMood(mood) {
         el.innerHTML = '<span style="color:#999;">市场情绪数据不可用</span>';
         return;
     }
-    const m = mood.mood || '未知';
-    const color = mood.color || '#9ca3af';
+    const m = esc(mood.mood || '未知');
+    const color = esc(mood.color || '#9ca3af');
     const bullTag = mood.is_bull
         ? '<span style="color:#16a34a;font-weight:600;">上证站上MA60 ✓</span>'
         : '<span style="color:#dc2626;font-weight:600;">上证跌破MA60 ✗</span>';
-    const note = mood.note ? '<span style="color:#b45309;"> ' + mood.note + '</span>' : '';
+    const note = mood.note ? '<span style="color:#b45309;"> ' + esc(mood.note) + '</span>' : '';
     el.innerHTML =
         '<div style="display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;">' +
-        '<span>📅 上一交易日 <strong>' + mood.date + '</strong></span>' +
+        '<span>📅 上一交易日 <strong>' + esc(mood.date) + '</strong></span>' +
         '<span>💥 涨停 <strong>' + (mood.zt_count || 0) + '</strong>家</span>' +
         '<span>🔗 连板 <strong>' + (mood.multi_board || 0) + '</strong>家</span>' +
         '<span>🏔 最高板 <strong>' + (mood.max_consecutive || 0) + '</strong>板</span>' +
-        '<span>📊 上证 ' + (mood.sh_close || '-') + ' | ' + bullTag + '</span>' +
+        '<span>📊 上证 ' + esc(mood.sh_close || '-') + ' | ' + bullTag + '</span>' +
         '<span style="margin-left:auto;font-size:1.05em;font-weight:700;color:' + color + ';">情绪：' + m + '</span>' +
-        '<span style="font-size:0.82em;color:#666;">→ ' + (mood.advice || '') + '</span>' +
+        '<span style="font-size:0.82em;color:#666;">→ ' + esc(mood.advice || '') + '</span>' +
         '</div>' + note;
 }
 
@@ -856,16 +864,16 @@ function v4RenderBuy(items) {
         const auc = s.auction || {status: 'pending', reason: ''};
         let aucTag = '';
         if (auc.status === 'passed') {
-            aucTag = '<span style="color:#16a34a;font-weight:600;">✅ 竞价通过 ' + (auc.reason || '') + '</span>';
+            aucTag = '<span style="color:#16a34a;font-weight:600;">✅ 竞价通过 ' + esc(auc.reason || '') + '</span>';
         } else if (auc.status === 'rejected') {
-            aucTag = '<span style="color:#dc2626;font-weight:600;">⛔ 竞价否决：' + (auc.reason || '') + '</span>';
+            aucTag = '<span style="color:#dc2626;font-weight:600;">⛔ 竞价否决：' + esc(auc.reason || '') + '</span>';
         } else {
-            aucTag = '<span style="color:#9ca3af;">⏳ ' + (auc.reason || '待确认') + '</span>';
+            aucTag = '<span style="color:#9ca3af;">⏳ ' + esc(auc.reason || '待确认') + '</span>';
         }
         html += '<div style="background:#f0fdf4;border-radius:8px;padding:9px 12px;margin-bottom:6px;border:1px solid #86efac;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
             '<span><a href="/stock/' + (s.code || '') + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.02em;">' + (s.code || '') + '</a>' +
-            ' <span style="color:#333;">' + (s.name || '') + '</span></span>' +
+            ' <span style="color:#333;">' + esc(s.name || '') + '</span></span>' +
             '<span style="font-weight:700;color:#e94560;">评分 ' + (s.score || 0) + '</span></div>' +
             '<div style="margin-top:3px;font-size:0.8em;color:#555;">' +
             '收盘 <strong>' + (s.close || 0) + '</strong> | 压力线 <strong>' + (s.top_line || 0) + '</strong> | 突破 <strong>+' + (s.break_pct || 0) + '%</strong>' +
@@ -875,7 +883,7 @@ function v4RenderBuy(items) {
             '📏 预估买入区间 <strong>' + (s.buy_range_low || 0) + ' ~ ' + (s.buy_range_high || 0) + '</strong> 元' +
             ' <span style="font-weight:400;color:#888;">(低开3%内接 / 追高≤' + (s.buy_range_pct || 6) + '%)</span></div>' +
             '<div style="margin-top:4px;font-size:0.78em;">' + aucTag +
-            ' <span style="color:#16a34a;">📅 ' + (s.buy_date || '次日') + ' 开盘买入</span></div>' +
+            ' <span style="color:#16a34a;">📅 ' + esc(s.buy_date || '次日') + ' 开盘买入</span></div>' +
             '<div style="margin-top:5px;">' +
             '<button onclick="v4RecordBuy(\'' + (s.code || '') + '\',' + (s.close || 0) + ')" style="font-size:0.85em;padding:2px 10px;cursor:pointer;background:#16a34a;color:#fff;border:none;border-radius:4px;">✅ 记录买入</button> ' +
             '<button onclick="v4DeleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="取消">✕</button>' +
@@ -899,13 +907,13 @@ function v4RenderSell(items) {
         html += '<div style="background:#fef2f2;border-radius:8px;padding:9px 12px;margin-bottom:6px;border:1px solid #fecaca;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;">' +
             '<span><a href="/stock/' + (s.code || '') + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>' +
-            ' <span style="color:#333;">' + (s.name || '') + '</span></span>' +
+            ' <span style="color:#333;">' + esc(s.name || '') + '</span></span>' +
             '<span style="font-weight:600;color:' + retColor + ';">预计' + (estRet > 0 ? '+' : '') + estRet.toFixed(2) + '%</span></div>' +
             '<div style="font-size:0.8em;color:#666;margin-top:2px;">' +
-            '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + (s.exit_reason || '到期') + '</div>' +
+            '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + esc(s.exit_reason || '到期') + '</div>' +
             '<div style="margin-top:3px;font-size:0.82em;font-weight:600;color:#dc2626;">' +
             '📏 预估卖出区间 <strong>' + (s.sell_range_low || 0) + ' ~ ' + (s.sell_range_high || 0) + '</strong> 元' +
-            ' <span style="font-weight:400;color:#888;">(' + (s.sell_range_basis || '') + ')</span></div>' +
+            ' <span style="font-weight:400;color:#888;">(' + esc(s.sell_range_basis || '') + ')</span></div>' +
             '<div style="margin-top:5px;">' +
             '<button onclick="v4RecordSell(\'' + (s.code || '') + '\')" style="font-size:0.85em;padding:2px 10px;cursor:pointer;background:#dc2626;color:#fff;border:none;border-radius:4px;">📝 记录卖出</button> ' +
             '<button onclick="v4DeleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="删除">✕</button>' +

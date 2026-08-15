@@ -331,7 +331,7 @@ function renderV2Pool(data) {
         if (status.last_update) {
             const today = new Date().toISOString().slice(0, 10);
             const isToday = status.last_update === today;
-            lu.innerHTML = '上次更新: ' + status.last_update + (isToday ? '' : ' <span style="color:#e67e22;">📅 最近交易日数据</span>');
+            lu.innerHTML = '上次更新: ' + escapeHtml(status.last_update) + (isToday ? '' : ' <span style="color:#e67e22;">📅 最近交易日数据</span>');
         } else {
             lu.textContent = '尚未扫描';
         }
@@ -347,8 +347,8 @@ function renderV2Pool(data) {
             let html = '<div style="max-height:160px;overflow-y:auto;">';
             signals.forEach(s => {
                 html += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f5f5f5;font-size:0.85em;">';
-                html += '<span><a href="/stock/' + s.code + '" style="color:#e67e22;font-weight:600;text-decoration:none;">' + s.code + '</a>';
-                html += ' <span style="color:#666;">' + (s.name || '') + '</span></span>';
+                html += '<span><a href="/stock/' + escapeHtml(s.code) + '" style="color:#e67e22;font-weight:600;text-decoration:none;">' + escapeHtml(s.code) + '</a>';
+                html += ' <span style="color:#666;">' + escapeHtml(s.name || '') + '</span></span>';
                 html += '<span style="color:#e94560;font-weight:600;">V2 ' + (s.score || 0) + '</span>';
                 html += '</div>';
             });
@@ -370,8 +370,8 @@ function renderV2Pool(data) {
                 const remaining = w.remaining_days;
                 const color = remaining <= 1 ? '#e94560' : (remaining <= 2 ? '#f59e0b' : '#2563eb');
                 html += '<tr style="border-bottom:1px solid #f0f0f5;">';
-                html += '<td style="padding:3px 4px;"><a href="/stock/' + w.code + '" style="color:#333;font-weight:500;text-decoration:none;">' + w.code + '</a></td>';
-                html += '<td style="padding:3px 4px;color:#666;">' + (w.name || '') + '</td>';
+                html += '<td style="padding:3px 4px;"><a href="/stock/' + escapeHtml(w.code) + '" style="color:#333;font-weight:500;text-decoration:none;">' + escapeHtml(w.code) + '</a></td>';
+                html += '<td style="padding:3px 4px;color:#666;">' + escapeHtml(w.name || '') + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;color:#e94560;">' + w.score + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;">T+' + w.days_watched + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;color:' + color + ';font-weight:600;">' + remaining + 'd</td>';
@@ -393,15 +393,15 @@ function renderV2Pool(data) {
             buys.forEach(b => {
                 html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid #bbf7d0;">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-                html += '<span><a href="/stock/' + b.code + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1em;">' + b.code + '</a>';
-                html += ' <span style="color:#555;font-size:0.85em;">' + (b.name || '') + '</span></span>';
+                html += '<span><a href="/stock/' + escapeHtml(b.code) + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1em;">' + escapeHtml(b.code) + '</a>';
+                html += ' <span style="color:#555;font-size:0.85em;">' + escapeHtml(b.name || '') + '</span></span>';
                 html += '<span style="color:#e94560;font-weight:700;font-size:1em;">V2 ' + (b.score || 0) + '</span>';
                 html += '</div>';
-                if (b.v2_tier) { html += '<span style="display:inline-block;margin-top:2px;font-size:0.72em;padding:1px 6px;border-radius:3px;background:' + (b.v2_tier === 'S' ? '#ffd700' : b.v2_tier === 'A' ? '#90ee90' : '#e0e0e0') + ';color:#333;font-weight:600;">' + b.v2_tier + '级</span>'; }
-                if (b.sector) { html += ' <span style="font-size:0.75em;color:#888;">[' + b.sector + ']</span>'; }
-                if (b.trigger_type) { html += ' <span style="font-size:0.72em;color:#666;">' + b.trigger_type + '</span>'; }
+                if (b.v2_tier) { html += '<span style="display:inline-block;margin-top:2px;font-size:0.72em;padding:1px 6px;border-radius:3px;background:' + (b.v2_tier === 'S' ? '#ffd700' : b.v2_tier === 'A' ? '#90ee90' : '#e0e0e0') + ';color:#333;font-weight:600;">' + escapeHtml(b.v2_tier) + '级</span>'; }
+                if (b.sector) { html += ' <span style="font-size:0.75em;color:#888;">[' + escapeHtml(b.sector) + ']</span>'; }
+                if (b.trigger_type) { html += ' <span style="font-size:0.72em;color:#666;">' + escapeHtml(b.trigger_type) + '</span>'; }
                 if (b.pullback_pct) html += '<div style="font-size:0.75em;color:#666;margin-top:3px;">回踩 ' + b.pullback_pct + '% / 缩量 ' + (b.vol_shrink_ratio || '-') + '</div>';
-                if (b.buy_date) html += '<div style="font-size:0.78em;color:#16a34a;font-weight:500;margin-top:2px;">📅 买入日 ' + b.buy_date + ' (开盘≈' + (b.buy_price || '-') + ')</div>';
+                if (b.buy_date) html += '<div style="font-size:0.78em;color:#16a34a;font-weight:500;margin-top:2px;">📅 买入日 ' + escapeHtml(b.buy_date) + ' (开盘≈' + (b.buy_price || '-') + ')</div>';
                 html += '<button onclick="markAsBought(\'' + b.code + '\')" style="margin-top:4px;font-size:0.75em;padding:2px 8px;border:1px solid #4ade80;border-radius:4px;background:#dcfce7;color:#166534;cursor:pointer;">✓ 已买入</button>';
                 html += '</div>';
             });
@@ -423,13 +423,13 @@ function renderV2Pool(data) {
                 const color = rem <= 0 ? '#e94560' : (rem <= 2 ? '#f59e0b' : '#7c3aed');
                 const label = rem <= 0 ? '今日卖出!' : rem + 'd';
                 html += '<tr style="border-bottom:1px solid #f0f0f5;">';
-                html += '<td style="padding:3px 4px;"><a href="/stock/' + h.code + '" style="color:#333;font-weight:500;text-decoration:none;">' + h.code + '</a></td>';
-                html += '<td style="padding:3px 4px;color:#666;">' + (h.name || '') + '</td>';
+                html += '<td style="padding:3px 4px;"><a href="/stock/' + escapeHtml(h.code) + '" style="color:#333;font-weight:500;text-decoration:none;">' + escapeHtml(h.code) + '</a></td>';
+                html += '<td style="padding:3px 4px;color:#666;">' + escapeHtml(h.name || '') + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;color:#666;">' + h.score + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;">Day ' + h.days_held + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;">MA10 ' + (h.ma10 || '-') + '</td>';
                 html += '<td style="text-align:center;padding:3px 4px;">现' + (h.price || '-') + '</td>';
-                html += '<td style="text-align:center;padding:3px 4px;color:' + (h.below_ma10 ? '#dc2626' : '#16a34a') + ';font-weight:600;">' + (h.sell_signal || '') + '</td>';
+                html += '<td style="text-align:center;padding:3px 4px;color:' + (h.below_ma10 ? '#dc2626' : '#16a34a') + ';font-weight:600;">' + escapeHtml(h.sell_signal || '') + '</td>';
                 html += '</tr>';
             });
             html += '</table>';
@@ -448,8 +448,8 @@ function renderV2Pool(data) {
             let html = '<div style="max-height:140px;overflow-y:auto;font-size:0.78em;">';
             recent.reverse().forEach(f => {
                 html += '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #f5f5f5;">';
-                html += '<span>' + f.code + ' ' + (f.name || '') + '</span>';
-                html += '<span style="color:#888;">V2=' + f.score + ' | ' + (f.status || '') + '</span>';
+                html += '<span>' + escapeHtml(f.code) + ' ' + escapeHtml(f.name || '') + '</span>';
+                html += '<span style="color:#888;">V2=' + f.score + ' | ' + escapeHtml(f.status || '') + '</span>';
                 html += '</div>';
             });
             html += '</div>';
@@ -475,15 +475,15 @@ function renderV2Pool(data) {
             opsBuy.forEach(b => {
                 html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;margin-bottom:6px;border:1px solid #86efac;">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-                html += '<span><a href="/stock/' + b.code + '" style="color:#16a34a;font-weight:700;text-decoration:none;">' + b.code + '</a>';
-                html += ' <span style="color:#555;">' + (b.name || '') + '</span></span>';
+                html += '<span><a href="/stock/' + escapeHtml(b.code) + '" style="color:#16a34a;font-weight:700;text-decoration:none;">' + escapeHtml(b.code) + '</a>';
+                html += ' <span style="color:#555;">' + escapeHtml(b.name || '') + '</span></span>';
                 html += '<span style="color:#e94560;font-weight:700;">V2 ' + (b.score || 0) + '</span>';
                 html += '</div>';
                 // tier + sector + trigger
                 let meta = '';
-                if (b.v2_tier) meta += '<span style="display:inline-block;font-size:0.72em;padding:1px 6px;border-radius:3px;background:' + (b.v2_tier === 'S' ? '#ffd700' : b.v2_tier === 'A' ? '#90ee90' : '#e0e0e0') + ';color:#333;font-weight:600;">' + b.v2_tier + '级</span> ';
-                if (b.sector) meta += '<span style="font-size:0.75em;color:#888;">[' + b.sector + ']</span> ';
-                if (b.trigger_type) meta += '<span style="font-size:0.72em;color:#666;">' + b.trigger_type + '</span>';
+                if (b.v2_tier) meta += '<span style="display:inline-block;font-size:0.72em;padding:1px 6px;border-radius:3px;background:' + (b.v2_tier === 'S' ? '#ffd700' : b.v2_tier === 'A' ? '#90ee90' : '#e0e0e0') + ';color:#333;font-weight:600;">' + escapeHtml(b.v2_tier) + '级</span> ';
+                if (b.sector) meta += '<span style="font-size:0.75em;color:#888;">[' + escapeHtml(b.sector) + ']</span> ';
+                if (b.trigger_type) meta += '<span style="font-size:0.72em;color:#666;">' + escapeHtml(b.trigger_type) + '</span>';
                 if (meta) html += '<div style="margin-top:2px;">' + meta + '</div>';
                 if (b.pullback_pct) html += '<div style="font-size:0.75em;color:#666;margin-top:2px;">回踩 ' + b.pullback_pct + '% / 缩量 ' + (b.vol_shrink_ratio || '-') + '</div>';
                 html += '<div style="display:flex;gap:4px;margin-top:4px;align-items:center;">';
@@ -509,8 +509,8 @@ function renderV2Pool(data) {
             opsSell.forEach(s => {
                 html += '<div style="background:#fef2f2;border-radius:8px;padding:8px 12px;margin-bottom:6px;border:1px solid #fca5a5;">';
                 html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-                html += '<span><a href="/stock/' + s.code + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + s.code + '</a>';
-                html += ' <span style="color:#555;">' + (s.name || '') + '</span></span>';
+                html += '<span><a href="/stock/' + escapeHtml(s.code) + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + escapeHtml(s.code) + '</a>';
+                html += ' <span style="color:#555;">' + escapeHtml(s.name || '') + '</span></span>';
                 html += '<span style="color:#666;font-size:0.8em;">Day ' + s.days_held + '</span>';
                 html += '</div>';
                 html += '<div style="font-size:0.78em;color:#dc2626;font-weight:500;">MA10=' + (s.ma10 || '-') + ' | 现价=' + (s.price || '-') + ' | 跌破MA10' + '</div>';
@@ -643,7 +643,7 @@ function showPremarketModal(data) {
 
     // Header
     html += '<h2 style="margin:0 0 4px;color:#1a1a2e;">📋 盘前清单</h2>';
-    html += '<div style="font-size:0.82em;color:#888;margin-bottom:14px;">' + (data.date || '-') + '</div>';
+    html += '<div style="font-size:0.82em;color:#888;margin-bottom:14px;">' + escapeHtml(data.date || '-') + '</div>';
 
     // ── 今日买入 ──
     html += '<h3 style="color:#16a34a;font-size:0.95em;margin:12px 0 6px;">🟢 今日买入 (' + checks.length + '只)</h3>';
@@ -660,8 +660,8 @@ function showPremarketModal(data) {
 
             html += '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid #bbf7d0;">';
             html += '<div style="display:flex;justify-content:space-between;">';
-            html += '<span><strong style="font-size:1em;">' + b.code + '</strong> <span style="color:#555;">' + (b.name || '') + '</span>';
-            if (b.industry) html += ' <span style="font-size:0.78em;color:#888;">[' + b.industry + ']</span>';
+            html += '<span><strong style="font-size:1em;">' + escapeHtml(b.code) + '</strong> <span style="color:#555;">' + escapeHtml(b.name || '') + '</span>';
+            if (b.industry) html += ' <span style="font-size:0.78em;color:#888;">[' + escapeHtml(b.industry) + ']</span>';
             html += '</span>';
             html += '<span style="color:#e94560;font-weight:600;">V2 ' + b.score + '</span></div>';
 
@@ -686,7 +686,7 @@ function showPremarketModal(data) {
         for (const s of sells) {
             html += '<div style="background:#fef2f2;border-radius:8px;padding:8px 12px;margin-bottom:6px;border:1px solid #fca5a5;">';
             html += '<div style="display:flex;justify-content:space-between;">';
-            html += '<span><strong>' + s.code + '</strong> <span style="color:#555;">' + (s.name || '') + '</span></span>';
+            html += '<span><strong>' + escapeHtml(s.code) + '</strong> <span style="color:#555;">' + escapeHtml(s.name || '') + '</span></span>';
             html += '<span style="color:#dc2626;font-size:0.85em;">MA10=' + (s.ma10 || '-') + ' 现价=' + (s.price || '-') + '</span>';
             html += '</div>';
             html += '<div style="font-size:0.85em;color:#dc2626;font-weight:500;margin-top:2px;">⬇ 跌破MA10，建议开盘卖出</div>';
@@ -701,8 +701,8 @@ function showPremarketModal(data) {
         for (const h of holdings) {
             const bg = h.below_ma10 ? '#fef2f2' : '#fafafa';
             html += '<div style="display:flex;justify-content:space-between;padding:4px 8px;background:' + bg + ';border-radius:4px;margin-bottom:2px;">';
-            html += '<span>' + h.code + ' ' + (h.name || '') + ' Day' + h.days_held + '</span>';
-            html += '<span style="color:' + (h.below_ma10 ? '#dc2626' : '#16a34a') + ';">' + (h.sell_signal || '') + '</span>';
+            html += '<span>' + escapeHtml(h.code) + ' ' + escapeHtml(h.name || '') + ' Day' + h.days_held + '</span>';
+            html += '<span style="color:' + (h.below_ma10 ? '#dc2626' : '#16a34a') + ';">' + escapeHtml(h.sell_signal || '') + '</span>';
             html += '</div>';
         }
         html += '</div>';
@@ -729,7 +729,7 @@ function showPremarketModal(data) {
         for (const ind of indKeys) {
             const cnt = industryDist[ind];
             const warn = cnt >= 3 ? 'color:#dc2626;font-weight:600;' : '';
-            html += '<span style="display:inline-block;background:#e0e7ff;border-radius:4px;padding:2px 6px;margin:1px;font-size:0.82em;' + warn + '">' + ind + ' ' + cnt + '只</span>';
+            html += '<span style="display:inline-block;background:#e0e7ff;border-radius:4px;padding:2px 6px;margin:1px;font-size:0.82em;' + warn + '">' + escapeHtml(ind) + ' ' + cnt + '只</span>';
         }
         html += '</div>';
     }
@@ -762,8 +762,9 @@ function showToast(msg, type) {
 document.addEventListener('DOMContentLoaded', loadV2Pool);
 
 function escapeHtml(str) {
+    if (str == null) return '';
     const div = document.createElement('div');
-    div.textContent = str;
+    div.textContent = String(str);
     return div.innerHTML;
 }
 
@@ -779,12 +780,12 @@ async function screen(strategy) {
         if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
         const data = await resp.json();
         if (data.error) {
-            el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>' + data.error + '</div>';
+            el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>' + escapeHtml(data.error) + '</div>';
         } else {
             el.innerHTML = renderStrategyBlock(data.strategy_name, data);
         }
     } catch (e) {
-        el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>请求失败: ' + e.message + '</div>';
+        el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>请求失败: ' + escapeHtml(e.message) + '</div>';
     } finally {
         _loading = false;
         buttons.forEach(b => { b.disabled = false; });
@@ -805,17 +806,17 @@ function strategyName(key) {
 }
 
 function renderStrategyBlock(name, data) {
-    if (!data.total) return '<div class="empty-result"><p class="empty-icon">📭</p><h3>' + name + '</h3><p>无匹配结果</p></div>';
+    if (!data.total) return '<div class="empty-result"><p class="empty-icon">📭</p><h3>' + escapeHtml(name) + '</h3><p>无匹配结果</p></div>';
     let html = '<div class="strategy-result">';
-    html += '<div class="strategy-bar"><h2>' + name + '</h2><span class="count-badge">共' + data.total + '只</span></div>';
+    html += '<div class="strategy-bar"><h2>' + escapeHtml(name) + '</h2><span class="count-badge">共' + data.total + '只</span></div>';
     // 代码段跟随：展示今日晋级主攻代码段（逻辑哥接力战法）
     if (data.segment_stats && data.segment_stats.dominant) {
         const ss = data.segment_stats;
         const c = ss.counts || {};
-        html += '<div class="segment-banner">📊 今日晋级主攻代码段：<b>' + ss.label + '</b>'
+        html += '<div class="segment-banner">📊 今日晋级主攻代码段：<b>' + escapeHtml(ss.label) + '</b>'
             + '<span style="margin-left:10px;color:#888;font-weight:400;">沪(6) ' + (c.sh6 || 0) + '只 · 深(0) ' + (c.sz0 || 0) + '只 · 创业(3) ' + (c.sz3 || 0) + '只 · 北交所 ' + (c.other || 0) + '只</span></div>';
     }
-    if (data.note) { html += '<p class="summary-note">📋 ' + data.note + '</p>'; }
+    if (data.note) { html += '<p class="summary-note">📋 ' + escapeHtml(data.note) + '</p>'; }
     if (data.top_3 && data.top_3.length > 0) {
         html += '<div class="pick-cards">';
         data.top_3.forEach((r, i) => { html += buildPickCard(r, i + 1); });
@@ -839,9 +840,9 @@ function buildPickCard(r, rank) {
     let card = '<div class="pick-card">';
     card += '<div class="pick-rank" style="background:' + (rankColors[rank - 1] || '#999') + '">#' + rank + '</div>';
     card += '<div class="pick-header">';
-    card += '<a href="/stock/' + r.code + '" class="pick-code">' + r.code + '</a>';
-    card += '<span class="pick-name">' + r.name + '</span>';
-    if (sector) card += '<span class="pick-sector">' + sector + '</span>';
+    card += '<a href="/stock/' + escapeHtml(r.code) + '" class="pick-code">' + escapeHtml(r.code) + '</a>';
+    card += '<span class="pick-name">' + escapeHtml(r.name) + '</span>';
+    if (sector) card += '<span class="pick-sector">' + escapeHtml(sector) + '</span>';
     card += '</div>';
 
     if (isSummary) {
@@ -855,9 +856,9 @@ function buildPickCard(r, rank) {
         if (detail.match_detail && detail.match_detail.length) {
             card += '<div class="match-strategies">';
             detail.match_detail.forEach(m => {
-                card += '<div class="match-row"><span class="match-strategy">' + m.strategy + '</span>';
+                card += '<div class="match-row"><span class="match-strategy">' + escapeHtml(m.strategy) + '</span>';
                 card += '<span class="match-score">' + m.score + '分</span>';
-                if (m.reasons && m.reasons.length) { card += '<span class="match-reasons">' + m.reasons.slice(0, 2).join(', ') + '</span>'; }
+                if (m.reasons && m.reasons.length) { card += '<span class="match-reasons">' + escapeHtml(m.reasons.slice(0, 2).join(', ')) + '</span>'; }
                 card += '</div>';
             });
             card += '</div>';
@@ -876,25 +877,25 @@ function buildPickCard(r, rank) {
         maHTML += '<span class="ma-summary ' + (tech.above_ma_count >= 3 ? 'ma-bull' : '') + '">站上' + tech.above_ma_count + '线</span></div>';
         card += maHTML;
     }
-    card += '<div class="tech-item"><span class="tech-key">MACD</span><span class="macd-state">' + (tech.macd_state || '') + '</span><span class="macd-zone">' + (tech.macd_zone || '') + '</span></div>';
-    card += '<div class="tech-item"><span class="tech-key">量价</span><span class="vol-state">' + (tech.vol_state || '') + '</span><span class="vol-ratio">量比 ' + (tech.vol_ratio || '-') + '</span></div>';
-    card += '<div class="tech-item"><span class="tech-key">关键位</span><span class="spr">支撑 <b>' + (tech.support || '-') + '</b></span><span class="spr">压力 <b>' + (tech.resistance || '-') + '</b></span></div>';
+    card += '<div class="tech-item"><span class="tech-key">MACD</span><span class="macd-state">' + escapeHtml(tech.macd_state || '') + '</span><span class="macd-zone">' + escapeHtml(tech.macd_zone || '') + '</span></div>';
+    card += '<div class="tech-item"><span class="tech-key">量价</span><span class="vol-state">' + escapeHtml(tech.vol_state || '') + '</span><span class="vol-ratio">量比 ' + (tech.vol_ratio || '-') + '</span></div>';
+    card += '<div class="tech-item"><span class="tech-key">关键位</span><span class="spr">支撑 <b>' + escapeHtml(tech.support || '-') + '</b></span><span class="spr">压力 <b>' + escapeHtml(tech.resistance || '-') + '</b></span></div>';
     card += '</div></div>';
 
     card += '<div class="pick-section"><div class="section-label">🎯 操作建议</div><div class="sug-grid">';
-    card += '<div class="sug-item"><span class="sug-key">入场</span><span class="sug-val">' + (sug.entry_zone || '-') + '</span></div>';
-    card += '<div class="sug-item"><span class="sug-key">止损</span><span class="sug-val stop">' + (sug.stop_loss || '-') + '</span></div>';
-    card += '<div class="sug-item"><span class="sug-key">目标</span><span class="sug-val target">' + (sug.target || '-') + '</span></div>';
-    card += '<div class="sug-item"><span class="sug-key">仓位</span><span class="sug-val position">' + (sug.position || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">入场</span><span class="sug-val">' + escapeHtml(sug.entry_zone || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">止损</span><span class="sug-val stop">' + escapeHtml(sug.stop_loss || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">目标</span><span class="sug-val target">' + escapeHtml(sug.target || '-') + '</span></div>';
+    card += '<div class="sug-item"><span class="sug-key">仓位</span><span class="sug-val position">' + escapeHtml(sug.position || '-') + '</span></div>';
     if (sug.rr_ratio) { card += '<div class="sug-item"><span class="sug-key">盈亏比</span><span class="sug-val ' + (sug.rr_ratio >= 2 ? 'good' : '') + '">1:' + sug.rr_ratio + '</span></div>'; }
     card += '</div>';
-    if (sug.risk_note) { card += '<div class="risk-note">⚠ ' + sug.risk_note + '</div>'; }
-    if (sug.strategy_tip) { card += '<div class="strategy-tip">💡 ' + sug.strategy_tip + '</div>'; }
+    if (sug.risk_note) { card += '<div class="risk-note">⚠ ' + escapeHtml(sug.risk_note) + '</div>'; }
+    if (sug.strategy_tip) { card += '<div class="strategy-tip">💡 ' + escapeHtml(sug.strategy_tip) + '</div>'; }
     card += '</div>';
 
     if (r.reasons && r.reasons.length) {
         card += '<div class="pick-reasons">';
-        r.reasons.slice(0, 4).forEach(rs => { card += '<span class="reason-tag">' + rs + '</span>'; });
+        r.reasons.slice(0, 4).forEach(rs => { card += '<span class="reason-tag">' + escapeHtml(rs) + '</span>'; });
         card += '</div>';
     }
     card += '</div>';
@@ -912,13 +913,13 @@ function buildTable(data) {
         const sector = detail.board_type || detail.sector || '-';
         const strategies = r.strategies ? r.strategies.join('+') : '';
         const sectorDisplay = strategies || sector;
-        html += '<tr><td>' + (i + 1) + '</td><td><a href="/stock/' + r.code + '">' + r.code + '</a></td><td>' + r.name + '</td><td>' + r.score + '</td><td class="sector-cell">' + sectorDisplay + '</td>';
+        html += '<tr><td>' + (i + 1) + '</td><td><a href="/stock/' + escapeHtml(r.code) + '">' + escapeHtml(r.code) + '</a></td><td>' + escapeHtml(r.name) + '</td><td>' + r.score + '</td><td class="sector-cell">' + escapeHtml(sectorDisplay) + '</td>';
         if (hasToday) {
             const tc = r.today_change;
             const cls = tc > 0 ? 'up' : (tc < 0 ? 'down' : '');
             html += '<td class="' + cls + '">' + (tc != null ? (tc > 0 ? '+' : '') + tc + '%' : '-') + '</td>';
         }
-        html += '<td>' + (r.reasons || []).join('; ') + '</td></tr>';
+        html += '<td>' + escapeHtml((r.reasons || []).join('; ')) + '</td></tr>';
     });
     return html + '</table></div>';
 }

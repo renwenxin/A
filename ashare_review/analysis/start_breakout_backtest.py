@@ -8,7 +8,7 @@
 
 统计: 胜率/盈亏比/累计收益/最大回撤/分层统计/逐日逐周/图表
 """
-import sys, os, struct, json, argparse, time
+import sys, os, struct, json, argparse, time, ast
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
@@ -2517,13 +2517,21 @@ if __name__ == '__main__':
                     for _, row in big_w.iterrows():
                         try:
                             f = row['v2_factors']
-                            if isinstance(f, str): f = eval(f)
+                            if isinstance(f, str):
+                                try:
+                                    f = ast.literal_eval(f)
+                                except Exception:
+                                    f = {}
                             if isinstance(f, dict): bw_sum += f.get(factor_key, 0)
                         except: pass
                     for _, row in oth.iterrows():
                         try:
                             f = row['v2_factors']
-                            if isinstance(f, str): f = eval(f)
+                            if isinstance(f, str):
+                                try:
+                                    f = ast.literal_eval(f)
+                                except Exception:
+                                    f = {}
                             if isinstance(f, dict): ot_sum += f.get(factor_key, 0)
                         except: pass
                     bw_avg = bw_sum / len(big_w); ot_avg = ot_sum / len(oth)

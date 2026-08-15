@@ -8,7 +8,7 @@ VOL180 突破战法 — 模拟持仓管理器
 状态机:
   WATCH → BUY_SIGNAL → HOLDING → FINISHED
 """
-import json, os, sys, struct
+import json, os, sys, struct, threading
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -22,6 +22,9 @@ from ashare_review.analysis.indicators import calc_ma, calc_zigzag_find_top_line
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 STATE_FILE = os.path.join(DATA_DIR, 'sim_vol180_state.json')
+
+# 进程内互斥锁：串行化状态文件的读-改-写（配合原子替换防止并发损坏）
+_STATE_LOCK = threading.Lock()
 CACHE_FILE = os.path.join(DATA_DIR, 'sim_vol180_cache.json')
 LIMIT_UP_POOL_FILE = os.path.join(DATA_DIR, 'limit_up_pool.json')  # 年涨停≥10候选池
 
@@ -99,8 +102,11 @@ class Vol180SimPortfolio:
 
     def _save(self):
         os.makedirs(DATA_DIR, exist_ok=True)
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self._state, f, ensure_ascii=False, indent=2)
+        with _STATE_LOCK:
+            tmp = STATE_FILE + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(self._state, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, STATE_FILE)  # 原子替换，避免半写文件
 
     # ── 工具 ──
 

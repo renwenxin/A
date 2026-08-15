@@ -15,12 +15,16 @@
 """
 import json
 import os
+import threading
 from datetime import date, datetime
 from typing import Dict, List, Optional
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 STATE_FILE = os.path.join(DATA_DIR, 'sim_portfolio_state.json')
 NAME_MAP_FILE = os.path.join(DATA_DIR, 'stock_name_map.json')
+
+# 进程内互斥锁：串行化状态文件的读-改-写（配合原子替换防止并发损坏）
+_STATE_LOCK = threading.Lock()
 
 
 def _today_str() -> str:
@@ -70,8 +74,11 @@ class SimPortfolio:
 
     def _save(self):
         self._state['last_update'] = _today_str()
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self._state, f, ensure_ascii=False, indent=2)
+        with _STATE_LOCK:
+            tmp = STATE_FILE + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(self._state, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, STATE_FILE)  # 原子替换，避免半写文件
 
     def _new_trade_id(self) -> str:
         """生成自增唯一交易编号。"""

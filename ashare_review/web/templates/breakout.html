@@ -119,6 +119,14 @@
 <script>
 let _scanning = false;
 
+// HTML 转义助手：用于 innerHTML 拼接的服务端/API 字符串字段（纵深防御）
+function esc(s) {
+    if (s == null) return '';
+    var d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
 async function runSimScan() {
     if (_scanning) return;
     _scanning = true;
@@ -187,8 +195,8 @@ function renderWatchPool(items) {
         const distColor = dist >= -3 ? '#e94560' : (dist >= -5 ? '#f59e0b' : '#666');
         html += '<div style="display:inline-block;background:#fff;border-radius:6px;padding:5px 9px;margin:2px 3px;border:1px solid #f0e0c0;vertical-align:top;min-width:150px;">';
         html += '<div style="display:flex;justify-content:space-between;">';
-        html += '<a href="/stock/' + (s.code || '') + '" style="color:#e67e22;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
-        html += '<span style="font-size:0.78em;color:#888;">' + (s.name || '') + '</span>';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#e67e22;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span style="font-size:0.78em;color:#888;">' + esc(s.name) + '</span>';
         html += '</div>';
         html += '<div style="font-size:0.75em;color:#666;margin-top:2px;">';
         html += '压力线 ' + (s.top_line || 0) + ' | 现价 ' + (s.close || 0);
@@ -212,8 +220,8 @@ function renderBuyPanel(items) {
     items.forEach(s => {
         html += '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #86efac;">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-        html += '<span><a href="/stock/' + (s.code || '') + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.05em;">' + (s.code || '') + '</a>';
-        html += ' <span style="color:#333;">' + (s.name || '') + '</span></span>';
+        html += '<span><a href="/stock/' + esc(s.code) + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.05em;">' + esc(s.code) + '</a>';
+        html += ' <span style="color:#333;">' + esc(s.name) + '</span></span>';
         html += '<span style="font-weight:700;color:#e94560;">评分 ' + (s.score || 0) + '</span>';
         html += '</div>';
         html += '<div style="margin-top:3px;font-size:0.82em;color:#555;">';
@@ -222,8 +230,8 @@ function renderBuyPanel(items) {
         html += '</div>';
         html += '<div style="margin-top:4px;font-size:0.78em;color:#16a34a;font-weight:500;">';
         html += '📅 次日开盘买入 | 🎯 连板持有/断板卖出/最多3天';
-        html += ' <button onclick="recordBuy(\'' + (s.code || '') + '\',' + (s.buy_price || s.close || 0) + ')" style="font-size:0.9em;padding:2px 10px;cursor:pointer;background:#16a34a;color:#fff;border:none;border-radius:4px;">✅ 记录明日买入</button>';
-        html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.8em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="取消">✕</button>';
+        html += ' <button data-action="buy" data-code="' + esc(s.code) + '" data-price="' + (s.buy_price || s.close || 0) + '" style="font-size:0.9em;padding:2px 10px;cursor:pointer;background:#16a34a;color:#fff;border:none;border-radius:4px;">✅ 记录明日买入</button>';
+        html += ' <button data-action="delete" data-code="' + esc(s.code) + '" style="font-size:0.8em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="取消">✕</button>';
         html += '</div>';
         html += '</div>';
     });
@@ -244,14 +252,14 @@ function renderSellPanel(items) {
         const retColor = estRet > 0 ? '#dc2626' : '#16a34a';
         html += '<div style="background:#fef2f2;border-radius:6px;padding:8px 10px;margin:3px 0;border:1px solid #fecaca;">';
         html += '<div style="display:flex;justify-content:space-between;">';
-        html += '<a href="/stock/' + (s.code || '') + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
-        html += '<span>' + (s.name || '') + '</span>';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span>' + esc(s.name) + '</span>';
         html += '<span style="font-weight:600;color:' + retColor + ';">预计' + (estRet > 0 ? '+' : '') + estRet.toFixed(2) + '%</span>';
         html += '</div>';
         html += '<div style="font-size:0.78em;color:#666;margin-top:2px;">';
-        html += '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + (s.exit_reason || '到期');
-        html += ' <button onclick="recordSell(\'' + (s.code || '') + '\')" style="font-size:0.85em;padding:1px 8px;cursor:pointer;background:#dc2626;color:#fff;border:none;border-radius:4px;">📝 记录卖出</button>';
-        html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 5px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;">✕</button>';
+        html += '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + esc(s.exit_reason || '到期');
+        html += ' <button data-action="sell" data-code="' + esc(s.code) + '" style="font-size:0.85em;padding:1px 8px;cursor:pointer;background:#dc2626;color:#fff;border:none;border-radius:4px;">📝 记录卖出</button>';
+        html += ' <button data-action="delete" data-code="' + esc(s.code) + '" style="font-size:0.75em;padding:1px 5px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;">✕</button>';
         html += '</div>';
         html += '</div>';
     });
@@ -274,17 +282,17 @@ function renderHoldPanel(items) {
         const ztTag = s.is_zt_today ? ' 🔥涨停' : '';
         html += '<div style="display:inline-block;background:' + bg + ';border-radius:6px;padding:8px 12px;margin:3px;border:1px solid #e5e7eb;vertical-align:top;min-width:180px;">';
         html += '<div style="display:flex;justify-content:space-between;">';
-        html += '<a href="/stock/' + (s.code || '') + '" style="color:#7c3aed;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
-        html += '<span style="font-size:0.85em;">' + (s.name || '') + ztTag + '</span>';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#7c3aed;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span style="font-size:0.85em;">' + esc(s.name) + ztTag + '</span>';
         html += '</div>';
         html += '<div style="font-size:0.8em;color:#666;margin-top:2px;">';
         html += '成本 ' + (s.buy_price || 0) + ' → 现价 ' + (s.current_price || 0);
         html += '</div>';
         html += '<div style="font-size:0.8em;margin-top:2px;">';
         html += '<span style="font-weight:600;color:' + pnlColor + ';">浮盈 ' + (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '%</span>';
-        html += ' | 持' + (s.days_held || 0) + '天 | 到期' + (s.sell_date || '');
+        html += ' | 持' + (s.days_held || 0) + '天 | 到期' + esc(s.sell_date || '');
         html += ' | 评 分' + (s.score || 0);
-        html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.7em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title=\"删除\">✕</button>';
+        html += ' <button data-action="delete" data-code="' + esc(s.code) + '" style="font-size:0.7em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title=\"删除\">✕</button>';
         html += '</div>';
         html += '</div>';
     });
@@ -360,6 +368,21 @@ function showToast(msg, type) {
     t.textContent = msg; t.style.opacity = '1';
     setTimeout(() => { t.style.opacity = '0'; }, 5000);
 }
+
+// 事件委托：处理 data-action 按钮（记录买入/卖出/删除）
+document.addEventListener('click', function(ev) {
+    const btn = ev.target.closest('button[data-action]');
+    if (!btn) return;
+    const code = btn.getAttribute('data-code') || '';
+    const action = btn.getAttribute('data-action');
+    if (action === 'buy') {
+        recordBuy(code, parseFloat(btn.getAttribute('data-price') || '0'));
+    } else if (action === 'sell') {
+        recordSell(code);
+    } else if (action === 'delete') {
+        deleteEntry(code);
+    }
+});
 
 // 页面加载时自动加载状态
 document.addEventListener('DOMContentLoaded', function() { loadSimPanels(); });

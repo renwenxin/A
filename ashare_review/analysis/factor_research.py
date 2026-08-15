@@ -395,24 +395,30 @@ class FactorExtractor:
 
     @classmethod
     def _extract_expression(cls, expr: str, df: pd.DataFrame) -> pd.Series:
-        """计算表达式（预留）。简单表达式直接 eval，复杂交给 pd.eval。"""
-        # 替换嵌套字段引用为临时列
-        modified = expr
-        temp_cols = {}
-        for col in df.columns:
-            if col in expr:
-                continue
+        """计算表达式。优先 pandas 表达式；回退到安全的嵌套列访问（不使用 eval）。"""
+        import re as _re
+        expr = expr.strip()
+        # 安全守卫：拒绝双下划线 / import 等危险模式
+        if '__' in expr or 'import' in expr or 'exec' in expr:
+            raise ValueError(f"拒绝的表达式: {expr}")
         # 简单实现：尝试 pd.eval
         try:
             return df.eval(expr, engine='python')
         except Exception:
             pass
-        # 回退：直接用 Python eval
-        try:
-            col_parts = expr.replace('.', "']['")
-            return eval(f"df['{col_parts}']")
-        except Exception:
-            raise ValueError(f"Cannot evaluate expression: {expr}")
+        # 回退：仅允许 标识符[.标识符]* 的嵌套列访问
+        if _re.fullmatch(r'[\w\u4e00-\u9fff]+(?:\.[\w\u4e00-\u9fff]+)*', expr):
+            parts = expr.split('.')
+            series = df[parts[0]]
+            for part in parts[1:]:
+                if isinstance(series, pd.DataFrame):
+                    series = series[part]
+                elif series.dtype == object:
+                    series = series.map(lambda v: v.get(part) if isinstance(v, dict) else pd.NA)
+                else:
+                    break
+            return series
+        raise ValueError(f"Cannot evaluate expression: {expr}")
 
     @classmethod
     def _safe_parse_dict(cls, val) -> dict:
@@ -444,13 +450,7 @@ class FactorExtractor:
                     return result
             except (ValueError, SyntaxError):
                 pass
-            # 尝试 3: eval (最后手段)
-            try:
-                result = eval(val)
-                if isinstance(result, dict):
-                    return result
-            except Exception:
-                pass
+            # （已移除 eval 兜底：非字面量表达式不解析，避免任意代码执行）
         return {}
 
 

@@ -8,7 +8,7 @@
 状态机:
   WATCH → BUY_SIGNAL → HOLDING → FINISHED
 """
-import json, os, struct, time as _time
+import json, os, struct, time as _time, threading
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -21,6 +21,9 @@ from ashare_review.utils.calendar import TradingCalendar
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 STATE_FILE = os.path.join(DATA_DIR, 'sim_zt_replica_state.json')
+
+# 进程内互斥锁：串行化状态文件的读-改-写（配合原子替换防止并发损坏）
+_STATE_LOCK = threading.Lock()
 LIMIT_UP_POOL_FILE = os.path.join(DATA_DIR, 'limit_up_pool.json')
 
 FEE = 0.0015; SLIPPAGE = 0.002; TOTAL_COST = FEE + SLIPPAGE
@@ -67,8 +70,11 @@ class ZTReplicaSimPortfolio:
                 'portfolio_history': []}
 
     def _save(self):
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(self._state, f, ensure_ascii=False, indent=2)
+        with _STATE_LOCK:
+            tmp = STATE_FILE + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(self._state, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, STATE_FILE)  # 原子替换，避免半写文件
 
     NAME_CACHE_FILE = os.path.join(DATA_DIR, 'stock_name_map.json')
 

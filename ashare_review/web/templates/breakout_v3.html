@@ -366,6 +366,14 @@
 <script>
 let _scanning = false;
 
+// XSS 纵深防御：HTML 转义助手（对外部 API 返回的字符串字段做转义）
+function esc(s) {
+    if (s == null) return '';
+    var d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+}
+
 async function runSimScan() {
     if (_scanning) return;
     _scanning = true;
@@ -435,8 +443,8 @@ function renderWatchPool(items) {
         const distColor = dist >= -3 ? '#e94560' : (dist >= -5 ? '#f59e0b' : '#666');
         html += '<div style="display:inline-block;background:#fff;border-radius:6px;padding:5px 9px;margin:2px 3px;border:1px solid #f0e0c0;vertical-align:top;min-width:150px;">';
         html += '<div style="display:flex;justify-content:space-between;">';
-        html += '<a href="/stock/' + (s.code || '') + '" style="color:#e67e22;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
-        html += '<span style="font-size:0.78em;color:#888;">' + (s.name || '') + '</span>';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#e67e22;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span style="font-size:0.78em;color:#888;">' + esc(s.name) + '</span>';
         html += '</div>';
         html += '<div style="font-size:0.75em;color:#666;margin-top:2px;">';
         html += '压力线 ' + (s.top_line || 0) + ' | 现价 ' + (s.close || 0);
@@ -460,8 +468,8 @@ function renderBuyPanel(items) {
     items.forEach(s => {
         html += '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #86efac;">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-        html += '<span><a href="/stock/' + (s.code || '') + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.05em;">' + (s.code || '') + '</a>';
-        html += ' <span style="color:#333;">' + (s.name || '') + '</span></span>';
+        html += '<span><a href="/stock/' + esc(s.code) + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.05em;">' + esc(s.code) + '</a>';
+        html += ' <span style="color:#333;">' + esc(s.name) + '</span></span>';
         html += '<span style="font-weight:700;color:#e94560;">评分 ' + (s.score || 0) + '</span>';
         html += '</div>';
         html += '<div style="margin-top:3px;font-size:0.82em;color:#555;">';
@@ -492,12 +500,12 @@ function renderSellPanel(items) {
         const retColor = estRet > 0 ? '#dc2626' : '#16a34a';
         html += '<div style="background:#fef2f2;border-radius:6px;padding:8px 10px;margin:3px 0;border:1px solid #fecaca;">';
         html += '<div style="display:flex;justify-content:space-between;">';
-        html += '<a href="/stock/' + (s.code || '') + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
-        html += '<span>' + (s.name || '') + '</span>';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span>' + esc(s.name) + '</span>';
         html += '<span style="font-weight:600;color:' + retColor + ';">预计' + (estRet > 0 ? '+' : '') + estRet.toFixed(2) + '%</span>';
         html += '</div>';
         html += '<div style="font-size:0.78em;color:#666;margin-top:2px;">';
-        html += '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + (s.exit_reason || '到期');
+        html += '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + esc(s.exit_reason) + (s.exit_reason ? '' : '到期');
         html += ' <button onclick="recordSell(\'' + (s.code || '') + '\')" style="font-size:0.85em;padding:1px 8px;cursor:pointer;background:#dc2626;color:#fff;border:none;border-radius:4px;">📝 记录卖出</button>';
         html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 5px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;">✕</button>';
         html += '</div>';
@@ -526,15 +534,15 @@ function renderHoldPanel(items) {
         const modeTag = (s.mode === 'v3') ? ' <span style="font-size:0.65em;background:#7c3aed;color:#fff;padding:1px 4px;border-radius:2px;">V3</span>' : '';
         html += '<div style="display:inline-block;background:' + bg + ';border-radius:6px;padding:8px 12px;margin:3px;border:1px solid #e5e7eb;vertical-align:top;min-width:200px;">';
         html += '<div style="display:flex;justify-content:space-between;">';
-        html += '<a href="/stock/' + (s.code || '') + '" style="color:#7c3aed;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
-        html += '<span style="font-size:0.85em;">' + (s.name || '') + modeTag + ztTag + reversalTag + '</span>';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#7c3aed;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span style="font-size:0.85em;">' + esc(s.name) + modeTag + ztTag + reversalTag + '</span>';
         html += '</div>';
         html += '<div style="font-size:0.8em;color:#666;margin-top:2px;">';
         html += '成本 ' + (s.buy_price || 0) + ' → 现价 ' + (s.current_price || 0);
         html += '</div>';
         html += '<div style="font-size:0.8em;margin-top:2px;">';
         html += '<span style="font-weight:600;color:' + pnlColor + ';">浮盈 ' + (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '%</span>';
-        html += ' | 持' + (s.days_held || 0) + '天 | 到期' + (s.sell_date || '');
+        html += ' | 持' + (s.days_held || 0) + '天 | 到期' + esc(s.sell_date);
         html += ' | 评分' + (s.score || 0);
         html += '</div>';
         if (s.highest_close && s.highest_close > 0) {
@@ -634,16 +642,16 @@ function renderFinished(items, stats) {
         const retColor = net >= 0 ? '#dc2626' : '#16a34a';
         const badge = isWin ? '<span class="result-badge win">✅胜</span>' : '<span class="result-badge loss">❌负</span>';
         return `<tr data-code="${t.code}">
-            <td><a href="/stock/${t.code}" style="color:#7c3aed;font-weight:600;text-decoration:none;">${t.code}</a></td>
-            <td>${t.name || ''}</td>
-            <td class="editable-cell" data-field="buy_date" data-code="${t.code}">${t.buy_date || '-'}</td>
+            <td><a href="/stock/${esc(t.code)}" style="color:#7c3aed;font-weight:600;text-decoration:none;">${esc(t.code)}</a></td>
+            <td>${esc(t.name)}</td>
+            <td class="editable-cell" data-field="buy_date" data-code="${t.code}">${esc(t.buy_date)}</td>
             <td class="editable-cell" data-field="buy_price" data-code="${t.code}">${(t.buy_price || 0).toFixed(2)}</td>
-            <td class="editable-cell" data-field="sell_date" data-code="${t.code}">${t.sell_date || '-'}</td>
+            <td class="editable-cell" data-field="sell_date" data-code="${t.code}">${esc(t.sell_date)}</td>
             <td class="editable-cell" data-field="sell_price" data-code="${t.code}">${(t.sell_price || 0).toFixed(2)}</td>
             <td class="editable-cell" data-field="net_ret" data-code="${t.code}" style="font-weight:600;color:${retColor};">${net >= 0 ? '+' : ''}${net.toFixed(2)}%</td>
             <td class="editable-cell" data-field="is_win" data-code="${t.code}">${badge}</td>
             <td class="editable-cell" data-field="days_held" data-code="${t.code}">${t.days_held || 0}</td>
-            <td class="editable-cell" data-field="exit_reason" data-code="${t.code}" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.exit_reason || ''}</td>
+            <td class="editable-cell" data-field="exit_reason" data-code="${t.code}" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(t.exit_reason)}</td>
             <td><button class="btn-del" onclick="deleteFinished('${t.code}')" title="删除">🗑</button></td>
         </tr>`;
     }).join('');
