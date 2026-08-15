@@ -34,125 +34,125 @@
 <!-- ====== V2 状态机选股池 ====== -->
 
 <!-- ====== 🥇 今日操作面板（最重要：置顶显示） ====== -->
-<div class="screener-panel" style="grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
-    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:3px solid #22c55e;">
+<div class="screener-panel" style="grid-template-columns:1fr 1fr;">
+    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:1px solid #86efac;">
         <div class="column-header" style="border-bottom-color:#22c55e;">
-            <h3 style="color:#16a34a;margin:0;font-size:1.1em;">🟢 今日需要买入</h3>
-            <span class="column-badge" style="background:#dcfce7;color:#166534;font-weight:600;" id="buy-count-badge">0只</span>
+            <h3 style="color:#16a34a;">🟢 今日需要买入</h3>
+            <span class="column-badge" style="background:#dcfce7;color:#166534;" id="buy-count-badge">0只</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:0 0 8px;">
+        <p class="column-desc">
             回踩确认 → 开盘按计划买入 · 记录实际买入价格
         </p>
         <div id="ops-buy" style="min-height:60px;">
-            <span style="color:#999;font-size:0.85em;">加载中...</span>
+            <span class="column-desc">加载中...</span>
         </div>
     </div>
 
-    <div class="screener-column" style="background:linear-gradient(135deg,#fef2f2,#fff);border:3px solid #ef4444;">
+    <div class="screener-column" style="background:linear-gradient(135deg,#fef2f2,#fff);border:1px solid #fca5a5;">
         <div class="column-header" style="border-bottom-color:#ef4444;">
-            <h3 style="color:#dc2626;margin:0;font-size:1.1em;">🔴 今日需要卖出</h3>
-            <span class="column-badge" style="background:#fef2f2;color:#991b1b;font-weight:600;" id="sell-count-badge">0只</span>
+            <h3 style="color:#dc2626;">🔴 今日需要卖出</h3>
+            <span class="column-badge" style="background:#fef2f2;color:#991b1b;" id="sell-count-badge">0只</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:0 0 8px;">
+        <p class="column-desc">
             持仓到期 → 收盘前卖出 · 记录实际卖出价格
         </p>
         <div id="ops-sell" style="min-height:60px;">
-            <span style="color:#999;font-size:0.85em;">加载中...</span>
+            <span class="column-desc">加载中...</span>
         </div>
     </div>
 
-    <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;margin-top:-4px;">
-        <button id="btn-v2-scan" onclick="runV2Scan()" class="btn-screener-card btn-main-control" style="display:inline-flex;width:auto;padding:10px 24px;">
+    <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;">
+        <button id="btn-v2-scan" onclick="runV2Scan()" class="btn-screener-card btn-main-control">
             <span class="btn-icon">🔄</span>
             <span class="btn-text"><span class="btn-label">运行每日扫描</span><span class="btn-desc">扫描今日启动 → 更新观察池 → 检查回踩</span></span>
         </button>
-        <button onclick="loadPremarket()" style="display:inline-flex;width:auto;padding:10px 20px;" class="btn-screener-card" style="border-left:4px solid #6366f1;">
+        <button onclick="loadPremarket()" class="btn-screener-card" style="border-left:4px solid #6366f1;">
             <span class="btn-icon">📋</span>
             <span class="btn-text"><span class="btn-label">盘前准备</span><span class="btn-desc">查看今日操作清单</span></span>
         </button>
-        <button onclick="loadV2Pool()" style="display:inline-flex;width:auto;padding:10px 20px;" class="btn-screener-card">
+        <button onclick="loadV2Pool()" class="btn-screener-card">
             <span class="btn-icon">📊</span>
             <span class="btn-text"><span class="btn-label">刷新状态</span></span>
         </button>
-        <span id="v2-last-update" style="font-size:0.78em;color:#999;"></span>
+        <span id="v2-last-update"></span>
         <span style="flex:1;"></span>
-        <span style="font-size:0.72em;color:#aaa;">🚀 启动 → 👀 观察池 → 🎯 买入 → 💼 持仓 → ✅ 完成</span>
+        <span class="column-desc">🚀 启动 → 👀 观察池 → 🎯 买入 → 💼 持仓 → ✅ 完成</span>
     </div>
 </div>
 
 <!-- ====== V2 五池详细状态 ====== -->
-<div class="screener-panel" style="grid-template-columns:1fr 2fr 1fr; gap:14px; margin-bottom:18px;">
-    <div class="screener-column" style="background:linear-gradient(135deg,#fff8f0,#fff);border:2px solid #f0c040;">
+<div class="screener-panel" style="grid-template-columns:1fr 2fr 1fr;">
+    <div class="screener-column" style="background:linear-gradient(135deg,#fff8f0,#fff);border:1px solid #fcd34d;">
         <div class="column-header" style="border-bottom-color:#f0c040;">
-            <h3 style="color:#e67e22;margin:0;">🚀 启动池</h3>
+            <h3 style="color:#e67e22;">🚀 启动池</h3>
             <span class="column-badge" style="background:#fef3c7;color:#92400e;">今日新信号</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:4px 0 8px;">
+        <p class="column-desc">
             今日刚满足启动条件的股票 → 进入观察池
         </p>
-        <div id="v2-signals" style="font-size:0.85em;color:#888;min-height:40px;">
+        <div id="v2-signals" style="min-height:40px;">
             <span>点击扫描更新</span>
         </div>
     </div>
 
-    <div class="screener-column" style="background:linear-gradient(135deg,#f0f8ff,#fff);border:2px solid #60a5fa;">
+    <div class="screener-column" style="background:linear-gradient(135deg,#f0f8ff,#fff);border:1px solid #93c5fd;">
         <div class="column-header" style="border-bottom-color:#60a5fa;">
-            <h3 style="color:#2563eb;margin:0;">👀 回踩观察池 (T+1~T+5)</h3>
+            <h3 style="color:#2563eb;">👀 回踩观察池 (T+1~T+5)</h3>
             <span class="column-badge" style="background:#dbeafe;color:#1e40af;">等待回踩确认</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:4px 0 8px;">
+        <p class="column-desc">
             已启动股票 · 剩余天数递减 · 过期自动删除
         </p>
         <div id="v2-watch" style="min-height:60px;">
-            <span style="font-size:0.85em;color:#888;">点击扫描更新</span>
+            <span class="column-desc">点击扫描更新</span>
         </div>
     </div>
 
-    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:2px solid #4ade80;">
+    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:1px solid #86efac;">
         <div class="column-header" style="border-bottom-color:#4ade80;">
-            <h3 style="color:#16a34a;margin:0;">🎯 买入池 (待执行)</h3>
+            <h3 style="color:#16a34a;">🎯 买入池 (待执行)</h3>
             <span class="column-badge" style="background:#dcfce7;color:#166534;">等待开盘买入</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:4px 0 8px;">
+        <p class="column-desc">
             已确认回踩 · 等待开盘执行
         </p>
         <div id="v2-buy" style="min-height:60px;">
-            <span style="font-size:0.85em;color:#888;">点击扫描更新</span>
+            <span class="column-desc">点击扫描更新</span>
         </div>
     </div>
 </div>
 
 <!-- ====== V2 持仓 + 完成 ====== -->
-<div class="screener-panel" style="grid-template-columns:2fr 1fr; gap:14px; margin-bottom:22px;">
-    <div class="screener-column" style="background:linear-gradient(135deg,#f5f3ff,#fff);border:2px solid #a78bfa;">
+<div class="screener-panel" style="grid-template-columns:2fr 1fr;">
+    <div class="screener-column" style="background:linear-gradient(135deg,#f5f3ff,#fff);border:1px solid #c4b5fd;">
         <div class="column-header" style="border-bottom-color:#a78bfa;">
-            <h3 style="color:#7c3aed;margin:0;">💼 持仓池</h3>
+            <h3 style="color:#7c3aed;">💼 持仓池</h3>
             <span class="column-badge" style="background:#ede9fe;color:#5b21b6;">买入持有中 · 到期卖出</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:0 0 6px;">
+        <p class="column-desc">
             已买入 · T+7 卖出日倒计时 · 到期自动提示
         </p>
         <div id="v2-holding" style="min-height:40px;">
-            <span style="font-size:0.85em;color:#888;">无持仓</span>
+            <span class="column-desc">无持仓</span>
         </div>
     </div>
 
-    <div class="screener-column" style="background:#fafafa;border:2px solid #d4d4d8;">
-        <div class="column-header" style="border-bottom-color:#d4d4d8;">
-            <h3 style="color:#52525b;margin:0;">✅ 已完成</h3>
+    <div class="screener-column">
+        <div class="column-header">
+            <h3>✅ 已完成</h3>
             <span class="column-badge" style="background:#f4f4f5;color:#71717a;">交易记录</span>
         </div>
-        <p style="font-size:0.8em;color:#999;margin:0 0 6px;">
+        <p class="column-desc">
             最近10笔完成交易
         </p>
         <div id="v2-finished" style="min-height:30px;">
-            <span style="font-size:0.85em;color:#888;">暂无</span>
+            <span class="column-desc">暂无</span>
         </div>
     </div>
 </div>
 
 <!-- ====== 绩效统计 ====== -->
-<div id="v2-performance" style="margin-bottom:22px;padding:0;"></div>
+<div id="v2-performance"></div>
 
 <!-- ====== 筛选器面板：竞价确认型四种策略 ====== -->
 
@@ -188,7 +188,7 @@
 </div>
 
 <!-- ====== 盘后技术分析筛选器 — 四大战法 ====== -->
-<div class="screener-panel" style="grid-template-columns:1fr 1fr; gap:12px;">
+<div class="screener-panel" style="grid-template-columns:1fr 1fr;">
 
     <!-- 战法1: 启动+突破（核心战法） -->
     <div class="screener-column">
@@ -258,8 +258,8 @@
 </div>
 
 <!-- ====== 综合共振（一键跑四个） ====== -->
-<div style="text-align:center; margin: 16px 0;">
-    <button onclick="screen('five_indicator')" class="btn-screener-card btn-combined" style="display:inline-flex; max-width:400px;">
+<div style="text-align:center;">
+    <button onclick="screen('five_indicator')" class="btn-screener-card btn-combined" style="max-width:400px;">
         <span class="btn-icon">🔮</span>
         <span class="btn-text"><span class="btn-label">四大战法综合共振</span><span class="btn-desc">一键跑四个战法 → 按命中战法数综合排名 → 最强标的</span></span>
     </button>

@@ -12,21 +12,21 @@
     <div class="page-date">
         📅 <strong>{{ report.date }}</strong>
         {% if data_cached_at %}
-        <span style="font-size:0.75em;color:#888;background:#f3f4f6;padding:2px 8px;border-radius:10px;margin-left:8px;"
+        <span class="freshness-badge" style="margin-left:8px;"
               title="最近一次成功抓取数据的时间。只有点「刷新数据」才会重新爬取，其余情况显示此快照。">🕓 快照 {{ data_cached_at }}</span>
         {% endif %}
         {% if report.date != 'N/A' %}
-        <a href="/review?date={{ report.date }}&refresh=1" class="btn-ai-summary" style="text-decoration:none;font-size:0.82em;margin-left:12px;padding:4px 12px;">🔄 刷新数据</a>
-        <a href="/review?date={{ report.date }}&llm=1" class="btn-ai-summary" style="text-decoration:none;font-size:0.82em;margin-left:6px;padding:4px 12px;background:#7c3aed;color:#fff;">🤖 AI综述</a>
+        <a href="/review?date={{ report.date }}&refresh=1" class="btn-ai-summary btn-sm" style="margin-left:12px;">🔄 刷新数据</a>
+        <a href="/review?date={{ report.date }}&llm=1" class="btn btn-primary btn-sm" style="margin-left:6px;">🤖 AI综述</a>
         {% endif %}
     </div>
 </div>
 
 <!-- ====== LLM 综述区 ====== -->
 {% if report.llm_summary %}
-<div class="card" style="margin-bottom:18px;border-left:4px solid #7c3aed;">
-    <div class="card-body" style="background:#f8f9ff;border-radius:8px;padding:16px 20px;">
-        <div style="font-size:0.9em;line-height:1.8;">{{ report.llm_summary }}</div>
+<div class="card">
+    <div class="card-body">
+        <div>{{ report.llm_summary }}</div>
     </div>
 </div>
 {% endif %}
@@ -37,13 +37,11 @@
 
 {% if report.error %}
 <!-- ====== 生成失败：只渲染错误卡片，跳过数据区块（避免 UndefinedError 500） ====== -->
-<div class="card" style="margin-bottom:18px;border:2px solid #ef4444;border-left:6px solid #ef4444;background:#fef2f2;">
-    <div class="card-body" style="padding:16px 20px;">
-        <div style="font-size:1.02em;font-weight:700;color:#b91c1c;margin-bottom:8px;">❌ 复盘生成失败</div>
-        <div style="font-size:0.88em;color:#7f1d1d;line-height:1.7;margin-bottom:10px;">
-            <code style="word-break:break-all;">{{ report.error }}</code>
-        </div>
-        <a href="/review?refresh=1" class="btn-ai-summary" style="text-decoration:none;font-size:0.85em;padding:6px 16px;background:#ef4444;color:#fff;">🔄 重试生成</a>
+<div class="error-box">
+    <div class="card-body" style="text-align:left;">
+        <div style="font-weight:700;margin-bottom:8px;">❌ 复盘生成失败</div>
+        <div style="word-break:break-all;margin-bottom:12px;">{{ report.error }}</div>
+        <a href="/review?refresh=1" class="btn btn-danger">🔄 重试生成</a>
     </div>
 </div>
 {% else %}
@@ -77,7 +75,7 @@
 <!-- ---- 涨跌家数仪表盘 ---- -->
 {% set mkt = report.market_overview %}
 <div class="section-title">📊 涨跌家数仪表盘</div>
-<div class="card" style="margin-bottom:18px;">
+<div class="card">
     <div class="card-body">
         <div class="breadth-dashboard">
             <!-- 可视化条 -->
@@ -181,13 +179,13 @@
 
 <!-- ---- 涨停时间分布 ---- -->
 <div class="section-title">⏱ 涨停时间分布</div>
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body">
         <div style="display:flex; gap:24px; flex-wrap:wrap; justify-content:center">
             {% for label, count in report.time_distribution.items() %}
             <div style="text-align:center">
-                <span style="font-size:1.4em;font-weight:700;color:#1a1a2e;display:block">{{ count }}</span>
-                <span style="font-size:0.82em;color:#888">{{ label }}</span>
+                <span class="stat-value" style="display:block">{{ count }}</span>
+                <span class="ic-label">{{ label }}</span>
             </div>
             {% endfor %}
         </div>
@@ -231,7 +229,7 @@
 {% endif %}
 
 {% if report.sector_analysis.hot_sectors %}
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-header"><h3>涨停潮板块 (≥5只涨停)</h3></div>
     <div class="card-body no-padding">
         <div class="table-wrap">
@@ -256,7 +254,7 @@
 {% endif %}
 
 {% if report.sector_analysis.all_sectors %}
-<details class="full-list" style="margin-bottom:18px">
+<details class="full-list">
     <summary>📋 全部板块分布 ({{ report.sector_analysis.all_sectors|length }}个板块)</summary>
     <div class="table-wrap">
         <table class="sector-table">
@@ -280,12 +278,12 @@
 <!-- ---- 事件驱动日历 ---- -->
 {% if report.has_event_data %}
 <div class="section-title">📅 事件驱动分析</div>
-<div class="card" style="margin-bottom:18px;border-left:4px solid #e94560;">
+<div class="card">
     <div class="card-body">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
             <div>
                 {% if report.ongoing_themes %}
-                <span style="font-size:0.82em;color:#888;">
+                <span class="ic-label">
                     {{ report.ongoing_themes|length }}个进行中主题 · {{ report.recent_events|length }}个近期事件 · {{ report.upcoming_events|length }}个即将发生
                 </span>
                 {% endif %}
@@ -294,14 +292,14 @@
         {% if report.ongoing_themes %}
         <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
             {% for theme in report.ongoing_themes[:6] %}
-            <span class="theme-tag" style="background:#fef0f2;color:#c0392b;">{{ theme.importance_stars if theme.importance_stars else '⭐' }} {{ theme.name }}</span>
+            <span class="theme-tag">{{ theme.importance_stars if theme.importance_stars else '⭐' }} {{ theme.name }}</span>
             {% endfor %}
         </div>
         {% endif %}
     </div>
 </div>
 {% else %}
-<details class="event-fallback" style="margin-bottom:18px;">
+<details class="event-fallback">
     <summary>📅 事件驱动日历（暂无数据）</summary>
     <p class="empty-hint">事件日历数据加载失败，请检查 events 模块</p>
 </details>
@@ -318,7 +316,7 @@
 {% if report.yesterday_picks %}
 <div class="section-title">🔄 昨日标的验证</div>
 <p class="section-note">昨日盘后选出的精选标的，今日实际表现复盘验证。</p>
-<div class="card" style="margin-bottom:18px;">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table>
@@ -347,7 +345,7 @@
             </table>
         </div>
     </div>
-    <div style="padding:8px 14px;font-size:0.75em;color:#888;border-top:1px solid #f0f0f5;">
+    <div class="crit" style="padding:8px 14px;border-top:1px solid var(--line);">
         📊 成功率统计：
         {% set success_count = report.yesterday_picks|selectattr('is_2board')|list|length %}
         {% set zt_count = report.yesterday_picks|selectattr('is_zt_today')|list|length %}
@@ -359,11 +357,10 @@
     </div>
 </div>
 {% else %}
-<div class="card" style="margin-bottom:18px;background:#fafafa;">
-    <div class="card-body" style="text-align:center;color:#888;padding:24px;">
-        <p>📭 暂无昨日标的验证数据</p>
-        <p style="font-size:0.82em;">系统将从今天开始保存每日精选标的，明天即可查看验证结果。</p>
-    </div>
+<div class="empty-result">
+    <div class="empty-icon">📭</div>
+    <h3>暂无昨日标的验证数据</h3>
+    <p>系统将从今天开始保存每日精选标的，明天即可查看验证结果。</p>
 </div>
 {% endif %}
 
@@ -372,7 +369,7 @@
 <p class="section-note">盘后22:00筛选：仅首板（连板数==1）+主板+低价3-15元+小盘10-100亿+封成比>0.5+封单强度>0.015+早盘封板优先+股性活跃</p>
 
 {% if report.sentiment and report.sentiment.picks %}
-<div class="card" style="margin-bottom:18px;">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table class="picks-table">
@@ -388,9 +385,9 @@
                 {% for pick in report.sentiment.picks %}
                 <tr class="pick-row" data-code="{{ pick.code }}">
                     <td>
-                        {% if loop.index == 1 %}<span style="font-size:1.2em;">🥇</span>
-                        {% elif loop.index == 2 %}<span style="font-size:1.2em;">🥈</span>
-                        {% elif loop.index == 3 %}<span style="font-size:1.2em;">🥉</span>
+                        {% if loop.index == 1 %}<span>🥇</span>
+                        {% elif loop.index == 2 %}<span>🥈</span>
+                        {% elif loop.index == 3 %}<span>🥉</span>
                         {% else %}{{ loop.index }}{% endif %}
                     </td>
                     <td><a href="/stock/{{ pick.code }}">{{ pick.code }}</a></td>
@@ -404,22 +401,22 @@
                             {{ '%.2f' % sr }}
                         </span>
                     </td>
-                    <td style="font-size:0.82em;">{{ pick.reasons[-1] if '板型:' in pick.reasons[-1] else (pick.reasons|last if pick.reasons else '-') }}</td>
-                    <td><strong style="color:#e94560;font-size:1.1em;">{{ pick.score }}分</strong></td>
+                    <td>{{ pick.reasons[-1] if '板型:' in pick.reasons[-1] else (pick.reasons|last if pick.reasons else '-') }}</td>
+                    <td><strong style="color:#e94560;">{{ pick.score }}分</strong></td>
                     <!-- 竞价量能（手动填入，localStorage存储） -->
                     <td class="auction-col"><input type="text" class="auction-input auction-auto" data-field="max_vol" data-code="{{ pick.code }}" value="{{ pick.max_volume if pick.max_volume else '' }}" placeholder="需下分钟线" style="width:90px;{% if pick.max_volume %}background:#f0fdf4;{% else %}background:#fff8f0;{% endif %}" readonly></td>
                     <td class="auction-col"><input type="text" class="auction-input auction-auto" data-field="max_vol_50" data-code="{{ pick.code }}" value="{{ pick.max_volume_50 if pick.max_volume_50 else '' }}" placeholder="-" style="width:80px;background:#f3f4f6;" readonly></td>
                     <td class="auction-col"><input type="text" class="auction-input" data-field="vol_924" data-code="{{ pick.code }}" placeholder="9:24量" style="width:80px;"></td>
                     <td class="auction-col"><input type="text" class="auction-input" data-field="vol_925" data-code="{{ pick.code }}" placeholder="9:25量" style="width:80px;"></td>
                     <td class="auction-col">
-                        <span class="auction-judge" data-code="{{ pick.code }}" style="font-size:0.82em;">⏳ 待录入</span>
+                        <span class="auction-judge" data-code="{{ pick.code }}">⏳ 待录入</span>
                     </td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
     </div>
-    <div style="padding:10px 14px;font-size:0.78em;color:#888;border-top:1px solid #f0f0f5;display:flex;gap:20px;flex-wrap:wrap;">
+    <div class="crit" style="padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:20px;flex-wrap:wrap;">
         <span>💡 <strong>竞价判断规则：</strong></span>
         <span>🔥 抢筹 = 9:24量 ≥ 9:25量的50% 且 9:25量 ≥ 50%昨日最高量</span>
         <span>✅ 达标 = 9:25量 ≥ 50%昨日最高量</span>
@@ -432,7 +429,7 @@
 
 <!-- ---- 入选理由详情 ---- -->
 {% if report.sentiment and report.sentiment.picks %}
-<details class="full-list" style="margin-bottom:18px;">
+<details class="full-list">
     <summary>📋 入选理由详情</summary>
     <div class="table-wrap">
         <table>
@@ -441,7 +438,7 @@
             <tr>
                 <td><strong>{{ pick.name }}</strong></td>
                 <td><strong style="color:#e94560">{{ pick.score }}分</strong></td>
-                <td style="font-size:0.82em;max-width:500px;">{{ pick.reasons|join(' · ') }}</td>
+                <td style="max-width:500px;">{{ pick.reasons|join(' · ') }}</td>
             </tr>
             {% endfor %}
         </table>
@@ -453,7 +450,7 @@
 {% if report.weak_to_strong %}
 <div class="section-title">🔄 弱转强候选池（次日竞价关注）</div>
 <p class="section-note">今日分歧/烂板/尾盘板，次日竞价高开3%+可构成弱转强买点</p>
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table>
@@ -478,7 +475,7 @@
 {% if report.zt_replica_picks %}
 <div class="section-title">📋 涨停复制回调</div>
 <p class="section-note">涨停激活股性 → 缩量回调企稳 → 放量复制涨停。四类信号：🔥双响炮 · 📈N字反包 · 🔍缩量回踩 · 📊蓄势待发</p>
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table>
@@ -492,14 +489,14 @@
                     <td><strong>{{ pick.zt_days_ago }}</strong>天前</td>
                     <td>{{ pick.pb_days }}天</td>
                     <td><span style="color:{% if pick.vol_ratio >= 2 %}#dc2626{% elif pick.vol_ratio >= 1.5 %}#d97706{% else %}#666{% endif %};font-weight:600">{{ pick.vol_ratio }}x</span></td>
-                    <td>{% if pick.ma_support %}<span style="background:#ede9fe;color:#5b21b6;padding:2px 6px;border-radius:3px;font-size:0.78em;white-space:nowrap;">{{ pick.ma_support }}</span>{% else %}-{% endif %}</td>
-                    <td style="font-size:0.82em;">{{ pick.sector or '-' }}{% if pick.sector_linkage %}<span style="color:#d97706;">🔥{{ pick.sector_linkage }}</span>{% endif %}</td>
+                    <td>{% if pick.ma_support %}<span class="tag tag-action" style="white-space:nowrap;">{{ pick.ma_support }}</span>{% else %}-{% endif %}</td>
+                    <td>{{ pick.sector or '-' }}{% if pick.sector_linkage %}<span style="color:#d97706;">🔥{{ pick.sector_linkage }}</span>{% endif %}</td>
                     <td><strong style="color:#e94560">{{ pick.score }}分</strong></td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
-        <div style="padding:8px 14px;font-size:0.72em;color:#888;border-top:1px solid #f0f0f5;">
+        <div class="crit" style="padding:8px 14px;border-top:1px solid var(--line);">
             💡 四类信号释义：<strong style="color:#dc2626;">双响炮</strong>=缩量回调后再涨停（最强） · <strong style="color:#d97706;">N字反包</strong>=缩量+放量突破回调高点 · <strong style="color:#16a34a;">缩量回踩</strong>=回踩均线不破+放量企稳 · <strong style="color:#2563eb;">蓄势待发</strong>=大涨5-9%未涨停留力
         </div>
     </div>
@@ -515,9 +512,9 @@
 
 <!-- ---- 盘面回顾编辑器 ---- -->
 <div class="section-title">📝 盘面回顾</div>
-<div class="card" style="margin-bottom:18px;">
+<div class="card">
     <div class="card-body">
-        <p class="section-note" style="margin-bottom:8px;">写下今日盘面回顾：指数走势、板块轮动、技术分析、操作反思——内容自动保存在浏览器本地。</p>
+        <p class="section-note">写下今日盘面回顾：指数走势、板块轮动、技术分析、操作反思——内容自动保存在浏览器本地。</p>
         <textarea id="market-review-editor" class="review-editor" placeholder="按照你的复盘习惯：
 
 【市场总览】大盘走势、成交额、涨跌家数
@@ -525,19 +522,19 @@
 【技术面】关键支撑/压力位、均线状态、MACD信号
 【最高板情绪】最高板状态、断板影响、情绪传导
 【操作反思】今天的操作得失、需要改进的地方
-【明日预判】对明天走势的预判和策略规划" style="width:100%;min-height:350px;padding:16px;border:1px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:0.9em;line-height:1.8;resize:vertical;"></textarea>
+【明日预判】对明天走势的预判和策略规划" style="min-height:350px;resize:vertical;"></textarea>
         <div style="display:flex;gap:12px;margin-top:10px;align-items:center;">
-            <button onclick="saveMarketReview()" class="btn-ai-summary" style="background:#059669;color:#fff;border:none;cursor:pointer;padding:8px 18px;">💾 保存复盘</button>
-            <button onclick="loadMarketReview()" class="btn-ai-summary" style="background:#6b7280;color:#fff;border:none;cursor:pointer;padding:8px 18px;">📂 加载上次</button>
-            <button onclick="clearMarketReview()" class="btn-ai-summary" style="background:#ef4444;color:#fff;border:none;cursor:pointer;padding:8px 18px;">🗑 清空</button>
-            <span id="review-save-status" style="font-size:0.78em;color:#888;"></span>
+            <button onclick="saveMarketReview()" class="btn btn-primary">💾 保存复盘</button>
+            <button onclick="loadMarketReview()" class="btn btn-secondary">📂 加载上次</button>
+            <button onclick="clearMarketReview()" class="btn btn-danger">🗑 清空</button>
+            <span id="review-save-status" class="crit"></span>
         </div>
     </div>
 </div>
 
 <!-- ---- 快速模板 ---- -->
 <div class="section-title">📋 快速模板</div>
-<div class="card" style="margin-bottom:18px;">
+<div class="card">
     <div class="card-body">
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button onclick="insertTemplate('market')" class="template-btn">📊 市场总览模板</button>
@@ -545,24 +542,24 @@
             <button onclick="insertTemplate('tech')" class="template-btn">🔧 技术面模板</button>
             <button onclick="insertTemplate('sentiment')" class="template-btn">🌡 情绪判断模板</button>
             <button onclick="insertTemplate('strategy')" class="template-btn">🎯 操作策略模板</button>
-            <button onclick="insertTemplate('full')" class="template-btn" style="background:#7c3aed;color:#fff;">📝 完整模板</button>
+            <button onclick="insertTemplate('full')" class="template-btn">📝 完整模板</button>
         </div>
     </div>
 </div>
 
 <!-- ---- AI 生成复盘文章（本地 qwen2.5） ---- -->
 <div class="section-title">🤖 AI生成复盘文章</div>
-<div class="card" style="margin-bottom:18px;">
+<div class="card">
     <div class="card-body">
-        <p class="section-note" style="margin-bottom:10px;">用本地 qwen2.5 按"逻辑哥"模板自动生成 {{ report.date }} 的复盘文章（9段式：大盘综述/热点板块/观察盘面/指数层面/操作策略…），生成约需 1-2 分钟。</p>
+        <p class="section-note">用本地 qwen2.5 按"逻辑哥"模板自动生成 {{ report.date }} 的复盘文章（9段式：大盘综述/热点板块/观察盘面/指数层面/操作策略…），生成约需 1-2 分钟。</p>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <button id="ai-article-btn" onclick="generateReviewArticle()" class="btn-ai-summary" style="background:#7c3aed;color:#fff;border:none;cursor:pointer;padding:8px 18px;">🤖 生成复盘文章</button>
-            <label style="font-size:0.82em;color:#888;display:flex;align-items:center;gap:6px;">个人持仓（可选）
-                <input id="ai-article-personal" type="text" placeholder="如：今日加仓光模块，仓位提到六成…" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;width:340px;font-size:0.85em;">
+            <button id="ai-article-btn" onclick="generateReviewArticle()" class="btn btn-primary">🤖 生成复盘文章</button>
+            <label class="crit" style="display:flex;align-items:center;gap:6px;">个人持仓（可选）
+                <input id="ai-article-personal" type="text" placeholder="如：今日加仓光模块，仓位提到六成…" style="width:340px;">
             </label>
             <span id="ai-article-status" style="font-size:0.8em;color:#7c3aed;"></span>
         </div>
-        <div id="ai-article-result" style="margin-top:12px;display:none;background:#f8f9ff;border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;font-size:0.9em;line-height:1.9;white-space:pre-wrap;"></div>
+        <div id="ai-article-result" style="margin-top:12px;display:none;white-space:pre-wrap;"></div>
     </div>
 </div>
 <script>
@@ -606,7 +603,7 @@ function generateReviewArticle() {
 {% if report.sector_analysis and report.sector_analysis.all_sectors %}
 <div class="section-title">🔥 板块涨停速查</div>
 <p class="section-note">按涨停数量排序的所有板块（数据源：涨停池聚合，比API概念/行业板块更可靠）</p>
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table class="sector-table">
@@ -626,7 +623,7 @@ function generateReviewArticle() {
             </table>
         </div>
     </div>
-    <div style="padding:8px 14px;font-size:0.75em;color:#888;border-top:1px solid #f0f0f5;">
+    <div class="crit" style="padding:8px 14px;border-top:1px solid var(--line);">
         💡 涨停数≥5=涨停潮（强势）· 3-4只=活跃 · 龙头=板块内连板最高+封板最早 · 新题材=多只首板无高连板
     </div>
 </div>
@@ -641,7 +638,7 @@ function generateReviewArticle() {
 
 <!-- ---- 连板梯队 ---- -->
 <div class="section-title">🪜 连板梯队</div>
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table>
@@ -665,7 +662,7 @@ function generateReviewArticle() {
 <!-- ---- 筹码分布信号 ---- -->
 {% if report.chip_signals %}
 <div class="section-title">📊 筹码分布信号</div>
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table>
@@ -689,7 +686,7 @@ function generateReviewArticle() {
 <!-- ---- 龙虎榜 ---- -->
 <div class="section-title">🐉 龙虎榜 Top 10</div>
 {% if report.top_lhb %}
-<div class="card" style="margin-bottom:18px">
+<div class="card">
     <div class="card-body no-padding">
         <div class="table-wrap">
             <table>
@@ -826,8 +823,8 @@ function generateReviewArticle() {
 </div>
 
 <div style="display:flex;gap:12px;margin-top:12px;align-items:center;">
-    <button onclick="resetChecklist()" class="btn-ai-summary" style="background:#6b7280;color:#fff;border:none;cursor:pointer;padding:8px 18px;">🔄 重置清单</button>
-    <span id="checklist-status" style="font-size:0.78em;color:#888;"></span>
+    <button onclick="resetChecklist()" class="btn btn-secondary">🔄 重置清单</button>
+    <span id="checklist-status" class="crit"></span>
 </div>
 
 </div><!-- /tab-checklist -->

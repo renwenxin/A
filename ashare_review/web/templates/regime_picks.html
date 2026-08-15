@@ -11,62 +11,61 @@
     </div>
     <div class="page-date">
         📅 <strong>{{ d.regime.date if d.regime else '—' }}</strong>
-        <a href="/regime_picks?refresh=1" class="btn-ai-summary" style="text-decoration:none;font-size:0.82em;margin-left:12px;padding:4px 12px;">🔄 刷新</a>
+        <a href="/regime_picks?refresh=1" class="btn-ai-summary" style="margin-left:12px;">🔄 刷新</a>
     </div>
 </div>
 
 {% if d.error %}
-<div class="card" style="margin-bottom:18px;border:2px solid #ef4444;border-left:6px solid #ef4444;background:#fef2f2;">
-    <div class="card-body" style="padding:16px 20px;">
-        <div style="font-size:1.02em;font-weight:700;color:#b91c1c;">❌ 行情诊断失败</div>
-        <div style="font-size:0.85em;color:#7f1d1d;margin-top:8px;"><code>{{ d.error }}</code></div>
-    </div>
+<div class="error-box">
+    <div class="error-icon">❌</div>
+    <h3>行情诊断失败</h3>
+    <p style="word-break:break-all;"><code>{{ d.error }}</code></p>
 </div>
 {% endif %}
 
 <!-- ══════════════════════════ ① 行情判断（顶部） ══════════════════════════ -->
 {% if d.regime %}
-<div class="card" style="margin-bottom:18px;border-left:6px solid {{ d.regime.recommend_color }};">
-    <div class="card-body" style="padding:18px 22px;">
+<div class="card" style="border-left:6px solid {{ d.regime.recommend_color }};">
+    <div class="card-body">
         <!-- 指数快照 -->
         <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
             <div>
-                <div style="font-size:0.78em;color:#888;">上证指数</div>
-                <div style="font-size:1.5em;font-weight:700;color:#1a1a2e;">
-                    {{ '%.0f' % d.regime.sh_close }}<small style="font-size:0.6em;color:{{ '#e94560' if d.regime.sh_chg>0 else '#00a854' if d.regime.sh_chg<0 else '#888' }};"> {{ '%+.2f' % d.regime.sh_chg }}%</small>
+                <div class="stat-label">上证指数</div>
+                <div class="stat-value">
+                    {{ '%.0f' % d.regime.sh_close }}<small style="color:{{ '#e94560' if d.regime.sh_chg>0 else '#00a854' if d.regime.sh_chg<0 else '#888' }};"> {{ '%+.2f' % d.regime.sh_chg }}%</small>
                 </div>
             </div>
             <div>
-                <div style="font-size:0.78em;color:#888;">国证2000（小盘）</div>
-                <div style="font-size:1.5em;font-weight:700;color:#1a1a2e;">
-                    {{ '%.0f' % d.regime.gz_close }}<small style="font-size:0.6em;color:{{ '#e94560' if d.regime.gz_chg>0 else '#00a854' if d.regime.gz_chg<0 else '#888' }};"> {{ '%+.2f' % d.regime.gz_chg }}%</small>
+                <div class="stat-label">国证2000（小盘）</div>
+                <div class="stat-value">
+                    {{ '%.0f' % d.regime.gz_close }}<small style="color:{{ '#e94560' if d.regime.gz_chg>0 else '#00a854' if d.regime.gz_chg<0 else '#888' }};"> {{ '%+.2f' % d.regime.gz_chg }}%</small>
                 </div>
             </div>
             <div>
-                <div style="font-size:0.78em;color:#888;">缠论趋势</div>
-                <div style="font-size:1.2em;font-weight:700;">
+                <div class="stat-label">缠论趋势</div>
+                <div class="stat-value">
                     {{ {'上涨':'🟢 上涨','下跌':'🔴 下跌','盘整':'🟡 盘整'}.get(d.regime.sh_trend_now, d.regime.sh_trend_now) }}
                     {% if d.regime.sh_beichi %}<span style="font-size:0.8em;color:#7c3aed;">(背驰)</span>{% endif %}
                 </div>
             </div>
             <div>
-                <div style="font-size:0.78em;color:#888;">情绪温度</div>
-                <div style="font-size:1.2em;font-weight:700;">{{ d.regime.emotion }}</div>
+                <div class="stat-label">情绪温度</div>
+                <div class="stat-value">{{ d.regime.emotion }}</div>
             </div>
         </div>
 
         <!-- 行情类型 + 推荐战法 -->
-        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:#f8f9fa;border-radius:8px;padding:12px 16px;">
-            <span style="font-size:0.9em;color:#555;">今日行情类型</span>
-            <span style="font-size:1.3em;font-weight:800;color:{{ d.regime.recommend_color }};">{{ d.regime.regime }}</span>
-            <span style="font-size:0.9em;color:#555;">→ 推荐战法</span>
-            <span style="font-size:1.1em;font-weight:700;padding:4px 14px;border-radius:6px;background:{{ d.regime.recommend_color }};color:#fff;">{{ d.regime.recommend }}</span>
-            <span style="font-size:0.78em;color:#999;">权重: 强势1.0/题材0.7/震荡0.3/退潮0</span>
+        <div class="metric-item" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+            <span>今日行情类型</span>
+            <span style="color:{{ d.regime.recommend_color }};">{{ d.regime.regime }}</span>
+            <span>→ 推荐战法</span>
+            <span style="background:{{ d.regime.recommend_color }};color:#fff;padding:4px 14px;border-radius:6px;">{{ d.regime.recommend }}</span>
+            <span>权重: 强势1.0/题材0.7/震荡0.3/退潮0</span>
         </div>
 
         <!-- 大盘信号 -->
-        <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:0.82em;color:#666;">
-            <span>上涨 <strong style="color:#e94560;">{{ d.regime.up_count }}</strong> / 下跌 <strong style="color:#00a854;">{{ d.regime.down_count }}</strong></span>
+        <div class="kpi-strip" style="margin-top:12px;">
+            <span>上涨 <strong class="up">{{ d.regime.up_count }}</strong> / 下跌 <strong class="down">{{ d.regime.down_count }}</strong></span>
             <span>涨停 <strong>{{ d.regime.limit_up }}</strong></span>
             <span>跌停 <strong>{{ d.regime.limit_down }}</strong></span>
             <span>小盘强度(国证2000-上证20日动量) <strong>{{ '%.1f' % d.regime.rel_strength if d.regime.rel_strength else '—' }}</strong></span>
@@ -119,7 +118,7 @@
             <td><strong>{{ p.name }}</strong></td>
             <td><strong style="color:#e94560">{{ p.score }}分</strong></td>
             <td>{{ '%.2f' % p.seal_ratio }}</td>
-            <td style="font-size:0.8em;">{{ p.reasons[:3]|join(' · ') }}</td>
+            <td>{{ p.reasons[:3]|join(' · ') }}</td>
         </tr>
         {% endfor %}
     </table></div></div></div>
@@ -151,10 +150,11 @@
     <p class="empty-hint">反转日但无满足条件的超跌强势股</p>
     {% endif %}
     {% else %}
-    <div class="card" style="background:#fafafa;"><div class="card-body" style="text-align:center;color:#888;padding:24px;">
-        <p style="font-size:1.1em;">❄ {{ '当前为冰点期，等待反转确认' if d.ice.is_ice else '今日非冰点反转日' }}</p>
-        <p style="font-size:0.82em;">{{ d.ice.note }} — 冰点抄底只在冰点反转确认日出手（全年可能就几次）</p>
-    </div></div>
+    <div class="empty-result">
+        <div class="empty-icon">❄</div>
+        <h3>{{ '当前为冰点期，等待反转确认' if d.ice.is_ice else '今日非冰点反转日' }}</h3>
+        <p>{{ d.ice.note }} — 冰点抄底只在冰点反转确认日出手（全年可能就几次）</p>
+    </div>
     {% endif %}
     {% endif %}
 </div>

@@ -3,54 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A股复盘选股系统</title>
+    <title>{% block title %}竞价交易系统{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- ====== 左侧导航栏 ====== -->
-    <aside class="sidebar">
+
+    <!-- ====== 侧边导航 ====== -->
+    <aside class="sidebar" id="app-sidebar">
         <div class="sidebar-brand">
-            <span class="brand-icon">📊</span>
+            <span class="brand-icon">📈</span>
             <div class="brand-text">
                 <span class="brand-title">竞价交易系统</span>
-                <span class="brand-sub">Auction Trading</span>
+                <span class="brand-sub">A股短线交易决策平台</span>
             </div>
         </div>
 
         <nav class="sidebar-nav">
-            <span class="nav-section">竞价交易流程</span>
+            <span class="nav-section">工作台</span>
             <a href="/" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
                 <span class="nav-icon">🏠</span>
                 <span class="nav-label">首页</span>
             </a>
+
+            <span class="nav-section">交易流程</span>
             <a href="/breakout_v3" class="nav-item {% if request.endpoint == 'breakout_v3' %}active{% endif %}">
                 <span class="nav-icon">🚀</span>
                 <span class="nav-label">启动突破</span>
-                <span class="nav-badge" style="background:#7c3aed;">V3</span>
+                <span class="nav-badge">V3</span>
             </a>
-            <!-- hidden: 选股面板 + 竞价分析 + V4监控
+            <a href="/zt_replica" class="nav-item {% if request.endpoint == 'zt_replica' %}active{% endif %}">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">涨停复制</span>
+            </a>
             <a href="/screening" class="nav-item {% if request.endpoint == 'screening' %}active{% endif %}">
-                <span class="nav-icon">⏰</span>
-                <span class="nav-label">盘前准备</span>
-                <span class="nav-badge">9:15</span>
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">多策略选股</span>
+                <span class="nav-badge">盘前</span>
             </a>
             <a href="/auction_analysis" class="nav-item {% if request.endpoint == 'auction_analysis' %}active{% endif %}">
                 <span class="nav-icon">🔔</span>
                 <span class="nav-label">竞价分析</span>
-                <span class="nav-badge" style="background:#d97706;">9:25</span>
+                <span class="nav-badge">9:25</span>
             </a>
             <a href="/v4_monitor" class="nav-item {% if request.endpoint == 'v4_monitor' %}active{% endif %}">
-                <span class="nav-icon">📋</span>
-                <span class="nav-label">V4 监控手册</span>
-                <span class="nav-badge" style="background:#059669;">V4</span>
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">V4 监控</span>
+                <span class="nav-badge">V4</span>
             </a>
-            -->
+
+            <span class="nav-section">持仓与复盘</span>
             <a href="/sim_portfolio" class="nav-item {% if request.endpoint == 'sim_portfolio' %}active{% endif %}">
                 <span class="nav-icon">💼</span>
                 <span class="nav-label">模拟持仓</span>
             </a>
             <a href="/review" class="nav-item {% if request.endpoint == 'review' %}active{% endif %}">
-                <span class="nav-icon">📊</span>
+                <span class="nav-icon">📝</span>
                 <span class="nav-label">复盘分析</span>
             </a>
             <a href="/regime_picks" class="nav-item {% if request.endpoint == 'regime_picks' %}active{% endif %}">
@@ -61,18 +68,54 @@
                 <span class="nav-icon">💰</span>
                 <span class="nav-label">基金挑选</span>
             </a>
+            <a href="/stock/000001" class="nav-item {% if request.endpoint == 'stock_detail' %}active{% endif %}">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">个股分析</span>
+            </a>
         </nav>
 
         <div class="sidebar-footer">
             <span class="footer-status">● 系统就绪</span>
-            <span class="footer-version">v2.0</span>
+            <span class="footer-version">v3.0</span>
         </div>
     </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- ====== 移动端顶栏 ====== -->
+    <header class="topbar">
+        <button class="hamburger" id="nav-toggle" aria-label="打开导航">☰</button>
+        <span class="topbar-brand">竞价交易系统</span>
+    </header>
 
     <!-- ====== 主内容区 ====== -->
     <div class="main-wrapper">
         {% block content %}{% endblock %}
     </div>
+
     {% block scripts %}{% endblock %}
+
+    <script>
+    // 移动端抽屉导航
+    (function () {
+        var toggle = document.getElementById('nav-toggle');
+        var backdrop = document.getElementById('sidebar-backdrop');
+        var sidebar = document.getElementById('app-sidebar');
+        if (!toggle || !backdrop || !sidebar) return;
+        function closeNav() {
+            document.body.classList.remove('nav-open');
+            sidebar.classList.remove('open');
+        }
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var open = document.body.classList.toggle('nav-open');
+            sidebar.classList.toggle('open', open);
+        });
+        backdrop.addEventListener('click', closeNav);
+        // 点击导航项后自动收起（移动端）
+        sidebar.querySelectorAll('.nav-item').forEach(function (a) {
+            a.addEventListener('click', closeNav);
+        });
+    })();
+    </script>
 </body>
 </html>

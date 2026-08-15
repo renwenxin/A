@@ -2,205 +2,69 @@
 {% block content %}
 
 <style>
-/* ---- V4 Monitor Page Styles ---- */
-.monitor-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-}
+/* V4 Monitor — 页面专用样式（布局与语义色；基础组件由 /static/style.css 设计系统提供） */
+.monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.card.full { grid-column: 1 / -1; }
 
-.monitor-card {
-    background: #fff;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-.monitor-card.full {
-    grid-column: 1 / -1;
-}
-
-.monitor-card h3 {
-    font-size: 1.1em;
-    font-weight: 700;
-    margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Checklist */
+/* Checklist 分类左条（语义色）；文字保持中性，避免被语义工具类染色 */
 .checklist { list-style: none; }
-.checklist li {
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    border-left: 4px solid transparent;
-    background: #fafbfc;
-    font-size: 0.92em;
-    line-height: 1.6;
-}
-.checklist li.pre { border-left-color: #f59e0b; }
-.checklist li.trade { border-left-color: #3b82f6; }
-.checklist li.risk { border-left-color: #ef4444; }
-.checklist li.record { border-left-color: #10b981; }
-.checklist li .tag {
-    display: inline-block;
-    font-size: 0.75em;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-right: 8px;
-}
-.tag-time { background: #fef3c7; color: #92400e; }
-.tag-action { background: #dbeafe; color: #1e40af; }
-.tag-risk { background: #fee2e2; color: #991b1b; }
-.tag-record { background: #d1fae5; color: #065f46; }
+.checklist li { padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-2); border-radius: var(--r-sm); border-left: 4px solid transparent; background: var(--bg-subtle); font-size: var(--fs-13); line-height: 1.6; }
+.checklist li.pre, .checklist li.trade, .checklist li.risk, .checklist li.record { color: var(--ink-2); }
+.checklist li.pre { border-left-color: var(--warn); }
+.checklist li.trade { border-left-color: var(--info); }
+.checklist li.risk { border-left-color: var(--danger); }
+.checklist li.record { border-left-color: var(--down); }
 
-/* Flowchart */
-.flowchart {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    align-items: stretch;
-    font-size: 0.85em;
-}
-.flow-row {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 2px;
-}
-.flow-box {
-    background: #fff;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 12px 16px;
-    min-width: 120px;
-    text-align: center;
-    font-weight: 600;
-    position: relative;
-}
-.flow-box.start { border-color: #10b981; background: #f0fdf4; color: #065f46; }
-.flow-box.condition { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
-.flow-box.action { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
-.flow-box.exit { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+/* Flowchart 流程节点语义色 */
+.flowchart { flex-direction: column; align-items: stretch; }
+.flow-row { justify-content: center; }
+.flow-box { position: relative; text-align: center; min-width: 120px; }
+.flow-box.start { border-color: var(--down); background: var(--down-soft); color: #065f46; }
+.flow-box.condition { border-color: var(--warn); background: var(--warn-soft); color: var(--warn); }
+.flow-box.action { border-color: var(--info); background: var(--info-soft); color: var(--info); }
+.flow-box.exit { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
 .flow-box.stop { border-color: #7c3aed; background: #f5f3ff; color: #5b21b6; }
-.flow-box.diamond {
-    border-radius: 4px;
-    transform: rotate(0deg);
-    background: #fffbeb;
-    border-color: #f59e0b;
-    min-width: 140px;
-}
-.flow-arrow {
-    text-align: center;
-    font-size: 1.2em;
-    color: #9ca3af;
-    margin: 2px 0;
-    line-height: 1;
-}
-.flow-label {
-    font-size: 0.72em;
-    color: #6b7280;
-    font-weight: 400;
-    margin-top: 4px;
-}
-.flow-divider {
-    border-top: 2px dashed #e5e7eb;
-    margin: 12px 0;
-}
+.flow-box.diamond { background: var(--warn-soft); border-color: var(--warn); min-width: 140px; }
+.flow-arrow { text-align: center; }
+.flow-label { font-weight: 400; }
 
-/* Table styles */
-.rule-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9em;
-}
-.rule-table th {
-    background: #374151;
-    color: #fff;
-    padding: 10px 12px;
-    text-align: left;
-    font-weight: 600;
-}
-.rule-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e5e7eb;
-}
-.rule-table tr:nth-child(even) td { background: #f9fafb; }
-.rule-table .highlight { background: #fef3c7 !important; font-weight: 600; }
-
-/* CB log */
-.cb-log {
-    background: #1e1e2e;
-    color: #a6e3a1;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.82em;
-    padding: 16px;
-    border-radius: 8px;
-    overflow-x: auto;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    max-height: 400px;
-    overflow-y: auto;
-}
+/* cb-log 终端日志（暗底语义日志） */
+.cb-log { background: #1e1e2e; color: #a6e3a1; padding: var(--sp-4); border-radius: var(--r-sm); overflow-x: auto; line-height: 1.7; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
 .cb-log .warn { color: #f9e2af; }
 .cb-log .crit { color: #f38ba8; }
 .cb-log .ok { color: #a6e3a1; }
 .cb-log .info { color: #89b4fa; }
 
-/* Recording template */
-.record-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85em;
-}
-.record-table th {
-    background: #1f2937;
-    color: #f9fafb;
-    padding: 8px 10px;
-    text-align: center;
-    font-weight: 600;
-    font-size: 0.82em;
-}
-.record-table td {
-    padding: 8px 10px;
-    border: 1px solid #e5e7eb;
-    text-align: center;
-    font-family: 'Consolas', monospace;
-    font-size: 0.85em;
-}
-.record-table tr.example td { background: #f0fdf4; }
+/* 表格斑马纹 / 高亮 / 边框 */
+.rule-table th { background: var(--ink-2); color: #fff; }
+.rule-table tr:nth-child(even) td { background: var(--bg-subtle); }
+.rule-table tr.highlight td { background: var(--warn-soft); }
+.record-table th { background: var(--ink-2); color: var(--surface); }
+.record-table th, .record-table td { text-align: center; font-family: var(--font-mono); }
+.record-table td { border: 1px solid var(--line); }
+.record-table tr.example td { background: var(--down-soft); }
 
-/* Responsive */
-@media (max-width: 900px) {
-    .monitor-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 900px) { .monitor-grid { grid-template-columns: 1fr; } }
 </style>
 
 <div class="page-header">
-    <div class="page-breadcrumb">
-        <span>策略监控</span>
+    <div>
+        <div class="page-title">V4 启动突破 — 实盘监控手册</div>
+        <div class="page-breadcrumb"><span>策略监控</span></div>
     </div>
-    <div class="page-date">📋 <strong>V4 启动突破 — 实盘监控手册</strong></div>
+    <div class="page-date">📋 每日盘前 · 盘中 · 盘后全流程</div>
 </div>
 <div class="content-area">
 
 <!-- ====== Quick Reference Banner ====== -->
-<div class="guide-banner" style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;margin-bottom:16px;padding:14px 20px;border-radius:10px;">
-    <div style="font-size:0.88em;line-height:1.8;text-align:center;">
+<div class="guide-banner">
+    <div style="text-align:center;line-height:1.8;">
         <strong>V4 核心规则速查</strong> &nbsp;|&nbsp;
-        🟢 <span style="color:#4ade80;">SH>MA20开仓</span> &nbsp;|&nbsp;
-        🟣 <span style="color:#c084fc;">涨停→断板离场</span> &nbsp;|&nbsp;
-        🟠 <span style="color:#fb923c;">非涨停→-3%移动止盈</span> &nbsp;|&nbsp;
-        🔴 <span style="color:#f87171;">-6%硬止损</span> &nbsp;|&nbsp;
-        ⚡ <span style="color:#fbbf24;">连亏3→减半/5→空仓2天</span>
+        🟢 SH>MA20开仓 &nbsp;|&nbsp;
+        🟣 涨停→断板离场 &nbsp;|&nbsp;
+        🟠 非涨停→-3%移动止盈 &nbsp;|&nbsp;
+        🔴 -6%硬止损 &nbsp;|&nbsp;
+        ⚡ 连亏3→减半/5→空仓2天
     </div>
 </div>
 
@@ -208,16 +72,17 @@
 <div class="monitor-grid">
 
     <!-- Left: Checklist -->
-    <div class="monitor-card">
-        <h3>🌅 一、每日开盘前检查清单（9:00-9:25）</h3>
+    <div class="card">
+        <div class="card-header">🌅 一、每日开盘前检查清单（9:00-9:25）</div>
+        <div class="card-body">
         <ul class="checklist">
 
             <li class="pre">
                 <span class="tag tag-time">9:00</span>
                 <span class="tag tag-action">大盘 MA20 状态确认</span><br>
                 打开上证指数日线图，确认昨日收盘价与 MA20 的关系：<br>
-                &nbsp;&nbsp;✅ <strong>收盘 > MA20</strong> → 允许开仓，进入下一步<br>
-                &nbsp;&nbsp;❌ <strong>收盘 ≤ MA20</strong> → <span style="color:#ef4444;">今日禁止新开仓，仅管理现有持仓</span>
+                &nbsp;&nbsp;✅ <strong>收盘 &gt; MA20</strong> → 允许开仓，进入下一步<br>
+                &nbsp;&nbsp;❌ <strong>收盘 ≤ MA20</strong> → <span class="risk">今日禁止新开仓，仅管理现有持仓</span>
             </li>
 
             <li class="pre">
@@ -225,9 +90,9 @@
                 <span class="tag tag-action">检查现有持仓触发状态</span><br>
                 遍历所有持仓，按优先级检查：<br>
                 &nbsp;&nbsp;🔴 浮亏 ≥ 6% → <strong>今日开盘立即挂单卖出</strong>（硬止损）<br>
-                &nbsp;&nbsp;🟠 非涨停买入 & 从最高点回落 ≥ 3% → <strong>挂单卖出</strong>（移动止盈）<br>
-                &nbsp;&nbsp;🟣 涨停买入 & 昨日断板 & 今日为断板后第2天未反包 → <strong>挂单卖出</strong><br>
-                &nbsp;&nbsp;🟢 涨停买入 & 昨日首次断板 → <strong>观察一天（等N字反包）</strong>
+                &nbsp;&nbsp;🟠 非涨停买入 &amp; 从最高点回落 ≥ 3% → <strong>挂单卖出</strong>（移动止盈）<br>
+                &nbsp;&nbsp;🟣 涨停买入 &amp; 昨日断板 &amp; 今日为断板后第2天未反包 → <strong>挂单卖出</strong><br>
+                &nbsp;&nbsp;🟢 涨停买入 &amp; 昨日首次断板 → <strong>观察一天（等N字反包）</strong>
             </li>
 
             <li class="risk">
@@ -244,8 +109,8 @@
                 <span class="tag tag-time">9:20</span>
                 <span class="tag tag-action">集合竞价扫描</span><br>
                 检查昨日信号池中候选标的的竞价情况：<br>
-                &nbsp;&nbsp;❌ 低开 > 3% → 放弃该标的<br>
-                &nbsp;&nbsp;❌ 竞价量 < 前日量 × 50% → 放弃该标的<br>
+                &nbsp;&nbsp;❌ 低开 &gt; 3% → 放弃该标的<br>
+                &nbsp;&nbsp;❌ 竞价量 &lt; 前日量 × 50% → 放弃该标的<br>
                 &nbsp;&nbsp;❌ 开盘跌停 → 放弃该标的<br>
                 &nbsp;&nbsp;✅ 全部通过 → <strong>列入今日可买入清单</strong>
             </li>
@@ -268,36 +133,38 @@
                 &nbsp;&nbsp;📊 当前胜率 vs 回测胜率 50.6%
             </li>
         </ul>
+        </div>
     </div>
 
     <!-- Right: Flowchart -->
-    <div class="monitor-card">
-        <h3>🔄 二、V4 核心规则流程图</h3>
+    <div class="card">
+        <div class="card-header">🔄 二、V4 核心规则流程图</div>
+        <div class="card-body">
 
         <!-- Entry Flow -->
-        <div style="font-weight:700;color:#374151;margin-bottom:8px;">▸ 开仓流程</div>
+        <div class="section-label">▸ 开仓流程</div>
         <div class="flowchart">
             <div class="flow-row">
                 <div class="flow-box condition">
-                    ① SH > MA20？<br><span class="flow-label">上证收盘 > 20日均线</span>
+                    ① SH &gt; MA20？<br><span class="flow-label">上证收盘 &gt; 20日均线</span>
                 </div>
             </div>
             <div class="flow-arrow">↓ YES &nbsp;&nbsp;&nbsp; → NO → 空仓等待</div>
             <div class="flow-row">
                 <div class="flow-box condition">
-                    ② 熔断检查<br><span class="flow-label">连亏<3:正常 | 3-4:半仓 | ≥5:空2天</span>
+                    ② 熔断检查<br><span class="flow-label">连亏&lt;3:正常 | 3-4:半仓 | ≥5:空2天</span>
                 </div>
             </div>
             <div class="flow-arrow">↓ 通过</div>
             <div class="flow-row">
                 <div class="flow-box condition">
-                    ③ 突破信号<br><span class="flow-label">收盘>找顶线 & 量>MAVOL180×1.2</span>
+                    ③ 突破信号<br><span class="flow-label">收盘&gt;找顶线 &amp; 量&gt;MAVOL180×1.2</span>
                 </div>
             </div>
             <div class="flow-arrow">↓ 检测到</div>
             <div class="flow-row">
                 <div class="flow-box condition">
-                    ④ 竞价确认<br><span class="flow-label">低开≤3% & 缩量≤50% & 非跌停</span>
+                    ④ 竞价确认<br><span class="flow-label">低开≤3% &amp; 缩量≤50% &amp; 非跌停</span>
                 </div>
             </div>
             <div class="flow-arrow">↓ 通过</div>
@@ -311,7 +178,7 @@
         <div class="flow-divider"></div>
 
         <!-- Exit Flow -->
-        <div style="font-weight:700;color:#374151;margin-bottom:8px;">▸ 退出流程（每日收盘检查）</div>
+        <div class="section-label">▸ 退出流程（每日收盘检查）</div>
         <div class="flowchart">
             <div class="flow-row">
                 <div class="flow-box action">
@@ -340,7 +207,7 @@
         <div class="flow-divider"></div>
 
         <!-- Circuit Breaker Flow -->
-        <div style="font-weight:700;color:#374151;margin-bottom:8px;">▸ 熔断流程（每笔卖出后触发）</div>
+        <div class="section-label">▸ 熔断流程（每笔卖出后触发）</div>
         <div class="flowchart">
             <div class="flow-row">
                 <div class="flow-box action">
@@ -365,18 +232,22 @@
                 </div>
             </div>
         </div>
+
+        </div>
     </div>
 </div>
 
 <!-- ====== Section 3: Post-Market Recording Template ====== -->
 <div class="monitor-grid">
-    <div class="monitor-card full">
-        <h3>📝 三、盘后数据记录模板</h3>
-        <p style="color:#6b7280;font-size:0.85em;margin-bottom:12px;">
+    <div class="card full">
+        <div class="card-header">📝 三、盘后数据记录模板</div>
+        <div class="card-body">
+        <p class="section-note">
             建议每日收盘后（15:30）填写以下数据，与回测基线对比。当连续 5 天偏差超过阈值时，触发异常调查流程。
         </p>
 
-        <table class="rule-table" style="margin-bottom:20px;">
+        <div class="table-wrap" style="margin-bottom:var(--sp-5);">
+        <table class="rule-table">
             <thead>
                 <tr>
                     <th>日期</th>
@@ -417,9 +288,11 @@
                 </tr>
             </tbody>
         </table>
+        </div>
 
-        <div style="font-weight:600;color:#374151;margin-bottom:8px;">▸ 持仓明细记录</div>
-        <table class="record-table" style="margin-bottom:16px;">
+        <div class="section-label">▸ 持仓明细记录</div>
+        <div class="table-wrap" style="margin-bottom:var(--sp-4);">
+        <table class="record-table">
             <thead>
                 <tr>
                     <th>代码</th><th>名称</th><th>买入日</th><th>买入价</th>
@@ -438,20 +311,23 @@
                 </tr>
             </tbody>
         </table>
+        </div>
 
-        <p style="color:#6b7280;font-size:0.8em;">
+        <p class="section-note">
             📌 <strong>对比频率建议</strong>：每周生成一次「实盘 vs 回测」对比报告。允许偏差范围：累计收益 ±15%、最大回撤 ±5pp、胜率 ±10pp、夏普 ±0.5。
         </p>
+        </div>
     </div>
 </div>
 
 <!-- ====== Section 4: Exception Handling ====== -->
 <div class="monitor-grid">
-    <div class="monitor-card">
-        <h3>🚨 四、异常情况应对流程</h3>
+    <div class="card">
+        <div class="card-header">🚨 四、异常情况应对流程</div>
+        <div class="card-body">
 
-        <div style="margin-bottom:20px;">
-            <h4 style="color:#ef4444;margin-bottom:10px;">场景 1：连续亏损触发熔断后的恢复流程</h4>
+        <div style="margin-bottom:var(--sp-5);">
+            <h4 class="section-label risk">场景 1：连续亏损触发熔断后的恢复流程</h4>
             <div class="cb-log">
 <span class="warn">[CB] 5 consecutive losses → FORCE 2 DAYS EMPTY</span>
 <span class="info">Day 1 (空仓): 不进行任何买入操作，仅管理现有持仓的退出</span>
@@ -466,10 +342,10 @@
             </div>
         </div>
 
-        <div style="margin-bottom:20px;">
-            <h4 style="color:#ef4444;margin-bottom:10px;">场景 2：实盘净值显著偏离回测基线</h4>
-            <p style="font-size:0.85em;color:#6b7280;margin-bottom:8px;">
-                偏离阈值：累计收益偏差 > 15%、或最大回撤偏差 > 5pp、或胜率偏差 > 10pp。
+        <div style="margin-bottom:var(--sp-5);">
+            <h4 class="section-label risk">场景 2：实盘净值显著偏离回测基线</h4>
+            <p class="section-note">
+                偏离阈值：累计收益偏差 &gt; 15%、或最大回撤偏差 &gt; 5pp、或胜率偏差 &gt; 10pp。
             </p>
             <div class="cb-log">
 <span class="warn">[ALERT] 实盘净值偏离回测基线超过阈值</span>
@@ -479,20 +355,23 @@
 <span class="info">  Step 2: 检查是否有标的买入后未按退出规则执行（手动干预导致）</span>
 <span class="info">         → 若有：统计手动干预 vs 规则执行的收益差异</span>
 <span class="info">  Step 3: 检查滑点是否显著高于 0.05%（实盘买入价 vs 信号价）</span>
-<span class="info">         → 若有：暂停流动性差的标的，优先做日均成交 > 2亿的票</span>
+<span class="info">         → 若有：暂停流动性差的标的，优先做日均成交 &gt; 2亿的票</span>
 <span class="info">  Step 4: 检查最近一周胜率是否低于 35%（回测均值的 -15pp）</span>
 <span class="info">         → 若是：考虑将仓位降至 5%，等待胜率回归均值</span>
-<span class="crit">  Step 5: 若以上排查无果且偏离持续 > 5天 → 暂停策略，人工复盘全部交易</span>
+<span class="crit">  Step 5: 若以上排查无果且偏离持续 &gt; 5天 → 暂停策略，人工复盘全部交易</span>
             </div>
+        </div>
         </div>
     </div>
 
-    <div class="monitor-card">
-        <h3>📊 五、V4 回测基线参考值</h3>
-        <p style="color:#6b7280;font-size:0.85em;margin-bottom:12px;" id="v4-baseline-desc">
+    <div class="card">
+        <div class="card-header">📊 五、V4 回测基线参考值</div>
+        <div class="card-body">
+        <p class="section-note" id="v4-baseline-desc">
             以下数据来自 V4 全周期回测（2022-01 ~ 2026-07，1108个交易日，0.20%成本）
         </p>
 
+        <div class="table-wrap">
         <table class="rule-table" id="v4-baseline-table">
             <thead>
                 <tr><th>指标</th><th>全周期</th><th>2022-2024 熊</th><th>2025-2026 牛</th></tr>
@@ -508,45 +387,48 @@
                 <tr class="highlight" data-metric="annualized_return"><td><strong>年化收益</strong></td><td class="val-full"><strong>—</strong></td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
                 <tr class="highlight" data-metric="max_drawdown"><td><strong>最大回撤</strong></td><td class="val-full"><strong>—</strong></td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
                 <tr data-metric="sharpe_ratio"><td>夏普比率</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
-                <tr data-metric="sh_above_ma20_pct"><td>SH > MA20 占比</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="sh_above_ma20_pct"><td>SH &gt; MA20 占比</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
                 <tr data-metric="avg_hold_days"><td>平均持有天数</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
                 <tr data-metric="avg_positions"><td>平均同时持仓</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
             </tbody>
         </table>
+        </div>
 
-        <div style="margin-top:16px;padding:12px;background:#fef3c7;border-radius:8px;font-size:0.82em;">
+        <div style="margin-top:var(--sp-4);padding:var(--sp-3);background:var(--warn-soft);border:1px solid #fde68a;border-radius:var(--r-sm);font-size:var(--fs-12);">
             <strong>⚠️ 偏差预警阈值：</strong><br>
             🟢 正常：累计收益偏差 ≤ 10%、回撤偏差 ≤ 3pp、胜率偏差 ≤ 5pp<br>
             🟡 关注：累计收益偏差 10-15%、回撤偏差 3-5pp、胜率偏差 5-10pp<br>
-            🔴 调查：累计收益偏差 > 15%、回撤偏差 > 5pp、胜率偏差 > 10pp → 启动场景2调查
+            🔴 调查：累计收益偏差 &gt; 15%、回撤偏差 &gt; 5pp、胜率偏差 &gt; 10pp → 启动场景2调查
+        </div>
         </div>
     </div>
 </div>
 
 <!-- ====== Section 6: Strategy Rules Reference ====== -->
 <div class="monitor-grid">
-    <div class="monitor-card full">
-        <h3>📖 六、V4 策略规则完整参考</h3>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:0.85em;">
+    <div class="card full">
+        <div class="card-header">📖 六、V4 策略规则完整参考</div>
+        <div class="card-body">
+        <div class="screener-panel">
 
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;">
-                <strong style="color:#16a34a;">🟢 开仓条件</strong>
-                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
-                    <li>上证收盘 > MA20</li>
+            <div class="screener-column" style="background:var(--down-soft);border-color:var(--down-soft);">
+                <strong style="color:var(--down);">🟢 开仓条件</strong>
+                <ul style="margin-top:var(--sp-2);padding-left:16px;color:var(--ink-2);line-height:1.8;">
+                    <li>上证收盘 &gt; MA20</li>
                     <li>沪深主板，非ST</li>
                     <li>年涨停 ≥ 10次</li>
                     <li>距找顶线 ≤ 10%</li>
                     <li>收盘突破找顶线</li>
-                    <li>量 > MAVOL180 × 1.2</li>
-                    <li>量比 < 5.0x（非过度放量）</li>
+                    <li>量 &gt; MAVOL180 × 1.2</li>
+                    <li>量比 &lt; 5.0x（非过度放量）</li>
                     <li>距压力位不在 3-5%（非死亡区间）</li>
                     <li>竞价：低开≤3%、缩量≤50%、非跌停</li>
                 </ul>
             </div>
 
-            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;">
-                <strong style="color:#dc2626;">🔴 退出层级（优先级从高到低）</strong>
-                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+            <div class="screener-column" style="background:var(--danger-soft);border-color:var(--danger-soft);">
+                <strong style="color:var(--danger);">🔴 退出层级（优先级从高到低）</strong>
+                <ul style="margin-top:var(--sp-2);padding-left:16px;color:var(--ink-2);line-height:1.8;">
                     <li><strong>1. -6% 硬止损</strong>（无条件）</li>
                     <li><strong>2. 涨停日买入：</strong>涨停→持有；断板→等N字反包1天→收阳放量=持有，否则=卖出</li>
                     <li><strong>3. 非涨停日买入：</strong>浮盈≥2%后，从最高价回落≥3%→卖出</li>
@@ -555,9 +437,9 @@
                 </ul>
             </div>
 
-            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:14px;">
+            <div class="screener-column" style="background:#f5f3ff;border-color:#f5f3ff;">
                 <strong style="color:#7c3aed;">⚡ 仓位熔断</strong>
-                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+                <ul style="margin-top:var(--sp-2);padding-left:16px;color:var(--ink-2);line-height:1.8;">
                     <li>正常：单票 10%</li>
                     <li>最大持仓：10只</li>
                     <li>每日最多新开：3只</li>
@@ -567,69 +449,72 @@
                 </ul>
             </div>
 
-            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;">
-                <strong style="color:#d97706;">🟡 过滤规则</strong>
-                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+            <div class="screener-column" style="background:var(--warn-soft);border-color:var(--warn-soft);">
+                <strong style="color:var(--warn);">🟡 过滤规则</strong>
+                <ul style="margin-top:var(--sp-2);padding-left:16px;color:var(--ink-2);line-height:1.8;">
                     <li>死亡区间 3-5%：跳过</li>
                     <li>过度放量 ≥ 5x：跳过</li>
                     <li>非一字板：跳过</li>
                     <li>次日开盘跌停：跳过</li>
-                    <li>开盘低开 > 3%：跳过</li>
-                    <li>竞价缩量 > 50%：跳过</li>
+                    <li>开盘低开 &gt; 3%：跳过</li>
+                    <li>竞价缩量 &gt; 50%：跳过</li>
                 </ul>
             </div>
 
+        </div>
         </div>
     </div>
 </div>
 
 <!-- ====== Section 7: V4 实盘候选池（每日操盘模块） ====== -->
-<div class="monitor-card full" style="margin-bottom:16px;border:3px solid #7c3aed;background:linear-gradient(135deg,#f5f3ff,#fff);">
-    <h3>🚀 七、V4 实盘候选池（每日操盘）</h3>
-    <p style="font-size:0.85em;color:#6b7280;margin:-8px 0 14px;">
+<div class="card full" style="border:2px solid var(--brand-strong);">
+    <div class="card-header">🚀 七、V4 实盘候选池（每日操盘）</div>
+    <div class="card-body">
+    <p class="section-note">
         与启动突破共用同一候选池 · 「运行扫描」清空重建 → 9:25 后点「刷新状态」竞价确认昨日选出的标的
     </p>
 
     <!-- 市场情绪判断（基于上一交易日） -->
-    <div id="v4-mood-panel" style="padding:12px 16px;background:#f0f4ff;border:1px solid #d0d7f0;border-radius:8px;margin-bottom:14px;font-size:0.88em;">
+    <div id="v4-mood-panel" style="padding:var(--sp-3) var(--sp-4);background:var(--info-soft);border:1px solid #d0d7f0;border-radius:var(--r-sm);margin-bottom:var(--sp-4);font-size:var(--fs-13);">
         ⏳ 加载市场情绪...
     </div>
 
     <!-- 操作按钮 -->
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
-        <button onclick="v4RunScan()" class="btn-screener-card btn-main-control" style="display:inline-flex;width:auto;padding:10px 24px;">
+    <div style="display:flex;gap:var(--sp-3);align-items:center;margin-bottom:var(--sp-4);flex-wrap:wrap;">
+        <button onclick="v4RunScan()" class="btn btn-primary">
             <span class="btn-icon">🔍</span>
             <span class="btn-text"><span class="btn-label">运行扫描</span><span class="btn-desc">清空候选池 → 重新全量筛选（重量级）</span></span>
         </button>
-        <button onclick="v4Refresh(true)" class="btn-screener-card" style="display:inline-flex;width:auto;padding:10px 20px;">
+        <button onclick="v4Refresh(true)" class="btn btn-secondary">
             <span class="btn-icon">🔄</span>
             <span class="btn-text"><span class="btn-label">刷新状态</span><span class="btn-desc">竞价确认昨日标的（9:25后生效）</span></span>
         </button>
-        <span id="v4-status" style="font-size:0.82em;color:#888;"></span>
+        <span id="v4-status" style="color:var(--muted);"></span>
     </div>
 
     <!-- 买入 / 卖出信号两栏 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border:3px solid #22c55e;border-radius:10px;padding:12px 14px;">
+    <div class="grid-2">
+        <div style="background:var(--down-soft);border:2px solid var(--down);border-radius:var(--r-sm);padding:var(--sp-3);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <h4 style="color:#16a34a;margin:0;">🟢 符合买入信号标的</h4>
-                <span id="v4-buy-count" style="background:#dcfce7;color:#166534;font-weight:600;padding:2px 10px;border-radius:10px;font-size:0.8em;">-</span>
+                <h4 style="color:var(--down);margin:0;">🟢 符合买入信号标的</h4>
+                <span id="v4-buy-count" style="background:var(--down-soft);color:var(--down);font-weight:600;padding:2px 10px;border-radius:999px;font-size:var(--fs-12);">-</span>
             </div>
-            <p style="font-size:0.75em;color:#999;margin:6px 0;">收盘突破找顶线 + 量&gt;MAVOL180×1.2 · 含预估买入区间与竞价确认</p>
+            <p style="font-size:var(--fs-12);color:var(--muted);margin:var(--sp-2) 0;">收盘突破找顶线 + 量&gt;MAVOL180×1.2 · 含预估买入区间与竞价确认</p>
             <div id="v4-buy-panel" style="max-height:380px;overflow-y:auto;min-height:40px;">
-                <span style="color:#999;font-size:0.82em;">点击「运行扫描」或「刷新状态」加载...</span>
+                <span style="color:var(--faint);font-size:var(--fs-12);">点击「运行扫描」或「刷新状态」加载...</span>
             </div>
         </div>
-        <div style="background:linear-gradient(135deg,#fef2f2,#fff);border:3px solid #ef4444;border-radius:10px;padding:12px 14px;">
+        <div style="background:var(--danger-soft);border:2px solid var(--danger);border-radius:var(--r-sm);padding:var(--sp-3);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <h4 style="color:#dc2626;margin:0;">🔴 符合卖出信号标的</h4>
-                <span id="v4-sell-count" style="background:#fef2f2;color:#991b1b;font-weight:600;padding:2px 10px;border-radius:10px;font-size:0.8em;">-</span>
+                <h4 style="color:var(--danger);margin:0;">🔴 符合卖出信号标的</h4>
+                <span id="v4-sell-count" style="background:var(--danger-soft);color:var(--danger);font-weight:600;padding:2px 10px;border-radius:999px;font-size:var(--fs-12);">-</span>
             </div>
-            <p style="font-size:0.75em;color:#999;margin:6px 0;">-6%止损 · 移动止盈(回落5%) · 断板/到期 · 含预估卖出区间</p>
+            <p style="font-size:var(--fs-12);color:var(--muted);margin:var(--sp-2) 0;">-6%止损 · 移动止盈(回落5%) · 断板/到期 · 含预估卖出区间</p>
             <div id="v4-sell-panel" style="max-height:380px;overflow-y:auto;min-height:40px;">
-                <span style="color:#999;font-size:0.82em;">点击「运行扫描」或「刷新状态」加载...</span>
+                <span style="color:var(--faint);font-size:var(--fs-12);">点击「运行扫描」或「刷新状态」加载...</span>
             </div>
         </div>
+    </div>
     </div>
 </div>
 
@@ -736,7 +621,7 @@
                 descEl.textContent = '以下数据来自 V4 全周期回测（' + meta.backtest_period + '，0.20%成本）';
             }
             if (meta.note && meta.note.indexOf('estimates') >= 0) {
-                descEl.textContent += ' \\26A0\\FE0F 缓存文件不存在，显示默认估计值。运行 generate_v4_baseline.py 生成准确数据。';
+                descEl.textContent += ' \26A0\FE0F 缓存文件不存在，显示默认估计值。运行 generate_v4_baseline.py 生成准确数据。';
             }
         }
     }

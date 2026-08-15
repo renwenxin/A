@@ -1,156 +1,149 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-header">
-    <div class="page-breadcrumb">
-        <span>涨停复制</span>
+    <div>
+        <div class="page-breadcrumb"><span>涨停复制</span></div>
+        <div class="page-title">涨停复制战法 — 龙哥涨停双响炮+N字反包体系</div>
     </div>
-    <div class="page-date">📋 <strong>涨停复制战法 — 龙哥涨停双响炮+N字反包体系</strong></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button onclick="runSimScan()" class="btn btn-screener-card btn-main-control">
+            <span class="btn-icon">🔍</span>
+            <span class="btn-text">运行扫描<span class="btn-desc">全量重建候选池 → 筛选候选 → 检测信号（重量级）</span></span>
+        </button>
+        <button onclick="loadSimPanels()" class="btn btn-screener-card">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-text">刷新状态<span class="btn-desc">基于现有候选刷新价格/信号（轻量级）</span></span>
+        </button>
+        <span class="btn-desc" id="scan-status"></span>
+    </div>
 </div>
 <div class="content-area">
 
 <!-- ====== 策略口诀速查 ====== -->
-<div class="guide-banner" style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0e0;margin-bottom:10px;">
-    <div style="font-size:0.85em;line-height:1.7;text-align:center;">
-        💡 <strong>涨停激活股性 → 缩量回调到均线 → 放量复制涨停</strong> &nbsp;|&nbsp;
-        四类信号：<span style="color:#f87171;">🔥双响炮</span> · <span style="color:#fbbf24;">📈N字反包</span> · <span style="color:#4ade80;">🔍缩量回踩</span> · <span style="color:#60a5fa;">📊蓄势待发</span> &nbsp;|&nbsp;
-        <span style="color:#f87171;">-5%硬止损</span> · 连板持有断板卖 · 两天不涨就撤 · 板块联动确认
+<div class="guide-banner">
+    <div class="guide-steps">
+        <div class="guide-step">
+            <strong>💡 涨停激活股性 → 缩量回调到均线 → 放量复制涨停</strong>
+        </div>
+        <div class="guide-step">
+            <span>四类信号：</span>
+            <span style="color:#dc2626;">🔥双响炮</span>
+            <span style="color:#d97706;">📈N字反包</span>
+            <span style="color:#16a34a;">🔍缩量回踩</span>
+            <span style="color:#2563eb;">📊蓄势待发</span>
+        </div>
+        <div class="guide-step">
+            <span style="color:#dc2626;">-5%硬止损</span>
+            <span>连板持有断板卖 · 两天不涨就撤 · 板块联动确认</span>
+        </div>
     </div>
 </div>
 
-<!-- ====== 操作按钮 ====== -->
-<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
-    <button onclick="runSimScan()" class="btn-screener-card btn-main-control" style="display:inline-flex;width:auto;padding:10px 24px;">
-        <span class="btn-icon">🔍</span>
-        <span class="btn-text"><span class="btn-label">运行扫描</span><span class="btn-desc">全量重建候选池 → 筛选涨停复制候选 → 检测买入信号（重量级）</span></span>
-    </button>
-    <button onclick="loadSimPanels()" class="btn-screener-card" style="display:inline-flex;width:auto;padding:10px 20px;">
-        <span class="btn-icon">🔄</span>
-        <span class="btn-text"><span class="btn-label">刷新状态</span><span class="btn-desc">基于现有候选刷新价格/信号（轻量级）</span></span>
-    </button>
-    <span id="scan-status" style="font-size:0.82em;color:#888;"></span>
-</div>
-
 <!-- ====== 策略规则（折叠面板） ====== -->
-<div class="guide-banner" style="padding:8px 16px;margin-bottom:14px;">
-    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+<div class="guide-banner" style="padding:12px 16px;">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
         <details style="flex:1;min-width:180px;">
-            <summary style="cursor:pointer;font-weight:600;color:#e67e22;font-size:0.82em;">📋 选股条件</summary>
-            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
-                沪深主板 · 年涨停≥10 · 非ST<br>
-                近20日有过涨停（非一字板）<br>
-                涨停后缩量回调(量<涨停量×0.6)<br>
-                回调不破涨停低点+关键均线<br>
-                当天板块有联动(≥2只确认)<br>
-                回调2-4天最佳窗口
-            </div>
+            <summary style="cursor:pointer;font-weight:600;color:#e67e22;">📋 选股条件</summary>
+            <p class="section-note">沪深主板 · 年涨停≥10 · 非ST<br>
+            近20日有过涨停（非一字板）<br>
+            涨停后缩量回调(量&lt;涨停量×0.6)<br>
+            回调不破涨停低点+关键均线<br>
+            当天板块有联动(≥2只确认)<br>
+            回调2-4天最佳窗口</p>
         </details>
         <details style="flex:1;min-width:180px;">
-            <summary style="cursor:pointer;font-weight:600;color:#16a34a;font-size:0.82em;">🎯 四类买入信号</summary>
-            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
-                <strong style="color:#dc2626;">🔥涨停双响炮：</strong>缩量回调后再次涨停 · 最强<br>
-                <strong style="color:#d97706;">📈N字反包：</strong>缩量+放量突破回调高点<br>
-                <strong style="color:#16a34a;">🔍缩量回踩均线：</strong>回踩5/10日线不破+放量<br>
-                <strong style="color:#2563eb;">📊蓄势待发：</strong>大涨5-9%未涨停 · 留力明天
-            </div>
+            <summary style="cursor:pointer;font-weight:600;color:#16a34a;">🎯 四类买入信号</summary>
+            <p class="section-note"><strong style="color:#dc2626;">🔥涨停双响炮：</strong>缩量回调后再次涨停 · 最强<br>
+            <strong style="color:#d97706;">📈N字反包：</strong>缩量+放量突破回调高点<br>
+            <strong style="color:#16a34a;">🔍缩量回踩均线：</strong>回踩5/10日线不破+放量<br>
+            <strong style="color:#2563eb;">📊蓄势待发：</strong>大涨5-9%未涨停 · 留力明天</p>
         </details>
         <details style="flex:1;min-width:180px;">
-            <summary style="cursor:pointer;font-weight:600;color:#dc2626;font-size:0.82em;">💰 卖出纪律</summary>
-            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
-                -5%硬止损 · 涨停持有断板卖<br>
-                移动止盈: 最高回落>5%<br>
-                N字反包失败→离场<br>
-                持有≥5天兜底
-            </div>
+            <summary style="cursor:pointer;font-weight:600;color:#dc2626;">💰 卖出纪律</summary>
+            <p class="section-note">-5%硬止损 · 涨停持有断板卖<br>
+            移动止盈: 最高回落&gt;5%<br>
+            N字反包失败→离场<br>
+            持有≥5天兜底</p>
         </details>
         <details style="flex:1;min-width:180px;">
-            <summary style="cursor:pointer;font-weight:600;color:#7c3aed;font-size:0.82em;">🧠 龙哥心法</summary>
-            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
-                涨停=大资金已进场<br>
-                缩量回调=洗盘不彻底<br>
-                再次放量=二次发力→跟上吃肉<br>
-                三种不能做：放量回调/破涨停低/超10天
-            </div>
+            <summary style="cursor:pointer;font-weight:600;color:#7c3aed;">🧠 龙哥心法</summary>
+            <p class="section-note">涨停=大资金已进场<br>
+            缩量回调=洗盘不彻底<br>
+            再次放量=二次发力→跟上吃肉<br>
+            三种不能做：放量回调/破涨停低/超10天</p>
         </details>
     </div>
 </div>
 
 <!-- ====== 1. 观察池（全宽） ====== -->
-<div class="screener-column" style="background:linear-gradient(135deg,#fff8f0,#fff);border:2px solid #f0c040;margin-bottom:14px;">
-    <div class="column-header" style="border-bottom-color:#f0c040;">
-        <h3 style="color:#e67e22;margin:0;">👀 观察池（涨停后回调企稳中）</h3>
-        <span class="column-badge" style="background:#fef3c7;color:#92400e;" id="watch-count">-</span>
+<div class="screener-column">
+    <div class="column-header">
+        <h3>👀 观察池 <span style="font-weight:400;font-size:0.85em;color:#888;">涨停后回调企稳中</span></h3>
+        <span class="column-badge" id="watch-count">-</span>
     </div>
-    <p style="font-size:0.78em;color:#999;margin:4px 0 8px;">
-        近20日有过涨停 · 缩量回调 · 不破涨停低点 · 等待放量突破信号
-    </p>
+    <p class="column-desc">近20日有过涨停 · 缩量回调 · 不破涨停低点 · 等待放量突破信号</p>
     <div id="watch-panel" style="min-height:40px;max-height:400px;overflow-y:auto;">
-        <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+        <span style="color:#999;">点击「运行扫描」加载...</span>
     </div>
 </div>
 
 <!-- ====== 2. 明日开盘买入 + 今日卖出（两栏） ====== -->
-<div class="screener-panel" style="grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+<div class="screener-panel">
 
     <!-- 明日开盘买入 -->
-    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:3px solid #22c55e;">
-        <div class="column-header" style="border-bottom-color:#22c55e;">
-            <h3 style="color:#16a34a;margin:0;">🟢 明日开盘买入</h3>
-            <span class="column-badge" style="background:#dcfce7;color:#166534;font-weight:600;" id="buy-count">-</span>
+    <div class="screener-column">
+        <div class="column-header">
+            <h3 style="color:#16a34a;">🟢 明日开盘买入</h3>
+            <span class="column-badge" id="buy-count">-</span>
         </div>
-        <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
-            涨停复制信号触发 → 次日竞价确认后开盘买入
-        </p>
+        <p class="column-desc">涨停复制信号触发 → 次日竞价确认后开盘买入</p>
         <div id="buy-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
-            <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+            <span style="color:#999;">点击「运行扫描」加载...</span>
         </div>
     </div>
 
     <!-- 今日卖出 -->
-    <div class="screener-column" style="background:linear-gradient(135deg,#fef2f2,#fff);border:3px solid #ef4444;">
-        <div class="column-header" style="border-bottom-color:#ef4444;">
-            <h3 style="color:#dc2626;margin:0;">🔴 今日卖出</h3>
-            <span class="column-badge" style="background:#fef2f2;color:#991b1b;font-weight:600;" id="sell-count">-</span>
+    <div class="screener-column">
+        <div class="column-header">
+            <h3 style="color:#dc2626;">🔴 今日卖出</h3>
+            <span class="column-badge" id="sell-count">-</span>
         </div>
-        <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
-            -5%止损 · 移动止盈(回落>5%) · 涨停后断板离场 · 持有到期
-        </p>
+        <p class="column-desc">-5%止损 · 移动止盈(回落&gt;5%) · 涨停后断板离场 · 持有到期</p>
         <div id="sell-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
-            <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+            <span style="color:#999;">点击「运行扫描」加载...</span>
         </div>
     </div>
 
 </div>
 
 <!-- ====== 3. 模拟持仓（全宽） ====== -->
-<div class="screener-column" style="background:linear-gradient(135deg,#f5f3ff,#fff);border:2px solid #a78bfa;margin-bottom:14px;">
-    <div class="column-header" style="border-bottom-color:#a78bfa;">
-        <h3 style="color:#7c3aed;margin:0;">💼 模拟持仓</h3>
-        <span class="column-badge" style="background:#ede9fe;color:#5b21b6;font-weight:600;" id="hold-count">-</span>
+<div class="screener-column">
+    <div class="column-header">
+        <h3>💼 模拟持仓</h3>
+        <span class="column-badge" id="hold-count">-</span>
     </div>
-    <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
-        当前持仓 · 实时浮盈 · 涨停复制标记 · 移动止盈状态 · N字反包等待
-    </p>
+    <p class="column-desc">当前持仓 · 实时浮盈 · 涨停复制标记 · 移动止盈状态 · N字反包等待</p>
     <div id="hold-panel" style="min-height:40px;max-height:300px;overflow-y:auto;">
-        <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+        <span style="color:#999;">点击「运行扫描」加载...</span>
     </div>
 </div>
 
 <!-- ====== 统计摘要 + 回测参考 ====== -->
-<div id="summary-bar" style="padding:10px 16px;background:#f0f4ff;border-radius:8px;border:1px solid #d0d7f0;font-size:0.82em;color:#666;display:none;margin-bottom:14px;"></div>
+<div id="summary-bar" class="card" style="display:none;padding:10px 16px;"></div>
 
-<div style="padding:12px 16px;background:#f8f9ff;border-radius:8px;border:1px solid #e0e7ff;font-size:0.82em;color:#666;">
-    <strong style="color:#dc2626;">📋 涨停复制战法 — 龙哥实盘体系</strong><br>
-    <strong style="color:#1a1a2e;">核心逻辑：</strong>涨停激活股性 → 缩量回调企稳（主力洗盘不彻底）→ 放量复制涨停（二次发力）<br>
-    <strong style="color:#16a34a;">买入时机：</strong>回调到5日线/10日线企稳后，当天放量拉升时跟随入场 · 上午冲高回落企稳是上车机会<br>
-    <strong style="color:#dc2626;">卖出铁律：</strong>连板持有断板止盈 · 两天不涨就撤 · 跌破5日线注意 · -5%硬止损 · 冲高回落放量就走<br>
-    <strong style="color:#d97706;">⚠ 三种不能做：</strong>放量回调（主力出货）· 跌破涨停最低价（支撑无效）· 回调超10天（股性冷却）
+<div class="guide-banner tips" style="font-size:0.82em;">
+    <div style="margin-bottom:4px;"><strong style="color:#dc2626;">📋 涨停复制战法 — 龙哥实盘体系</strong></div>
+    <div style="margin-bottom:3px;"><strong>核心逻辑：</strong>涨停激活股性 → 缩量回调企稳（主力洗盘不彻底）→ 放量复制涨停（二次发力）</div>
+    <div style="margin-bottom:3px;"><strong style="color:#16a34a;">买入时机：</strong>回调到5日线/10日线企稳后，当天放量拉升时跟随入场 · 上午冲高回落企稳是上车机会</div>
+    <div style="margin-bottom:3px;"><strong style="color:#dc2626;">卖出铁律：</strong>连板持有断板止盈 · 两天不涨就撤 · 跌破5日线注意 · -5%硬止损 · 冲高回落放量就走</div>
+    <div><strong style="color:#d97706;">⚠ 三种不能做：</strong>放量回调（主力出货）· 跌破涨停最低价（支撑无效）· 回调超10天（股性冷却）</div>
 </div>
 
 <!-- ====== 已完成交易（可编辑） ====== -->
-<div class="card" style="margin-bottom:14px;">
+<div class="card">
     <div class="card-header">
-        <h3>📝 已完成交易 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="finished-count"></span></h3>
-        <button onclick="loadFinished()" style="padding:5px 14px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;font-size:0.82em;font-family:inherit;">🔄 刷新</button>
+        <h3>📝 已完成交易 <span class="count-badge" id="finished-count"></span></h3>
+        <button onclick="loadFinished()" class="btn btn-danger btn-sm">🔄 刷新</button>
     </div>
     <div class="card-body no-padding">
         <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
@@ -167,7 +160,7 @@
                 </tbody>
             </table>
         </div>
-        <div style="padding:8px 14px;font-size:0.72em;color:#888;border-top:1px solid #f0f0f5;">
+        <div style="padding:8px 14px;font-size:0.75em;color:#888;border-top:1px solid #f0f0f5;">
             💡 点击数值可直接编辑 · 修改后统计自动重算 · 数据保存到 sim_zt_replica_state.json
         </div>
     </div>

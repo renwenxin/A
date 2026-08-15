@@ -94,7 +94,10 @@ def _enrich_top_3(data: list, strategy: str) -> list:
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    from datetime import datetime as _dt
+    weekday_cn = '一二三四五六日'
+    today = _dt.now().strftime('%Y-%m-%d') + ' 周' + weekday_cn[_dt.now().weekday()]
+    return render_template('index.html', today=today)
 
 
 @app.route('/screening')

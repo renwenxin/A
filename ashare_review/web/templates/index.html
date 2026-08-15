@@ -1,112 +1,127 @@
 {% extends "base.html" %}
+{% block title %}工作台 · 竞价交易系统{% endblock %}
 {% block content %}
 <div class="content-area">
 
     <!-- ====== 页面标题 ====== -->
-    <div class="page-header" style="margin-bottom:24px;">
-        <div class="page-title" style="font-size:1.5em;">📊 竞价交易系统 — 功能导航</div>
-        <div class="page-date">一站式A股短线交易决策平台</div>
+    <div class="page-header">
+        <div>
+            <div class="page-title">工作台</div>
+            <div class="page-date">一站式 A 股短线交易决策 · {{ today }}</div>
+        </div>
+        <a href="/breakout_v3" class="btn btn-primary">开始今日交易 →</a>
     </div>
 
     <!-- ====== 交易流程引导 ====== -->
-    <div class="guide-banner" style="margin-bottom:28px;">
+    <div class="guide-banner">
         <div class="guide-steps">
             <div class="guide-step">
                 <span class="step-icon">⏰</span>
-                <span class="step-label">9:15</span>
-                <span class="step-desc">盘前准备</span>
+                <div>
+                    <div class="step-label">9:15</div>
+                    <div class="step-desc">盘前准备 · 选股</div>
+                </div>
             </div>
             <span class="step-arrow">→</span>
             <div class="guide-step">
                 <span class="step-icon">🔔</span>
-                <span class="step-label">9:25</span>
-                <span class="step-desc">竞价分析</span>
+                <div>
+                    <div class="step-label">9:25</div>
+                    <div class="step-desc">竞价分析 · 确认</div>
+                </div>
             </div>
             <span class="step-arrow">→</span>
             <div class="guide-step">
                 <span class="step-icon">📊</span>
-                <span class="step-label">盘中</span>
-                <span class="step-desc">盯盘交易</span>
+                <div>
+                    <div class="step-label">盘中</div>
+                    <div class="step-desc">盯盘交易 · 持仓管理</div>
+                </div>
             </div>
             <span class="step-arrow">→</span>
             <div class="guide-step">
                 <span class="step-icon">🔍</span>
-                <span class="step-label">盘后</span>
-                <span class="step-desc">复盘分析</span>
+                <div>
+                    <div class="step-label">盘后</div>
+                    <div class="step-desc">复盘分析 · 次日决策</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ====== 盘前准备模块 ====== -->
-    <div class="section-title" style="font-size:1.1em;font-weight:700;color:#1a1a2e;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid #e94560;">
-        ⏰ 盘前准备（9:15 前）
-    </div>
-
-    <div class="card-grid" style="margin-bottom:28px;">
+    <!-- ====== 盘前准备 ====== -->
+    <div class="section-title">盘前准备 · 9:15 前</div>
+    <div class="card-grid">
         <a href="/screening" class="home-card">
-            <h2>🔍 多策略选股</h2>
-            <p><strong>六大策略并行筛选：</strong>1进2接力 / 机构票 / 龙头战法 / 突破形态 / 板块分歧 / 竞价抢筹</p>
-            <p style="margin-top:6px;"><strong>因子选股：</strong>动量 / 反转 / 质量因子综合评分</p>
-            <p style="margin-top:6px;"><strong>五指标战法：</strong>启动突破V1-V3 / 接力 / N字反包 / 冰点底</p>
-            <p style="margin-top:6px;color:#6366f1;font-size:0.82em;">🔗 含 V2 选股池状态机管理（盘前准备 + 仓位分配）</p>
+            <h2><span class="hc-icon">🔍</span>多策略选股</h2>
+            <p><strong>六大策略并行筛选：</strong>1进2接力 / 机构票 / 龙头战法 / 突破形态 / 板块分歧 / 竞价抢筹，叠加动量/反转/质量因子评分。</p>
+            <p><strong>五指标战法：</strong>启动突破 V1–V3 / 接力 / N 字反包 / 冰点底。</p>
+            <div class="hc-meta">含 V2 选股池状态机管理（仓位分配）</div>
         </a>
-
         <a href="/auction_analysis" class="home-card">
-            <h2>🔔 竞价四维分析</h2>
-            <p><strong>9:25 竞价结束即时分析：</strong>集合竞价量价异动 / 开盘强度排名 / 竞价抢筹识别 / 高开弱转强</p>
-            <p style="margin-top:6px;color:#888;font-size:0.82em;">竞价数据来自 AKShare 实时接口，需在交易日上午 9:25 后运行</p>
+            <h2><span class="hc-icon">🔔</span>竞价四维分析</h2>
+            <p><strong>9:25 竞价结束即时分析：</strong>集合竞价量价异动 / 开盘强度排名 / 竞价抢筹识别 / 高开弱转强。</p>
+            <div class="hc-meta">数据来自 AKShare 实时接口，需交易日 9:25 后运行</div>
         </a>
     </div>
 
-    <!-- ====== 盘中交易模块 ====== -->
-    <div class="section-title" style="font-size:1.1em;font-weight:700;color:#1a1a2e;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid #7c3aed;">
-        📈 盘中盯盘 & 模拟交易
-    </div>
-
-    <div class="card-grid" style="margin-bottom:28px;">
+    <!-- ====== 盘中交易 ====== -->
+    <div class="section-title">盘中交易 · 盯盘与持仓</div>
+    <div class="card-grid">
         <a href="/breakout_v3" class="home-card">
-            <h2>🚀 启动突破 V3</h2>
-            <p><strong>MAVOL180 突破战法升级版：</strong>zigzag 找顶线突破 + 竞价确认 + N字反包信号 + 移动止盈</p>
-            <p style="margin-top:6px;"><strong>模拟交易面板：</strong>候选池 → 观察池 → 就绪 → 持仓 → 已完成，全流程跟踪</p>
-            <p style="margin-top:6px;color:#888;font-size:0.82em;">V1/V2 版本已归档隐藏，V3 为当前主力版本</p>
+            <h2><span class="hc-icon">🚀</span>启动突破 V3 <span class="nav-badge" style="vertical-align:middle;">主力</span></h2>
+            <p><strong>MAVOL180 突破战法升级版：</strong>zigzag 找顶线突破 + 竞价确认 + N 字反包信号 + 移动止盈。</p>
+            <p><strong>模拟交易面板：</strong>候选池 → 观察池 → 就绪 → 持仓 → 已完成，全流程跟踪。</p>
         </a>
-
         <a href="/zt_replica" class="home-card">
-            <h2>📋 涨停复制战法</h2>
-            <p><strong>涨停板复制模型：</strong>识别首板/二板涨停 → 跟踪回踩 → 等待复制信号 → 模拟买入卖出</p>
-            <p style="margin-top:6px;"><strong>信号类型：</strong>缩量回踩 / 放量反包 / 均线支撑 / 涨停复制确认</p>
-            <p style="margin-top:6px;color:#888;font-size:0.82em;">含一年回测功能，自动生成 xlsx 回测报告</p>
+            <h2><span class="hc-icon">📋</span>涨停复制战法</h2>
+            <p><strong>涨停板复制模型：</strong>识别首板/二板涨停 → 跟踪回踩 → 等待复制信号 → 模拟买卖。</p>
+            <p><strong>信号类型：</strong>缩量回踩 / 放量反包 / 均线支撑 / 涨停复制确认。</p>
+            <div class="hc-meta">含一年回测，自动生成 xlsx 报告</div>
+        </a>
+        <a href="/sim_portfolio" class="home-card">
+            <h2><span class="hc-icon">💼</span>模拟持仓</h2>
+            <p><strong>统一持仓管理：</strong>备选标的 / 模拟持仓 / 已完成交易三板块，支持加仓、减仓、清仓与成本重算。</p>
+            <div class="hc-meta">贴近真实交易的资金模型</div>
+        </a>
+        <a href="/v4_monitor" class="home-card">
+            <h2><span class="hc-icon">📊</span>V4 监控手册</h2>
+            <p><strong>实盘候选池监控：</strong>盘前检查清单 + 买入/卖出信号面板 + 市场情绪。</p>
+            <div class="hc-meta">按流程手册逐项操作</div>
         </a>
     </div>
 
-    <!-- ====== 盘后复盘模块 ====== -->
-    <div class="section-title" style="font-size:1.1em;font-weight:700;color:#1a1a2e;margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid #10b981;">
-        🔍 盘后复盘（15:00 后）
-    </div>
-
-    <div class="card-grid" style="margin-bottom:28px;">
+    <!-- ====== 盘后复盘 ====== -->
+    <div class="section-title">盘后复盘 · 15:00 后</div>
+    <div class="card-grid">
         <a href="/review" class="home-card">
-            <h2>📋 每日复盘报告</h2>
-            <p><strong>全市场涨停复盘：</strong>涨停板统计 / 连板高度 / 板块强度排名 / 龙虎榜速览</p>
-            <p style="margin-top:6px;"><strong>AI 市场综述：</strong>一键生成 LLM 市场总结（需配置 API Key）</p>
-            <p style="margin-top:6px;color:#888;font-size:0.82em;">复盘数据基于 TDX 本地数据 + AKShare 在线补充</p>
+            <h2><span class="hc-icon">📝</span>每日复盘报告</h2>
+            <p><strong>全市场涨停复盘：</strong>涨停统计 / 连板高度 / 板块强度 / 龙虎榜速览，一键生成 AI 市场综述。</p>
+            <div class="hc-meta">TDX 本地数据 + AKShare 在线补充</div>
         </a>
-
-        <a href="/stock/000001" class="home-card" style="opacity:0.85;">
-            <h2>📈 个股深度分析</h2>
-            <p><strong>单票技术面全景：</strong>多周期均线状态 / MACD 金叉死叉 / 筹码分布 / 成交量量比</p>
-            <p style="margin-top:6px;"><strong>入场建议：</strong>自动计算止损位 / 止盈目标 / 仓位建议</p>
-            <p style="margin-top:6px;color:#888;font-size:0.82em;">点击任意股票代码跳转，或在 URL 中直接输入 /stock/代码</p>
+        <a href="/regime_picks" class="home-card">
+            <h2><span class="hc-icon">🎯</span>行情诊断</h2>
+            <p><strong>三战法 × 行情分类：</strong>缠论趋势 + 小盘风格 + 情绪温度 → 六档行情，自动推荐对应战法与今日标的。</p>
+        </a>
+        <a href="/fund_screening" class="home-card">
+            <h2><span class="hc-icon">💰</span>基金挑选</h2>
+            <p><strong>养基体系五条件：</strong>按板块筛出符合标准的主动基金 Top5，支持关键词搜索。</p>
+        </a>
+        <a href="/stock/000001" class="home-card">
+            <h2><span class="hc-icon">📈</span>个股深度分析</h2>
+            <p><strong>单票技术面全景：</strong>多周期均线 / MACD / 筹码分布 / 量比，自动给出止损位、止盈目标与仓位建议。</p>
         </a>
     </div>
 
-    <!-- ====== 底部说明 ====== -->
-    <div style="margin-top:10px;padding:18px 20px;background:white;border-radius:10px;border:1px solid #e8eaed;font-size:0.85em;color:#666;line-height:1.8;">
-        <strong style="color:#1a1a2e;">💡 使用提示</strong><br>
-        • <strong>数据源：</strong>TDX 本地日线数据 + AKShare 实时行情 / 竞价数据，首次使用需确保 TDX 数据已下载<br>
-        • <strong>非交易时间：</strong>竞价分析和实时看盘功能在非交易时间可能返回空数据<br>
-        • <strong>左侧导航：</strong>按交易时间流程排列，从上到下依次为盘前 → 盘中 → 盘后<br>
-        • <strong>快捷操作：</strong>在任意页面按 <code style="background:#f0f0f0;padding:1px 5px;border-radius:3px;">Ctrl+K</code> 可快速搜索股票代码跳转
+    <!-- ====== 使用提示 ====== -->
+    <div class="card">
+        <div class="card-header">💡 使用提示</div>
+        <div class="card-body" style="font-size:var(--fs-13);color:var(--muted);line-height:1.9;">
+            <div>• <strong style="color:var(--ink-2);">数据源：</strong>TDX 本地日线 + AKShare 实时行情/竞价，首次使用需确保 TDX 数据已下载</div>
+            <div>• <strong style="color:var(--ink-2);">非交易时间：</strong>竞价分析与实时看盘可能返回空数据</div>
+            <div>• <strong style="color:var(--ink-2);">左侧导航：</strong>按 盘前 → 盘中 → 盘后 流程排列</div>
+            <div>• <strong style="color:var(--ink-2);">快捷操作：</strong>在任意页面按 <code>Ctrl+K</code> 快速搜索股票代码</div>
+        </div>
     </div>
 
 </div>

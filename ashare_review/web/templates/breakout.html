@@ -32,84 +32,84 @@
 </div>
 
 <!-- ====== 操作按钮 ====== -->
-<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
-    <button onclick="runSimScan()" class="btn-screener-card btn-main-control" style="display:inline-flex;width:auto;padding:10px 24px;">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+    <button onclick="runSimScan()" class="btn-screener-card btn-main-control">
         <span class="btn-icon">🔍</span>
         <span class="btn-text"><span class="btn-label">运行扫描</span><span class="btn-desc">VOL180: zigzag找顶线 + MAVOL180量能检测</span></span>
     </button>
-    <button onclick="loadSimPanels()" class="btn-screener-card" style="display:inline-flex;width:auto;padding:10px 20px;">
+    <button onclick="loadSimPanels()" class="btn-screener-card">
         <span class="btn-icon">🔄</span>
         <span class="btn-text"><span class="btn-label">刷新状态</span></span>
     </button>
-    <span id="scan-status" style="font-size:0.82em;color:#888;"></span>
+    <span id="scan-status" class="chip-desc"></span>
 </div>
 
 <!-- ====== 1. 观察池（全宽） ====== -->
-<div class="screener-column" style="background:linear-gradient(135deg,#fff8f0,#fff);border:2px solid #f0c040;margin-bottom:14px;">
-    <div class="column-header" style="border-bottom-color:#f0c040;">
-        <h3 style="color:#e67e22;margin:0;">👀 观察池（蓄势待突破）</h3>
-        <span class="column-badge" style="background:#fef3c7;color:#92400e;" id="watch-count">-</span>
+<div class="screener-column" style="margin-bottom:14px;">
+    <div class="column-header">
+        <h3>👀 观察池（蓄势待突破）</h3>
+        <span class="column-badge" id="watch-count">-</span>
     </div>
-    <p style="font-size:0.78em;color:#999;margin:4px 0 8px;">
+    <p class="column-desc">
         距zigzag找顶线 ≤10% · 年涨停>10次 · 等待量价突破确认
     </p>
     <div id="watch-panel" style="min-height:40px;max-height:400px;overflow-y:auto;">
-        <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+        <span class="empty-hint">点击「运行扫描」加载...</span>
     </div>
 </div>
 
 <!-- ====== 2. 明日开盘买入 + 今日模拟卖出（两栏） ====== -->
-<div class="screener-panel" style="grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+<div class="grid-2" style="margin-bottom:14px;">
 
     <!-- 明日开盘买入 -->
-    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:3px solid #22c55e;">
-        <div class="column-header" style="border-bottom-color:#22c55e;">
-            <h3 style="color:#16a34a;margin:0;">🟢 明日开盘买入</h3>
-            <span class="column-badge" style="background:#dcfce7;color:#166534;font-weight:600;" id="buy-count">-</span>
+    <div class="screener-column">
+        <div class="column-header">
+            <h3>🟢 明日开盘买入</h3>
+            <span class="column-badge" id="buy-count">-</span>
         </div>
-        <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
+        <p class="column-desc">
             今日收盘突破zigzag找顶线 + 量>MAVOL180×1.2 → 次日开盘买入
         </p>
         <div id="buy-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
-            <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+            <span class="empty-hint">点击「运行扫描」加载...</span>
         </div>
     </div>
 
     <!-- 今日模拟卖出 -->
-    <div class="screener-column" style="background:linear-gradient(135deg,#fef2f2,#fff);border:3px solid #ef4444;">
-        <div class="column-header" style="border-bottom-color:#ef4444;">
-            <h3 style="color:#dc2626;margin:0;">🔴 今日模拟卖出</h3>
-            <span class="column-badge" style="background:#fef2f2;color:#991b1b;font-weight:600;" id="sell-count">-</span>
+    <div class="screener-column">
+        <div class="column-header">
+            <h3>🔴 今日模拟卖出</h3>
+            <span class="column-badge" id="sell-count">-</span>
         </div>
-        <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
+        <p class="column-desc">
             不涨停/持有满3天 → 收盘卖出
         </p>
         <div id="sell-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
-            <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+            <span class="empty-hint">点击「运行扫描」加载...</span>
         </div>
     </div>
 
 </div>
 
 <!-- ====== 3. 模拟持仓（全宽） ====== -->
-<div class="screener-column" style="background:linear-gradient(135deg,#f5f3ff,#fff);border:2px solid #a78bfa;margin-bottom:14px;">
-    <div class="column-header" style="border-bottom-color:#a78bfa;">
-        <h3 style="color:#7c3aed;margin:0;">💼 模拟持仓</h3>
-        <span class="column-badge" style="background:#ede9fe;color:#5b21b6;font-weight:600;" id="hold-count">-</span>
+<div class="screener-column" style="margin-bottom:14px;">
+    <div class="column-header">
+        <h3>💼 模拟持仓</h3>
+        <span class="column-badge" id="hold-count">-</span>
     </div>
-    <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
+    <p class="column-desc">
         当前持仓 · 实时浮盈 · 涨停标记 · 持有天数
     </p>
     <div id="hold-panel" style="min-height:40px;max-height:300px;overflow-y:auto;">
-        <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+        <span class="empty-hint">点击「运行扫描」加载...</span>
     </div>
 </div>
 
 <!-- ====== 统计摘要 + 回测参考 ====== -->
-<div id="summary-bar" style="padding:10px 16px;background:#f0f4ff;border-radius:8px;border:1px solid #d0d7f0;font-size:0.82em;color:#666;display:none;margin-bottom:14px;"></div>
+<div id="summary-bar" style="padding:10px 16px;display:none;margin-bottom:14px;"></div>
 
-<div style="padding:12px 16px;background:#f8f9ff;border-radius:8px;border:1px solid #e0e7ff;font-size:0.82em;color:#666;">
-    <strong style="color:#4338ca;">📊 历史回测参考（过去250交易日 · VOL180方法）</strong><br>
+<div class="notice-banner">
+    <strong class="highlight">📊 历史回测参考（过去250交易日 · VOL180方法）</strong><br>
     胜率 51.7% | 均收益 +2.94% | 盈亏比 1.83 | 连板股胜率 92.6% 均+17.36%<br>
     评分90+信号：胜率57.9% 均+3.99% | 详细数据见 <code>vol180_breakout_backtest_250d.xlsx</code>
 </div>

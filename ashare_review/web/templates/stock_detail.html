@@ -144,20 +144,20 @@
 
     <!-- 入场/止损/止盈 -->
     {% if suggestion and suggestion.entry_zone %}
-    <div class="stock-card" style="border-left: 4px solid #e94560;">
+    <div class="stock-card">
         <h3>🎯 操作建议 <span class="card-badge">算法</span></h3>
         <div class="metric-grid">
             <div class="metric-item">
                 <span class="metric-label">入场区间</span>
-                <span class="metric-value" style="color:#6c5ce7;font-weight:bold;">{{ suggestion.entry_zone }}</span>
+                <span class="metric-value">{{ suggestion.entry_zone }}</span>
             </div>
             <div class="metric-item">
                 <span class="metric-label">止损价</span>
-                <span class="metric-value" style="color:#e94560;">{{ '%.2f' % suggestion.stop_loss }}</span>
+                <span class="metric-value risk">{{ '%.2f' % suggestion.stop_loss }}</span>
             </div>
             <div class="metric-item">
                 <span class="metric-label">目标价</span>
-                <span class="metric-value" style="color:#00b894;">{{ '%.2f' % suggestion.target }}</span>
+                <span class="metric-value">{{ '%.2f' % suggestion.target }}</span>
             </div>
             <div class="metric-item">
                 <span class="metric-label">盈亏比</span>
@@ -175,12 +175,12 @@
             </div>
         </div>
         {% if suggestion.risk_note %}
-        <div style="margin-top:10px;padding:8px 12px;background:#fff3cd;border-radius:4px;font-size:13px;">
+        <div class="risk-note">
             ⚠ {{ suggestion.risk_note }}
         </div>
         {% endif %}
         {% if suggestion.strategy_tip %}
-        <div style="margin-top:6px;padding:8px 12px;background:#e8f4fd;border-radius:4px;font-size:13px;color:#555;">
+        <div class="strategy-tip">
             💡 {{ suggestion.strategy_tip }}
         </div>
         {% endif %}
@@ -269,7 +269,7 @@
 <div class="stock-card" style="margin-top:20px">
     <h3>🤖 AI 多空观点
         <button onclick="loadAIOpinions('{{ code }}')"
-                style="float:right;padding:6px 16px;background:#6c5ce7;color:white;border:none;border-radius:4px;cursor:pointer;font-family:inherit">
+                style="float:right" class="btn btn-sm btn-primary">
             分析
         </button>
     </h3>

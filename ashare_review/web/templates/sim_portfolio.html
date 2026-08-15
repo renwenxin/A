@@ -1,38 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="page-header">
-    <div class="page-breadcrumb">
-        <span>模拟持仓</span>
+    <div>
+        <div class="page-title">💼 统一模拟持仓管理</div>
+        <div class="page-date">模拟持仓</div>
     </div>
-    <div class="page-date">💼 <strong>统一模拟持仓管理</strong></div>
+    <button onclick="loadState()" class="btn btn-sm btn-secondary">🔄 刷新</button>
 </div>
 <div class="content-area">
 
 <!-- ====== 搜索添加 ====== -->
-<div class="card" style="margin-bottom:14px;">
-    <div class="card-body" style="padding:12px 16px;">
+<div class="card">
+    <div class="card-body">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="stock-search" placeholder="输入代码或名称搜索…"
-                style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d0d5dd;border-radius:6px;font-size:0.9em;font-family:inherit;"
+                style="flex:1;min-width:200px;"
                 onkeydown="if(event.key==='Enter')searchStock()"
                 oninput="handleSearchInput(this.value)">
-            <button onclick="searchStock()" class="btn-screener-card" style="display:inline-flex;width:auto;padding:8px 16px;">
-                🔍 搜索
-            </button>
-            <span id="search-status" style="font-size:0.82em;color:#888;"></span>
+            <button onclick="searchStock()" class="btn-screener-card">🔍 搜索</button>
+            <span id="search-status"></span>
         </div>
         <div id="search-results" style="margin-top:8px;display:none;"></div>
     </div>
 </div>
 
 <!-- ====== 1. 备选标的 ====== -->
-<div class="card" style="margin-bottom:14px;border-left:4px solid #e67e22;">
+<div class="card">
     <div class="card-header">
-        <h3>📋 备选标的 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="watch-count">-</span></h3>
+        <h3>📋 备选标的 <span class="card-badge" id="watch-count">-</span></h3>
     </div>
     <div class="card-body no-padding">
         <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
-            <table style="font-size:0.85em;">
+            <table>
                 <thead>
                     <tr>
                         <th>代码</th><th>名称</th><th>加入日期</th><th>备注</th>
@@ -40,7 +39,7 @@
                     </tr>
                 </thead>
                 <tbody id="watch-tbody">
-                    <tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">
+                    <tr><td colspan="5" style="text-align:center;padding:20px;">
                         暂无备选标的 · 在上方搜索框输入代码或名称添加
                     </td></tr>
                 </tbody>
@@ -50,13 +49,13 @@
 </div>
 
 <!-- ====== 2. 模拟持仓 ====== -->
-<div class="card" style="margin-bottom:14px;border-left:4px solid #7c3aed;">
+<div class="card">
     <div class="card-header">
-        <h3>💼 模拟持仓 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="hold-count">-</span></h3>
+        <h3>💼 模拟持仓 <span class="card-badge" id="hold-count">-</span></h3>
     </div>
     <div class="card-body no-padding">
         <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
-            <table style="font-size:0.85em;">
+            <table>
                 <thead>
                     <tr>
                         <th>代码</th><th>名称</th><th>买入日</th><th>成本均价</th>
@@ -65,7 +64,7 @@
                     </tr>
                 </thead>
                 <tbody id="hold-tbody">
-                    <tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">
+                    <tr><td colspan="7" style="text-align:center;padding:20px;">
                         暂无持仓
                     </td></tr>
                 </tbody>
@@ -75,17 +74,16 @@
 </div>
 
 <!-- ====== 统计摘要 ====== -->
-<div id="stats-bar" style="padding:10px 16px;background:#f0f4ff;border-radius:8px;border:1px solid #d0d7f0;font-size:0.82em;color:#666;display:none;margin-bottom:14px;"></div>
+<div id="stats-bar" class="metric-item" style="display:none;margin-bottom:14px;"></div>
 
 <!-- ====== 3. 已完成交易 ====== -->
-<div class="card" style="margin-bottom:14px;">
+<div class="card">
     <div class="card-header">
-        <h3>📝 已完成交易 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="finished-count"></span></h3>
-        <button onclick="loadState()" style="padding:5px 14px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;font-size:0.82em;font-family:inherit;">🔄 刷新</button>
+        <h3>📝 已完成交易 <span class="card-badge" id="finished-count"></span></h3>
     </div>
     <div class="card-body no-padding">
         <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
-            <table style="font-size:0.82em;">
+            <table>
                 <thead>
                     <tr>
                         <th>代码</th><th>名称</th><th>买入日</th><th>买入价</th>
@@ -94,11 +92,11 @@
                     </tr>
                 </thead>
                 <tbody id="finished-tbody">
-                    <tr><td colspan="10" style="text-align:center;color:#999;padding:12px;">加载中...</td></tr>
+                    <tr><td colspan="10" class="loading-container">加载中...</td></tr>
                 </tbody>
             </table>
         </div>
-        <div style="padding:8px 14px;font-size:0.72em;color:#888;border-top:1px solid #f0f0f5;">
+        <div class="btn-desc" style="padding:10px 16px;border-top:1px solid var(--line);">
             💡 点击数值可直接编辑 · 修改后统计自动重算 · 数据保存到 sim_portfolio_state.json
         </div>
     </div>
