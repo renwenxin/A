@@ -34,6 +34,30 @@ _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.absp
 from generate_review_article import generate_article, _write_output as _write_article_output
 
 app = Flask(__name__)
+
+
+@app.before_request
+def _reject_cross_site_requests():
+    """CSRF 防护：非安全方法（POST/PUT/DELETE）必须来自本机。
+
+    浏览器跨站请求会携带 Origin/Referer 头，来源不是本机时直接拒绝；
+    命令行/脚本客户端（无 Origin/Referer）不受影响。
+    """
+    if request.method in ('GET', 'HEAD', 'OPTIONS'):
+        return None
+    origin = request.headers.get('Origin') or request.headers.get('Referer') or ''
+    if origin:
+        from urllib.parse import urlparse
+        try:
+            host = urlparse(origin).netloc.split(':')[0]
+        except Exception:
+            host = ''
+        # 同源判定：Origin/Referer 的 host 必须与请求目标一致（含本机回环）
+        if host and host != request.host.split(':')[0] and host not in ('127.0.0.1', 'localhost'):
+            return jsonify({'error': '跨站请求被拒绝（CSRF 防护）'}), 403
+    return None
+
+
 tdx = TdxReader()
 ak_fetcher = AkshareFetcher()
 
@@ -1477,6 +1501,8 @@ def regime_picks():
 
 @app.route('/stock/<code>')
 def stock_detail(code):
+    if not (len(code) == 6 and code.isdigit()):
+        return render_template('stock_detail.html', code=code, error='无效的股票代码')
     market = 'sh' if code.startswith('6') else 'sz'
     if code.startswith('8') or code.startswith('4'):
         market = 'bj'
@@ -1674,7 +1700,12 @@ def api_review_article():
     body = request.get_json(silent=True) or {}
     date_raw = body.get('date') or request.args.get('date') or ''
     personal = (body.get('personal_note') or '').strip()
-    provider = body.get('provider') or 'ollama'
+    # provider 白名单：默认仅本地 Ollama；如需允许其他 provider，设置环境变量
+    # ASHARE_ARTICLE_PROVIDERS（逗号分隔），避免任意调用方触发付费 LLM 调用
+    _allowed = {p.strip() for p in os.environ.get('ASHARE_ARTICLE_PROVIDERS', 'ollama').split(',') if p.strip()}
+    provider = (body.get('provider') or 'ollama')
+    if provider not in _allowed:
+        provider = 'ollama'
     date_ymd = date_raw.replace('-', '') if date_raw else None
 
     cache_key = (date_ymd or 'latest', personal)
@@ -1698,5 +1729,8 @@ def api_review_article():
         return jsonify({'success': False, 'error': f'生成失败: {e}'}), 500
 
 
-def run(host='127.0.0.1', port=5000, debug=True):
+def run(host='127.0.0.1', port=5000, debug=None):
+    # debug 默认 False（生产安全）；开发环境通过环境变量 ASHARE_DEBUG=1 或显式参数开启
+    if debug is None:
+        debug = os.environ.get('ASHARE_DEBUG', '') == '1'
     app.run(host=host, port=port, debug=debug)

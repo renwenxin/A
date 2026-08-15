@@ -27,6 +27,14 @@ def _today_str() -> str:
     return date.today().strftime('%Y-%m-%d')
 
 
+def _valid_code(code: str) -> bool:
+    """股票代码合法性校验：6 位数字（沪深京 A 股）。
+
+    防止任意字符串写入状态文件（存储型 XSS / 状态污染）。
+    """
+    return len(code) == 6 and code.isdigit()
+
+
 class SimPortfolio:
     """统一模拟持仓管理器"""
 
@@ -111,6 +119,8 @@ class SimPortfolio:
     def add_to_watch(self, code: str, notes: str = '') -> dict:
         """添加标的到备选池"""
         code = str(code).zfill(6)
+        if not _valid_code(code):
+            return {'success': False, 'error': f'无效的股票代码: {code}'}
         if code in self._state['watch']:
             return {'success': False, 'error': f'{code} 已在备选池中'}
         if code in self._state['holding']:
@@ -129,6 +139,8 @@ class SimPortfolio:
     def remove_from_watch(self, code: str) -> bool:
         """从备选池移除"""
         code = str(code).zfill(6)
+        if not _valid_code(code):
+            return False
         if code in self._state['watch']:
             del self._state['watch'][code]
             self._save()
@@ -144,6 +156,8 @@ class SimPortfolio:
         已持有同一代码时自动加仓，按加权平均重算持仓成本。
         """
         code = str(code).zfill(6)
+        if not _valid_code(code):
+            return {'success': False, 'error': f'无效的股票代码: {code}'}
         bd = buy_date or _today_str()
         name = self._get_name(code)
         shares = int(shares)
@@ -194,6 +208,8 @@ class SimPortfolio:
         shares<=0 或 >= 持仓 → 清仓；否则 → 减仓(剩余继续持有)。
         """
         code = str(code).zfill(6)
+        if not _valid_code(code):
+            return {'success': False, 'error': f'无效的股票代码: {code}'}
         holding = self._state['holding']
         if code not in holding:
             return {'success': False, 'error': f'{code} 不在持仓中'}

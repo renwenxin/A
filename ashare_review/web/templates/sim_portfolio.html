@@ -303,7 +303,7 @@ function renderWatch(items) {
     }
     tbody.innerHTML = items.map(s =>
         '<tr>' +
-        '<td><a href="/stock/' + s.code + '" style="color:#e67e22;font-weight:600;text-decoration:none;">' + s.code + '</a></td>' +
+        '<td><a href="/stock/' + escapeHtml(s.code) + '" style="color:#e67e22;font-weight:600;text-decoration:none;">' + escapeHtml(s.code) + '</a></td>' +
         '<td><strong>' + escapeHtml(s.name || '') + '</strong></td>' +
         '<td>' + (s.added_date || '') + '</td>' +
         '<td style="font-size:0.82em;color:#888;">' + escapeHtml(s.notes || '-') + '</td>' +
@@ -324,7 +324,7 @@ function renderHolding(items) {
     tbody.innerHTML = items.map(s => {
         const cost = (s.buy_price || 0) * (s.shares || 0);
         return '<tr>' +
-        '<td><a href="/stock/' + s.code + '" style="color:#7c3aed;font-weight:600;text-decoration:none;">' + s.code + '</a></td>' +
+        '<td><a href="/stock/' + escapeHtml(s.code) + '" style="color:#7c3aed;font-weight:600;text-decoration:none;">' + escapeHtml(s.code) + '</a></td>' +
         '<td><strong>' + escapeHtml(s.name || '') + '</strong></td>' +
         '<td>' + (s.buy_date || '') + '</td>' +
         '<td>' + (s.buy_price || 0).toFixed(2) + '</td>' +
@@ -350,7 +350,7 @@ function renderFinished(items) {
         const retColor = net >= 0 ? '#dc2626' : '#16a34a';
         const badge = t.is_win ? '<span class="result-badge win">✅胜</span>' : '<span class="result-badge loss">❌负</span>';
         return '<tr data-tid="' + t.trade_id + '">' +
-            '<td><a href="/stock/' + t.code + '" style="color:#dc2626;font-weight:600;text-decoration:none;">' + t.code + '</a></td>' +
+            '<td><a href="/stock/' + escapeHtml(t.code) + '" style="color:#dc2626;font-weight:600;text-decoration:none;">' + escapeHtml(t.code) + '</a></td>' +
             '<td>' + escapeHtml(t.name || '') + '</td>' +
             '<td class="editable-cell" data-field="buy_date" data-tid="' + t.trade_id + '">' + (t.buy_date || '-') + '</td>' +
             '<td class="editable-cell" data-field="buy_price" data-tid="' + t.trade_id + '">' + (t.buy_price || 0).toFixed(2) + '</td>' +

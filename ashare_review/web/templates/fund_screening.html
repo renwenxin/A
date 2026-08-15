@@ -101,6 +101,13 @@ let FUND_STATE = null;   // API 返回（板块浏览）
 let FUND_ACTIVE = null;  // 当前激活板块 key
 let FUND_MODE = 'browse'; // 'browse' | 'search'
 
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escAttr(s) { return esc(s); }
+
 async function loadFunds(force) {
     const url = '/api/fund_screen' + (force ? '?refresh=1' : '');
     document.getElementById('fund-loading').style.display = '';
@@ -126,8 +133,8 @@ function renderTabs() {
     const tabsEl = document.getElementById('fund-tabs');
     tabsEl.innerHTML = FUND_STATE.sectors.map(function (s, i) {
         const active = i === 0 ? ' active' : '';
-        return '<button class="v2-tab' + active + '" data-sec="' + s.key + '" onclick="switchSector(\'' + s.key + '\')">'
-            + s.name + ' <span class="tab-badge">' + s.picked + '</span></button>';
+        return '<button class="v2-tab' + active + '" data-sec="' + escAttr(s.key) + '">'
+            + esc(s.name) + ' <span class="tab-badge">' + s.picked + '</span></button>';
     }).join('');
     const first = FUND_STATE.sectors.find(function (s) { return s.picked > 0; }) || FUND_STATE.sectors[0];
     switchSector(first.key);
@@ -146,7 +153,7 @@ function fmtSign(v) {
     if (v === '—' || v == null) return '<span style="color:#94a3b8">—</span>';
     const n = parseFloat(v);
     const cls = n >= 0 ? '#e94560' : '#00a854';   // A股习惯：红涨绿跌
-    return '<span style="color:' + cls + ';font-weight:600;">' + v + '</span>';
+    return '<span style="color:' + cls + ';font-weight:600;">' + esc(v) + '</span>';
 }
 
 function fundTableRows(funds) {
@@ -155,20 +162,20 @@ function fundTableRows(funds) {
             f.scale_flag === '小规模✓' ? '#059669' :
             f.scale_flag === '清盘风险' || f.scale_flag === '巨无霸✗' ? '#ef4444' : '#d97706';
         const reasons = (f.reasons || []).map(function (r) {
-            return '<span class="fund-reason">' + r + '</span>';
+            return '<span class="fund-reason">' + esc(r) + '</span>';
         }).join('');
         return '<tr>'
             + '<td>' + (i + 1) + '</td>'
-            + '<td style="font-family:monospace">' + f.code + '</td>'
-            + '<td><strong>' + f.name + '</strong><div style="font-size:0.72em;color:#64748b;margin-top:2px;">'
-            + (f.manager || '经理未知') + ' · ' + (f.established || '') + '</div></td>'
-            + '<td>' + f.kind + '</td>'
-            + '<td>' + f.scale + ' <span style="color:' + scaleFlagColor + ';font-size:0.72em;">' + f.scale_flag + '</span></td>'
+            + '<td style="font-family:monospace">' + esc(f.code) + '</td>'
+            + '<td><strong>' + esc(f.name) + '</strong><div style="font-size:0.72em;color:#64748b;margin-top:2px;">'
+            + esc(f.manager || '经理未知') + ' · ' + esc(f.established || '') + '</div></td>'
+            + '<td>' + esc(f.kind) + '</td>'
+            + '<td>' + esc(f.scale) + ' <span style="color:' + scaleFlagColor + ';font-size:0.72em;">' + esc(f.scale_flag) + '</span></td>'
             + '<td>' + fmtSign(f.r1y) + '</td>'
             + '<td>' + fmtSign(f.ytd) + '</td>'
             + '<td>' + fmtSign(f.r3m) + '</td>'
             + '<td>' + fmtSign(f.since) + '</td>'
-            + '<td><span class="fund-score">' + f.score + '</span></td>'
+            + '<td><span class="fund-score">' + esc(f.score) + '</span></td>'
             + '<td style="max-width:260px;">' + reasons + '</td>'
             + '</tr>';
     }).join('');
@@ -193,7 +200,7 @@ function renderPanel(sec) {
         return;
     }
     el.innerHTML = renderFundTable(sec.funds,
-        '<div class="section-title">💰 ' + sec.name + ' — 符合养基体系五条件的主动基金 Top' + sec.picked
+        '<div class="section-title">💰 ' + esc(sec.name) + ' — 符合养基体系五条件的主动基金 Top' + sec.picked
         + ' <span style="font-size:0.75em;color:#94a3b8;font-weight:400;">匹配' + sec.matched + '只 / 合格' + sec.candidates + '只</span></div>');
 }
 
@@ -217,7 +224,7 @@ async function searchFunds() {
             panel.innerHTML = renderFundTable([], '', data.note || '没有匹配的基金');
         } else {
             panel.innerHTML = renderFundTable(data.funds,
-                '<div class="section-title">🔍 搜索「' + data.keyword + '」— 匹配 ' + data.matched + ' 只，选出符合五条件的 Top' + data.funds.length
+                '<div class="section-title">🔍 搜索「' + esc(data.keyword) + '」— 匹配 ' + data.matched + ' 只，选出符合五条件的 Top' + data.funds.length
                 + ' <span style="font-size:0.75em;color:#94a3b8;font-weight:400;">' + data.note + '</span></div>');
         }
         document.getElementById('fund-search-body').style.display = '';
@@ -237,5 +244,11 @@ function backToSectors() {
 }
 
 document.addEventListener('DOMContentLoaded', function () { loadFunds(false); });
+
+// 板块 Tab 事件委托（替代内联 onclick，避免属性注入）
+document.getElementById('fund-tabs').addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.v2-tab') : null;
+    if (btn) switchSector(btn.dataset.sec);
+});
 </script>
 {% endblock %}
