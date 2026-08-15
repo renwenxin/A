@@ -7,11 +7,26 @@ from typing import AsyncIterator
 
 
 class LLMProvider(ABC):
-    def __init__(self, model: str, api_key: str, base_url: str = '', timeout: int = 60):
+    def __init__(self, model: str, api_key: str, base_url: str = '', timeout: int = 60,
+                 api_key_env: str = ''):
         self.model = model
         self.api_key = api_key
         self.base_url = base_url
         self.timeout = timeout
+        self.api_key_env = api_key_env
+
+    def _ensure_key(self):
+        """调用前检查 API Key；未配置时给出明确的错误提示。
+
+        设计契约（vibe-trading 集成文档）：Provider 在无 API Key 时也可创建，
+        但真正发起 LLM 请求前必须报错，避免带着空 Key 发出无效请求。
+        """
+        if not self.api_key:
+            env = self.api_key_env or '对应 API Key'
+            raise ValueError(
+                f"API Key 未配置！请设置环境变量 {env}，"
+                f"或在 .env 文件中添加 {env}=your_key"
+            )
 
     @abstractmethod
     async def chat(self, messages: list[dict], **kwargs) -> str: ...
@@ -34,6 +49,7 @@ class OpenAICompatProvider(LLMProvider):
     """OpenAI 兼容 API（DeepSeek, OpenAI, 大部分国产模型都用这个格式）"""
 
     async def chat(self, messages: list[dict], **kwargs) -> str:
+        self._ensure_key()
         url = f"{self.base_url.rstrip('/')}/chat/completions" if self.base_url else \
               "https://api.deepseek.com/v1/chat/completions"
         body = {
@@ -55,6 +71,7 @@ class OpenAICompatProvider(LLMProvider):
             return data['choices'][0]['message']['content']
 
     async def chat_stream(self, messages: list[dict], **kwargs) -> AsyncIterator[str]:
+        self._ensure_key()
         url = f"{self.base_url.rstrip('/')}/chat/completions" if self.base_url else \
               "https://api.deepseek.com/v1/chat/completions"
         body = {
@@ -131,10 +148,11 @@ class AnthropicProvider(LLMProvider):
 
     ANTHROPIC_VERSION = "2023-06-01"
 
-    def __init__(self, model: str, api_key: str, base_url: str = '', timeout: int = 120):
+    def __init__(self, model: str, api_key: str, base_url: str = '', timeout: int = 120,
+                 api_key_env: str = ''):
         super().__init__(model, api_key,
                          base_url or "https://api.anthropic.com",
-                         timeout)
+                         timeout, api_key_env)
 
     def _build_anthropic_headers(self) -> dict:
         return {
@@ -171,6 +189,7 @@ class AnthropicProvider(LLMProvider):
         return system_prompt, anthropic_msgs
 
     async def chat(self, messages: list[dict], **kwargs) -> str:
+        self._ensure_key()
         system_prompt, anthropic_msgs = self._convert_messages(messages)
 
         body = {
@@ -213,6 +232,7 @@ class AnthropicProvider(LLMProvider):
             return ''
 
     async def chat_stream(self, messages: list[dict], **kwargs) -> AsyncIterator[str]:
+        self._ensure_key()
         system_prompt, anthropic_msgs = self._convert_messages(messages)
 
         body = {
@@ -296,20 +316,19 @@ def create_provider(provider_name: str = None) -> LLMProvider:
     cfg = get_config()
     name = provider_name or cfg.default_provider
     api_key = cfg.get_api_key(name)
+    api_key_env = ''
 
     if not api_key:
         if name == 'ollama':
             # 本地 Ollama 无需鉴权，占位即可（服务端会忽略该头）
             api_key = 'ollama-local'
         else:
-            # 给出明确的错误提示而非静默失败
+            # 设计契约（vibe-trading 集成文档）：无 Key 时 Provider 可创建但不发送请求。
+            # 创建时留空 api_key；真正调用 chat()/chat_stream() 时 _ensure_key() 会给出明确的错误提示。
             from ..config.defaults import DEFAULT_PROVIDERS
-            provider_cfg = DEFAULT_PROVIDERS.get(name)
-            env_var = provider_cfg.api_key_env if provider_cfg else f'{name.upper()}_API_KEY'
-            raise ValueError(
-                f"API Key 未配置！请设置环境变量 {env_var}，"
-                f"或在 .env 文件中添加 {env_var}=your_key"
-            )
+            _cfg = DEFAULT_PROVIDERS.get(name)
+            api_key_env = _cfg.api_key_env if _cfg else f'{name.upper()}_API_KEY'
+            api_key = ''
 
     provider_cfg = cfg.providers.get(name)
     if provider_cfg is None:
@@ -329,6 +348,7 @@ def create_provider(provider_name: str = None) -> LLMProvider:
             api_key=api_key,
             base_url=provider_cfg.base_url,
             timeout=provider_cfg.timeout,
+            api_key_env=api_key_env,
         )
 
     return OpenAICompatProvider(
@@ -336,4 +356,5 @@ def create_provider(provider_name: str = None) -> LLMProvider:
         api_key=api_key,
         base_url=provider_cfg.base_url,
         timeout=provider_cfg.timeout,
+        api_key_env=api_key_env,
     )
