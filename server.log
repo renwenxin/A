@@ -1,0 +1,80 @@
+ * Serving Flask app 'ashare_review.web.app'
+ * Debug mode: off
+01:13:38 INFO    werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+01:13:38 INFO    werkzeug: [33mPress CTRL+C to quit[0m
+01:13:44 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:13:44] "GET / HTTP/1.1" 200 -
+[Òò¹ûºòÑ¡³Ø] ´Ó»º´æ¼ÓÔØ: 1034 Ö»
+01:13:48 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:13:48] "GET /regime_picks?refresh=1 HTTP/1.1" 200 -
+01:13:48 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:13:48] "GET /regime_picks HTTP/1.1" 200 -
+01:15:05 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:15:05] "GET /regime_picks HTTP/1.1" 200 -
+01:17:03 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:03] "GET /regime_picks HTTP/1.1" 200 -
+01:17:03 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:03] "GET /static/style.css HTTP/1.1" 200 -
+01:17:06 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:06] "GET /review HTTP/1.1" 200 -
+01:17:06 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:06] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+01:17:08 INFO    ashare_review.utils.calendar: ´Ó±¾µØ»º´æ¼ÓÔØÁË 8797 ¸ö½»Ò×ÈÕ
+01:17:08 INFO    ashare_review.report.daily: ÕıÔÚ»ñÈ¡ 2026-08-10 Êı¾İ...
+01:17:09 INFO    ashare_review.data.akshare_fetcher: ÕÇÍ£³ØÁĞÃû: ['ĞòºÅ', '´úÂë', 'Ãû³Æ', 'ÕÇµø·ù', '×îĞÂ¼Û', '³É½»¶î', 'Á÷Í¨ÊĞÖµ', '×ÜÊĞÖµ', '»»ÊÖÂÊ', '·â°å×Ê½ğ', 'Ê×´Î·â°åÊ±¼ä', '×îºó·â°åÊ±¼ä', 'Õ¨°å´ÎÊı', 'ÕÇÍ£Í³¼Æ', 'Á¬°åÊı', 'ËùÊôĞĞÒµ']
+[akshare] ÕÇÍ£³Ø½âÎö: 74 Ö» (×ÜÊı74)
+01:17:09 INFO    ashare_review.report.daily: ÕÇÍ£³Ø: 74 Ö»
+[akshare] Áú»¢°ñÖ÷½Ó¿ÚÊ§°Ü: 'NoneType' object is not subscriptable
+[akshare] Áú»¢°ñ±¸ÓÃ½Ó¿ÚÊ§°Ü: module 'akshare' has no attribute 'stock_lhb_stock_em'
+01:17:10 INFO    ashare_review.report.daily: Áú»¢°ñ: 0 Ìõ
+[akshare] concept°å¿é(em)³¬Ê±(>4.0s)£¬¸ÄÓÃÕÇÍ£³Ø¾ÛºÏ
+01:17:14 INFO    ashare_review.report.daily: ¸ÅÄî°å¿é: 10 ¸ö
+[akshare] industry°å¿é(em)³¬Ê±(>4.0s)£¬¸ÄÓÃÕÇÍ£³Ø¾ÛºÏ
+01:17:18 INFO    ashare_review.report.daily: ĞĞÒµ°å¿é: 10 ¸ö
+[spot] clist Ê×Ò³Ê§°Ü: HTTPSConnectionPool(host='push2.eastmoney.com', port=443): Max retries exceeded with url: /api/qt/clist/get?fid=f3&po=1&pz=100&np=1&fltt=2&invt=2&fs=m%3A0%2Bt%3A6%2Cm%3A0%2Bt%3A80%2Cm%3A1%2Bt%3A2%2Cm%3A1%2Bt%3A23&fields=f2%2Cf3%2Cf5%2Cf6%2Cf12%2Cf14%2Cf20%2Cf21&pn=1 (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+[spot] clist Ê§°Ü£¬»ØÍËµ½¾º¼ÛÊı¾İ
+[spot] ¾º¼ÛÊı¾İ¹¹Ôì 5058 Ö»
+01:17:18 INFO    ashare_review.report.daily: ÊµÊ±ĞĞÇéÊı¾İ²»ÍêÕû£¬²¹³äÊ¹ÓÃÍ¨´ïĞÅ±¾µØÊı¾İ...
+01:17:18 INFO    ashare_review.report.daily: Ê¹ÓÃÍ¨´ïĞÅ±¾µØÊı¾İ...
+01:17:20 INFO    ashare_review.report.daily: Í¨´ïĞÅÉ¨Ãè0Ö»: ÕÇ0 µø0 ³É½»¶î0ÒÚ
+01:17:20 INFO    ashare_review.report.daily: ´óÅÌ: ³É½»¶î0ÒÚ ÕÇ0 µø0
+[akshare] Áú»¢°ñ±¸ÓÃ½Ó¿ÚÊ§°Ü: module 'akshare' has no attribute 'stock_lhb_stock_em'
+01:17:20 INFO    ashare_review.report.daily: Áú»¢°ñ±¸ÓÃ½Ó¿Ú: 0 Ìõ
+01:17:21 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:21] "GET / HTTP/1.1" 200 -
+01:17:21 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:21] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+[¸´ÅÌ¡¤ÕÇÍ£¸´ÖÆ] ¼ì²é 149 Ö»±êµÄ...
+  ÕÇÍ£¸´ÖÆ¼ì²é 50/149...
+  ÕÇÍ£¸´ÖÆ¼ì²é 100/149...
+[¸´ÅÌ¡¤ÕÇÍ£¸´ÖÆ] ÕÒµ½ 3 Ö»ºòÑ¡, Top 5: [('002552', '??????', 100), ('603228', '??????', 93), ('002971', '??????', 93)]
+01:17:22 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:22] "GET /review?refresh=1 HTTP/1.1" 200 -
+01:17:23 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:23] "GET / HTTP/1.1" 200 -
+01:17:23 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:23] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+01:17:24 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:24] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+01:17:25 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:25] "GET /review HTTP/1.1" 200 -
+01:17:25 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:25] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+01:17:31 INFO    ashare_review.utils.calendar: ´Ó±¾µØ»º´æ¼ÓÔØÁË 8797 ¸ö½»Ò×ÈÕ
+01:17:31 INFO    ashare_review.report.daily: ÕıÔÚ»ñÈ¡ 2026-08-10 Êı¾İ...
+01:17:31 INFO    ashare_review.report.daily: ÕÇÍ£³Ø: 74 Ö»
+[akshare] Áú»¢°ñÖ÷½Ó¿ÚÊ§°Ü: 'NoneType' object is not subscriptable
+[akshare] Áú»¢°ñ±¸ÓÃ½Ó¿ÚÊ§°Ü: module 'akshare' has no attribute 'stock_lhb_stock_em'
+01:17:32 INFO    ashare_review.report.daily: Áú»¢°ñ: 0 Ìõ
+[akshare] concept°å¿é(em)³¬Ê±(>4.0s)£¬¸ÄÓÃÕÇÍ£³Ø¾ÛºÏ
+01:17:36 INFO    ashare_review.report.daily: ¸ÅÄî°å¿é: 10 ¸ö
+01:17:37 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:37] "GET /regime_picks HTTP/1.1" 200 -
+01:17:37 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:37] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+01:17:39 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:39] "GET /breakout_v3 HTTP/1.1" 200 -
+01:17:39 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:39] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+01:17:39 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:39] "GET /api/breakout_v3/simulation/finished HTTP/1.1" 200 -
+01:17:39 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:39] "GET /api/breakout_v3/simulation HTTP/1.1" 200 -
+01:17:39 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:39] "GET /api/breakout_v3/simulation/finished HTTP/1.1" 200 -
+01:17:40 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:40] "GET /sim_portfolio HTTP/1.1" 200 -
+01:17:40 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:40] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+01:17:40 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:40] "GET /api/sim_portfolio/state HTTP/1.1" 200 -
+[akshare] industry°å¿é(em)³¬Ê±(>4.0s)£¬¸ÄÓÃÕÇÍ£³Ø¾ÛºÏ
+01:17:40 INFO    ashare_review.report.daily: ĞĞÒµ°å¿é: 10 ¸ö
+01:17:40 INFO    ashare_review.report.daily: ÊµÊ±ĞĞÇéÊı¾İ²»ÍêÕû£¬²¹³äÊ¹ÓÃÍ¨´ïĞÅ±¾µØÊı¾İ...
+01:17:40 INFO    ashare_review.report.daily: Ê¹ÓÃÍ¨´ïĞÅ±¾µØÊı¾İ...
+01:17:40 INFO    ashare_review.report.daily: Í¨´ïĞÅÉ¨Ãè0Ö»: ÕÇ0 µø0 ³É½»¶î0ÒÚ
+01:17:40 INFO    ashare_review.report.daily: ´óÅÌ: ³É½»¶î0ÒÚ ÕÇ0 µø0
+[akshare] Áú»¢°ñ±¸ÓÃ½Ó¿ÚÊ§°Ü: module 'akshare' has no attribute 'stock_lhb_stock_em'
+01:17:40 INFO    ashare_review.report.daily: Áú»¢°ñ±¸ÓÃ½Ó¿Ú: 0 Ìõ
+01:17:41 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:41] "GET / HTTP/1.1" 200 -
+01:17:41 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:41] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+[¸´ÅÌ¡¤ÕÇÍ£¸´ÖÆ] ¼ì²é 149 Ö»±êµÄ...
+  ÕÇÍ£¸´ÖÆ¼ì²é 50/149...
+  ÕÇÍ£¸´ÖÆ¼ì²é 100/149...
+[¸´ÅÌ¡¤ÕÇÍ£¸´ÖÆ] ÕÒµ½ 3 Ö»ºòÑ¡, Top 5: [('002552', '??????', 100), ('603228', '??????', 93), ('002971', '??????', 93)]
+01:17:47 INFO    werkzeug: 127.0.0.1 - - [10/Aug/2026 01:17:47] "GET /review?refresh=1 HTTP/1.1" 200 -

@@ -23,6 +23,15 @@ DEFAULT_PROVIDERS = {
     'claude': LLMProviderConfig(
         model='claude-sonnet-4-6',
         api_key_env='ANTHROPIC_API_KEY',
+        base_url='https://api.anthropic.com',
+        timeout=120,
+    ),
+    # 本地 Ollama（OpenAI 兼容接口，无需 API Key）
+    'ollama': LLMProviderConfig(
+        model='qwen2.5:latest',
+        api_key_env='OLLAMA_API_KEY',
+        base_url='http://localhost:11434/v1',
+        timeout=180,
     ),
 }
 

@@ -12,39 +12,54 @@
         <div class="sidebar-brand">
             <span class="brand-icon">📊</span>
             <div class="brand-text">
-                <span class="brand-title">A股复盘系统</span>
-                <span class="brand-sub">Short-term Trading</span>
+                <span class="brand-title">竞价交易系统</span>
+                <span class="brand-sub">Auction Trading</span>
             </div>
         </div>
 
         <nav class="sidebar-nav">
+            <span class="nav-section">竞价交易流程</span>
             <a href="/" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
                 <span class="nav-icon">🏠</span>
-                <span class="nav-label">系统首页</span>
+                <span class="nav-label">首页</span>
             </a>
-            <span class="nav-section">竞价交易流程</span>
+            <a href="/breakout_v3" class="nav-item {% if request.endpoint == 'breakout_v3' %}active{% endif %}">
+                <span class="nav-icon">🚀</span>
+                <span class="nav-label">启动突破</span>
+                <span class="nav-badge" style="background:#7c3aed;">V3</span>
+            </a>
+            <!-- hidden: 选股面板 + 竞价分析 + V4监控
             <a href="/screening" class="nav-item {% if request.endpoint == 'screening' %}active{% endif %}">
                 <span class="nav-icon">⏰</span>
                 <span class="nav-label">盘前准备</span>
                 <span class="nav-badge">9:15</span>
             </a>
+            <a href="/auction_analysis" class="nav-item {% if request.endpoint == 'auction_analysis' %}active{% endif %}">
+                <span class="nav-icon">🔔</span>
+                <span class="nav-label">竞价分析</span>
+                <span class="nav-badge" style="background:#d97706;">9:25</span>
+            </a>
+            <a href="/v4_monitor" class="nav-item {% if request.endpoint == 'v4_monitor' %}active{% endif %}">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">V4 监控手册</span>
+                <span class="nav-badge" style="background:#059669;">V4</span>
+            </a>
+            -->
+            <a href="/sim_portfolio" class="nav-item {% if request.endpoint == 'sim_portfolio' %}active{% endif %}">
+                <span class="nav-icon">💼</span>
+                <span class="nav-label">模拟持仓</span>
+            </a>
             <a href="/review" class="nav-item {% if request.endpoint == 'review' %}active{% endif %}">
-                <span class="nav-icon">🔍</span>
+                <span class="nav-icon">📊</span>
                 <span class="nav-label">复盘分析</span>
             </a>
-            <span class="nav-section">数据与工具</span>
-            <a href="/events" class="nav-item {% if request.endpoint == 'events_page' %}active{% endif %}">
-                <span class="nav-icon">📅</span>
-                <span class="nav-label">事件驱动</span>
+            <a href="/regime_picks" class="nav-item {% if request.endpoint == 'regime_picks' %}active{% endif %}">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">行情诊断</span>
             </a>
-            <a href="/chart" class="nav-item {% if request.endpoint == 'chart_page' %}active{% endif %}">
-                <span class="nav-icon">📈</span>
-                <span class="nav-label">看盘</span>
-                <span class="nav-badge">NEW</span>
-            </a>
-            <a href="/chat" class="nav-item {% if request.endpoint == 'chat' %}active{% endif %}">
-                <span class="nav-icon">🤖</span>
-                <span class="nav-label">AI分析</span>
+            <a href="/fund_screening" class="nav-item {% if request.endpoint == 'fund_screening' %}active{% endif %}">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">基金挑选</span>
             </a>
         </nav>
 
@@ -58,27 +73,6 @@
     <div class="main-wrapper">
         {% block content %}{% endblock %}
     </div>
-
-    <!-- AI 分析弹窗 (全局) -->
-    <div id="ai-modal" class="ai-modal" style="display:none">
-        <div class="ai-modal-content">
-            <span class="ai-modal-close" onclick="closeAIModal()">&times;</span>
-            <h3 id="ai-modal-title">AI 分析中...</h3>
-            <div id="ai-modal-body"></div>
-        </div>
-    </div>
-
-    <script>
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-    let aiEventSource = null;
-    function closeAIModal() {
-        document.getElementById('ai-modal').style.display = 'none';
-        if (aiEventSource) aiEventSource.close();
-    }
-    </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

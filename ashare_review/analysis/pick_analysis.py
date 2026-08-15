@@ -634,12 +634,16 @@ def analyze_with_agents(code: str, strategy: str = 'leader',
         import asyncio, json
 
         name = code
-        # Try to get name from screener
-        from ..web.app import SCREENERS
-        if strategy in SCREENERS:
-            n = SCREENERS[strategy]._get_name(code)
+        # 从名称映射获取股票名（不直接依赖 web.app）
+        try:
+            from ..screening.base import BaseScreener
+            screener = BaseScreener.__new__(BaseScreener)
+            screener.__init__()
+            n = screener._get_name(code)
             if n:
                 name = n
+        except Exception:
+            pass
 
         orch = SwarmOrchestrator()
         context = json.dumps(detail or {}, ensure_ascii=False)

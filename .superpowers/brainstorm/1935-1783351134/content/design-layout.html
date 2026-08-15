@@ -1,0 +1,142 @@
+<h2>设计方案 — 第2段：页面布局 & 前端组件</h2>
+<p class="subtitle">经典 TradingView 三列布局，前端拆分为 8 个独立 ES 模块。</p>
+
+<div class="mockup">
+  <div class="mockup-header">页面精确布局（1280px+ 宽屏基准）</div>
+  <div class="mockup-body">
+    <div style="display:flex;height:480px;gap:0;background:#2a2e39;border-radius:4px;overflow:hidden;">
+
+      <!-- 左列：自选列表 -->
+      <div style="width:200px;min-width:200px;background:#1e222d;display:flex;flex-direction:column;border-right:1px solid #2a2e39;">
+        <div style="padding:10px 12px;border-bottom:1px solid #2a2e39;color:#d1d4dc;font-size:12px;font-weight:600;">
+          📋 自选股 <span style="float:right;color:#787b86;font-size:10px;">15只</span>
+        </div>
+        <div style="padding:4px 8px;">
+          <input style="width:100%;padding:4px 8px;background:#131722;border:1px solid #2a2e39;border-radius:3px;color:#d1d4dc;font-size:11px;" placeholder="🔍 搜索代码/名称...">
+        </div>
+        <div style="padding:4px 8px;display:flex;gap:4px;font-size:10px;">
+          <span style="padding:2px 6px;background:#2962ff;border-radius:3px;color:#fff;cursor:pointer;">全部</span>
+          <span style="padding:2px 6px;color:#787b86;cursor:pointer;">短线</span>
+          <span style="padding:2px 6px;color:#787b86;cursor:pointer;">中长线</span>
+          <span style="padding:2px 6px;color:#787b86;cursor:pointer;">观察</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;font-size:11px;">
+          <div style="padding:6px 10px;border-left:2px solid #2962ff;background:rgba(41,98,255,0.1);cursor:pointer;">
+            <div style="color:#d1d4dc;">贵州茅台</div>
+            <div style="color:#787b86;">600519 <span style="color:#ef5350;float:right;">-1.2%</span></div>
+          </div>
+          <div style="padding:6px 10px;border-left:2px solid transparent;cursor:pointer;">
+            <div style="color:#d1d4dc;">宁德时代</div>
+            <div style="color:#787b86;">300750 <span style="color:#26a69a;float:right;">+2.3%</span></div>
+          </div>
+          <div style="padding:6px 10px;border-left:2px solid transparent;cursor:pointer;">
+            <div style="color:#d1d4dc;">中芯国际</div>
+            <div style="color:#787b86;">688981 <span style="color:#26a69a;float:right;">+5.1%</span></div>
+          </div>
+        </div>
+        <div style="padding:8px;border-top:1px solid #2a2e39;font-size:10px;color:#787b86;">
+          <span>+ 添加自选</span>
+        </div>
+      </div>
+
+      <!-- 中列：图表区 -->
+      <div style="flex:1;background:#131722;display:flex;flex-direction:column;min-width:0;">
+        <!-- 股票标题栏 -->
+        <div style="padding:8px 14px;background:#1e222d;display:flex;align-items:center;gap:12px;font-size:12px;">
+          <span style="color:#d1d4dc;font-weight:600;font-size:14px;">600519 贵州茅台</span>
+          <span style="color:#ef5350;font-size:16px;font-weight:600;">1,852.00</span>
+          <span style="color:#ef5350;">-22.00 (-1.17%)</span>
+          <span style="color:#787b86;margin-left:auto;font-size:11px;">
+            <span style="padding:2px 8px;background:#2962ff;border-radius:3px;color:#fff;">日线</span>
+            <span style="padding:2px 6px;">60分</span>
+            <span style="padding:2px 6px;">30分</span>
+            <span style="padding:2px 6px;">15分</span>
+            <span style="padding:2px 6px;">5分</span>
+            <span style="padding:2px 6px;">分时</span>
+          </span>
+        </div>
+        <!-- K线主图 -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:14px;border-bottom:1px solid #2a2e39;">
+          📈 K线主图 (Candlestick + MA5/MA10/MA20/MA60/MA89)
+        </div>
+        <!-- 成交量副图 -->
+        <div style="height:70px;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;border-bottom:1px solid #2a2e39;">
+          📊 成交量 (红涨绿跌 + 均量线)
+        </div>
+        <!-- MACD副图 -->
+        <div style="height:70px;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;">
+          🔵 MACD (DIF/DEA/柱状图)
+        </div>
+      </div>
+
+      <!-- 右列：工具+盘口 -->
+      <div style="width:220px;min-width:220px;background:#1e222d;display:flex;flex-direction:column;border-left:1px solid #2a2e39;overflow-y:auto;">
+        <div style="padding:10px 12px;border-bottom:1px solid #2a2e39;color:#d1d4dc;font-size:12px;font-weight:600;">
+          🔧 工具 & 盘口
+        </div>
+        <!-- 画线工具 -->
+        <div style="padding:8px 12px;">
+          <div style="color:#787b86;font-size:10px;margin-bottom:4px;">画线工具</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <span style="padding:3px 7px;background:#2a2e39;border-radius:3px;font-size:10px;color:#d1d4dc;cursor:pointer;">↗ 趋势线</span>
+            <span style="padding:3px 7px;background:#2a2e39;border-radius:3px;font-size:10px;color:#d1d4dc;cursor:pointer;">— 水平线</span>
+            <span style="padding:3px 7px;background:#2a2e39;border-radius:3px;font-size:10px;color:#d1d4dc;cursor:pointer;">▭ 矩形</span>
+            <span style="padding:3px 7px;background:#2a2e39;border-radius:3px;font-size:10px;color:#d1d4dc;cursor:pointer;">📐 斐波</span>
+          </div>
+        </div>
+        <!-- 盘口五档 -->
+        <div style="padding:8px 12px;">
+          <div style="color:#787b86;font-size:10px;margin-bottom:4px;">五档盘口</div>
+          <div style="font-size:10px;font-family:monospace;">
+            <div style="display:flex;justify-content:space-between;color:#ef5350;"><span>卖5</span><span>1,865.00</span><span>234</span></div>
+            <div style="display:flex;justify-content:space-between;color:#ef5350;"><span>卖4</span><span>1,862.00</span><span>156</span></div>
+            <div style="display:flex;justify-content:space-between;color:#ef5350;"><span>卖1</span><span>1,853.00</span><span>1,200</span></div>
+            <div style="color:#787b86;text-align:center;margin:2px 0;">──── 1,852.00 ────</div>
+            <div style="display:flex;justify-content:space-between;color:#26a69a;"><span>买1</span><span>1,852.00</span><span>856</span></div>
+            <div style="display:flex;justify-content:space-between;color:#26a69a;"><span>买4</span><span>1,848.00</span><span>312</span></div>
+            <div style="display:flex;justify-content:space-between;color:#26a69a;"><span>买5</span><span>1,845.00</span><span>421</span></div>
+          </div>
+        </div>
+        <!-- 策略信号 -->
+        <div style="padding:8px 12px;border-top:1px solid #2a2e39;margin-top:auto;">
+          <div style="color:#787b86;font-size:10px;margin-bottom:4px;">🎯 策略信号</div>
+          <div style="font-size:10px;color:#d1d4dc;">
+            <div style="padding:2px 0;">✅ MA60/89 粘合突破</div>
+            <div style="padding:2px 0;">✅ 成交量复合炮</div>
+            <div style="padding:2px 0;">⏳ 等待回踩确认</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+  <div>
+    <h3>📁 前端 JS 模块拆分 (8个文件)</h3>
+    <table style="width:100%;font-size:11px;border-collapse:collapse;">
+      <tr style="color:#787b86;"><th style="text-align:left;padding:4px;">模块文件</th><th style="text-align:left;padding:4px;">职责</th></tr>
+      <tr><td style="padding:4px;"><code>chart-core.js</code></td><td style="padding:4px;">lightweight-charts 初始化，主图/副图创建</td></tr>
+      <tr><td style="padding:4px;"><code>chart-data.js</code></td><td style="padding:4px;">K线数据获取、周期切换、IndexedDB缓存</td></tr>
+      <tr><td style="padding:4px;"><code>chart-indicators.js</code></td><td style="padding:4px;">MA/MACD/RSI/布林带/成交量计算和渲染</td></tr>
+      <tr><td style="padding:4px;"><code>chart-drawings.js</code></td><td style="padding:4px;">趋势线/水平线/斐波那契/矩形等画线工具</td></tr>
+      <tr><td style="padding:4px;"><code>watchlist.js</code></td><td style="padding:4px;">自选列表管理、分组、搜索、拖拽排序</td></tr>
+      <tr><td style="padding:4px;"><code>toolbar.js</code></td><td style="padding:4px;">右侧工具面板、盘口五档渲染</td></tr>
+      <tr><td style="padding:4px;"><code>strategy-overlay.js</code></td><td style="padding:4px;">策略买卖点标注、选股结果图表联动</td></tr>
+      <tr><td style="padding:4px;"><code>app.js</code></td><td style="padding:4px;">主入口，事件总线 (Pub/Sub)，模块协调</td></tr>
+    </table>
+  </div>
+  <div>
+    <h3>🗄️ 后端新增 API</h3>
+    <table style="width:100%;font-size:11px;border-collapse:collapse;">
+      <tr style="color:#787b86;"><th style="text-align:left;padding:4px;">端点</th><th style="text-align:left;padding:4px;">说明</th></tr>
+      <tr><td style="padding:4px;"><code>GET /chart</code></td><td style="padding:4px;">看盘页面（Jinja2模板）</td></tr>
+      <tr><td style="padding:4px;"><code>GET /api/chart/kline?code=&period=</code></td><td style="padding:4px;">多周期K线数据</td></tr>
+      <tr><td style="padding:4px;"><code>GET /api/chart/intra?code=</code></td><td style="padding:4px;">当日分时图数据</td></tr>
+      <tr><td style="padding:4px;"><code>GET /api/chart/depth?code=</code></td><td style="padding:4px;">盘口五档（实时）</td></tr>
+      <tr><td style="padding:4px;"><code>GET/POST /api/watchlist</code></td><td style="padding:4px;">自选列表 CRUD</td></tr>
+      <tr><td style="padding:4px;"><code>GET /api/chart/events?code=</code></td><td style="padding:4px;">策略事件标注（买卖点/涨停日等）</td></tr>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,63 @@
+<h2>前端架构 — 怎么嵌入现有系统？</h2>
+<p class="subtitle">现在的项目是 Flask + Jinja2 模板。TradingView 风格界面需要大量前端 JS。三种嵌入方式：</p>
+
+<div class="options">
+  <div class="option" data-choice="vanilla-spa" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>🥇 独立页面 + Vanilla JS 模块化（推荐）</h3>
+      <p>在 Flask 中新增一个 <code>/chart</code> 路由，HTML 页面内用原生 ES 模块组织 JS，引入 lightweight-charts。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 优势</h4><ul>
+          <li><strong>零框架依赖</strong>——不引入 React/Vue，保持轻量</li>
+          <li>与现有 Jinja2 模板系统完全兼容，侧边栏/导航复用 base.html</li>
+          <li>ES 模块化组织代码 (charts.js, indicators.js, drawings.js, watchlist.js)</li>
+          <li>Flask API 复用现有的数据接口，增量添加新的图表数据接口</li>
+          <li>打包体积小，加载快</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 局限</h4><ul>
+          <li>代码组织需要纪律，没有框架约束</li>
+          <li>复杂状态管理需要手写（Pub/Sub 模式）</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="react-vue" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>独立前端 SPA（React/Vue）</h3>
+      <p>用 Vite + React/Vue 搭建独立前端项目，通过 Flask API 获取数据，可配置 Nginx 反向代理。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 优势</h4><ul>
+          <li>组件化开发，状态管理成熟</li>
+          <li>生态丰富（UI 库、拖拽、路由等现成方案）</li>
+          <li>适合复杂交互</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 局限</h4><ul>
+          <li><strong>引入整套工具链</strong>——Vite/Webpack/Node.js 依赖</li>
+          <li>需要 Nginx 配置或 CORS 处理</li>
+          <li>与现有 Jinja2 模板系统割裂，导航/认证需重复实现</li>
+          <li>开发周期显著更长</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="htmx" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>HTMX + 服务端渲染增强</h3>
+      <p>用 HTMX 实现局部刷新，图表区用 lightweight-charts 嵌入，整体仍以服务端渲染为主。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 优势</h4><ul>
+          <li>最接近现有架构，改动最小</li>
+          <li>HTML 优先，SEO 友好</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 局限</h4><ul>
+          <li><strong>K线图交互不适合 HTMX</strong>——缩放/拖拽/画线都是纯前端行为</li>
+          <li>HTMX 适合表单/列表，不适合实时图表</li>
+          <li>最终图表部分还是要写大量 JS，HTMX 帮助有限</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

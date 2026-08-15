@@ -16,6 +16,9 @@ from .analysts import (
 )
 from .providers import create_provider
 from ..config import get_config
+from ..utils.log import get_logger
+
+logger = get_logger(__name__)
 
 _OPINION_SCHEMA = {
     'type': 'json_object',

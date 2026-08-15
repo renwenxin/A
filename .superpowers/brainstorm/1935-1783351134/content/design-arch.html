@@ -1,0 +1,76 @@
+<h2>设计方案 — 第1段：整体架构</h2>
+<p class="subtitle">基于前面所有选择的完整技术架构。</p>
+
+<div class="mockup">
+  <div class="mockup-header">系统架构总览</div>
+  <div class="mockup-body">
+    <div style="font-family:monospace;font-size:12px;line-height:1.8;color:#d1d4dc;">
+      ┌─────────────────────────────────────────────────────────┐
+      │                   <strong>浏览器 (Browser)</strong>                         │
+      │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+      │  │ Watchlist │ │ K线主图  │ │ 成交量    │ │ MACD     │  │
+      │  │ Panel    │ │ (Candles)│ │ (Volume) │ │ (Pane)   │  │
+      │  │          │ │ MA叠加   │ │          │ │          │  │
+      │  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
+      │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+      │  │ 工具栏   │ │ 盘口五档 │ │ 画线工具 │ │ 时间周期  │  │
+      │  │ (Tools)  │ │ (Depth)  │ │ (Draw)   │ │ (TF)     │  │
+      │  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
+      │              IndexedDB (K线数据缓存)                     │
+      └──────────────────────┬──────────────────────────────────┘
+                             │ HTTP/SSE
+      ┌──────────────────────▼──────────────────────────────────┐
+      │                <strong>Flask 后端 (Python)</strong>                      │
+      │  ┌──────────────────────────────────────────────────┐   │
+      │  │  /chart          → 看盘页面 (Jinja2)             │   │
+      │  │  /api/chart/kline → K线数据 (多周期)             │   │
+      │  │  /api/chart/depth → 盘口数据                     │   │
+      │  │  /api/chart/intra → 分时图数据                   │   │
+      │  │  /api/watchlist/*  → 自选列表 CRUD               │   │
+      │  │  /api/screening/*  → 现有筛选接口（复用）         │   │
+      │  └──────────────────────────────────────────────────┘   │
+      └──────┬──────────────┬──────────────┬───────────────────┘
+             │              │              │
+      ┌──────▼──────┐ ┌─────▼─────┐ ┌──────▼──────┐
+      │ TDX Reader  │ │ Akshare   │ │ SQLite      │
+      │ .day 日线   │ │ 分钟K线   │ │ 自选股缓存  │
+      │ .5 分钟线   │ │ 实时盘口  │ │ + K线缓存   │
+      └─────────────┘ └───────────┘ └─────────────┘
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+  <div class="card" style="margin:0;">
+    <div class="card-body">
+      <h3>🎨 前端</h3>
+      <p><strong>Vanilla JS ES模块</strong><br>
+      lightweight-charts (CDN)<br>
+      自定义 Watchlist / Toolbar<br>
+      IndexedDB 数据缓存<br>
+      复用现有 base.html 导航</p>
+    </div>
+  </div>
+  <div class="card" style="margin:0;">
+    <div class="card-body">
+      <h3>⚙️ 后端</h3>
+      <p><strong>Flask (现有)</strong><br>
+      新增 /chart 路由<br>
+      新增 5 个数据 API<br>
+      复用 TdxReader + AkshareFetcher<br>
+      SSE 推送实时数据</p>
+    </div>
+  </div>
+  <div class="card" style="margin:0;">
+    <div class="card-body">
+      <h3>📦 核心依赖</h3>
+      <p><strong>仅 1 个新依赖</strong><br>
+      lightweight-charts v4.x (CDN)<br>
+      无 Node.js / 打包工具<br>
+      无 React / Vue<br>
+      全部浏览器原生能力</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;"><strong>核心原则：</strong>在现有 Flask 项目中新增一个看盘页面和一组 API，前端用 lightweight-charts CDN + 原生 ES 模块。不引入任何构建工具或前端框架。</p>

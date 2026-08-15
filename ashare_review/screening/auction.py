@@ -29,6 +29,8 @@ class AuctionScreener(BaseScreener):
     name = '竞价抢筹'
 
     _MIN_SCORE = 25
+    MIN_OPEN_PCT = 2.0     # 最低高开幅度（%）
+    MAX_OPEN_PCT = 6.0     # 最高高开幅度（%）
 
     def screen(self) -> List[ScreeningResult]:
         auctions = self.ak.get_auction_data()
@@ -41,6 +43,11 @@ class AuctionScreener(BaseScreener):
         results = []
         for a in auctions:
             if a.auction_volume == 0 and a.auction_amount == 0:
+                continue
+
+            # ---- 高开幅度过滤：仅2%~6%的标的入选 ----
+            open_pct = a.open_change_pct
+            if open_pct < self.MIN_OPEN_PCT or open_pct > self.MAX_OPEN_PCT:
                 continue
 
             score = 0
@@ -82,8 +89,6 @@ class AuctionScreener(BaseScreener):
             # ============================================
             # 二维·价：高开幅度
             # ============================================
-            open_pct = a.open_change_pct
-
             if open_pct >= 7:
                 score += 20
                 reasons.append(f'超高开{open_pct:.1f}%')

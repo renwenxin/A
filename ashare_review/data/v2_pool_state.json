@@ -1,0 +1,395 @@
+{
+  "signals": {
+    "603137": {
+      "code": "603137",
+      "name": "恒尚节能",
+      "score": 100,
+      "reasons": [
+        "nzt8c",
+        "tp250d",
+        "SWL>sws",
+        "fl3.1x",
+        "60d98%"
+      ],
+      "v2_factors": {
+        "code": "603137",
+        "is_zt": false,
+        "dist_60d": -3.499278499278495,
+        "dist_250d": 6.150793650793654,
+        "swl_control": true,
+        "vol_ratio": 3.122480376696179,
+        "chg_60d": 98.14814814814815,
+        "is_sector_leader": 0
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "002208": {
+      "code": "002208",
+      "name": "合肥城建",
+      "score": 95,
+      "reasons": [
+        "nzt25c",
+        "SWL>sws",
+        "fl2.6x",
+        "60d61%"
+      ],
+      "v2_factors": {
+        "code": "002208",
+        "is_zt": false,
+        "dist_60d": -26.289833080424884,
+        "dist_250d": -26.289833080424884,
+        "swl_control": true,
+        "vol_ratio": 2.5573336717224744,
+        "chg_60d": 60.97763048881524,
+        "is_sector_leader": 1
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "600353": {
+      "code": "600353",
+      "name": "旭光电子",
+      "score": 95,
+      "reasons": [
+        "nzt15c",
+        "SWL>sws",
+        "fl1.6x",
+        "60d170%"
+      ],
+      "v2_factors": {
+        "code": "600353",
+        "is_zt": false,
+        "dist_60d": -21.3859910581222,
+        "dist_250d": -21.3859910581222,
+        "swl_control": true,
+        "vol_ratio": 1.601196707353304,
+        "chg_60d": 169.8209718670077,
+        "is_sector_leader": 1
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "603986": {
+      "code": "603986",
+      "name": "兆易创新",
+      "score": 95,
+      "reasons": [
+        "nzt14c",
+        "SWL>sws",
+        "fl1.5x",
+        "60d133%"
+      ],
+      "v2_factors": {
+        "code": "603986",
+        "is_zt": false,
+        "dist_60d": -27.71596626745092,
+        "dist_250d": -27.71596626745092,
+        "swl_control": true,
+        "vol_ratio": 1.5265687125996474,
+        "chg_60d": 133.46303501945528,
+        "is_sector_leader": 1
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "002185": {
+      "code": "002185",
+      "name": "华天科技",
+      "score": 90,
+      "reasons": [
+        "nzt8c",
+        "tp250d",
+        "SWL>sws",
+        "60d105%"
+      ],
+      "v2_factors": {
+        "code": "002185",
+        "is_zt": false,
+        "dist_60d": -3.0268199233716575,
+        "dist_250d": 6.077116512992453,
+        "swl_control": true,
+        "vol_ratio": 1.045549644745577,
+        "chg_60d": 104.77346278317152,
+        "is_sector_leader": 1
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "603726": {
+      "code": "603726",
+      "name": "朗迪集团",
+      "score": 90,
+      "reasons": [
+        "nzt11c",
+        "SWL>sws",
+        "fl1.8x",
+        "60d41%"
+      ],
+      "v2_factors": {
+        "code": "603726",
+        "is_zt": false,
+        "dist_60d": -9.138888888888888,
+        "dist_250d": -9.138888888888888,
+        "swl_control": true,
+        "vol_ratio": 1.797641799839636,
+        "chg_60d": 41.29589632829374,
+        "is_sector_leader": 0
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "603991": {
+      "code": "603991",
+      "name": "领先股份",
+      "score": 85,
+      "reasons": [
+        "nzt8c",
+        "SWL>sws",
+        "fl1.8x",
+        "60d55%"
+      ],
+      "v2_factors": {
+        "code": "603991",
+        "is_zt": false,
+        "dist_60d": -9.37640449438202,
+        "dist_250d": -3.4418771698790853,
+        "swl_control": true,
+        "vol_ratio": 1.8091811617728941,
+        "chg_60d": 55.40462427745665,
+        "is_sector_leader": 1
+      },
+      "sector": "",
+      "signal_date": "2026-07-10"
+    },
+    "600113": {
+      "code": "600113",
+      "name": "浙江东日",
+      "score": 65,
+      "reasons": [
+        "年涨停17次·主板活跃",
+        "距找顶线10.0%·即将突破"
+      ],
+      "v2_factors": {
+        "code": "600113",
+        "is_zt": false,
+        "top_line": 36.73692307692307,
+        "dist_60d": -38.237490664675136,
+        "dist_250d": -51.97444831591172,
+        "swl_control": false,
+        "vol_ratio": 0.6277243282467757,
+        "chg_60d": -28.860215053763444,
+        "is_sector_leader": 0
+      },
+      "sector": "",
+      "signal_date": "2026-07-13"
+    }
+  },
+  "watch": {
+    "603137": {
+      "code": "603137",
+      "name": "恒尚节能",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 100,
+      "v2_factors": {
+        "code": "603137",
+        "is_zt": false,
+        "dist_60d": -3.499278499278495,
+        "dist_250d": 6.150793650793654,
+        "swl_control": true,
+        "vol_ratio": 3.122480376696179,
+        "chg_60d": 98.14814814814815,
+        "is_sector_leader": 0
+      },
+      "days_watched": 4
+    },
+    "002208": {
+      "code": "002208",
+      "name": "合肥城建",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 95,
+      "v2_factors": {
+        "code": "002208",
+        "is_zt": false,
+        "dist_60d": -26.289833080424884,
+        "dist_250d": -26.289833080424884,
+        "swl_control": true,
+        "vol_ratio": 2.5573336717224744,
+        "chg_60d": 60.97763048881524,
+        "is_sector_leader": 1
+      },
+      "days_watched": 4
+    },
+    "600353": {
+      "code": "600353",
+      "name": "旭光电子",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 95,
+      "v2_factors": {
+        "code": "600353",
+        "is_zt": false,
+        "dist_60d": -21.3859910581222,
+        "dist_250d": -21.3859910581222,
+        "swl_control": true,
+        "vol_ratio": 1.601196707353304,
+        "chg_60d": 169.8209718670077,
+        "is_sector_leader": 1
+      },
+      "days_watched": 4
+    },
+    "603986": {
+      "code": "603986",
+      "name": "兆易创新",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 95,
+      "v2_factors": {
+        "code": "603986",
+        "is_zt": false,
+        "dist_60d": -27.71596626745092,
+        "dist_250d": -27.71596626745092,
+        "swl_control": true,
+        "vol_ratio": 1.5265687125996474,
+        "chg_60d": 133.46303501945528,
+        "is_sector_leader": 1
+      },
+      "days_watched": 4
+    },
+    "002185": {
+      "code": "002185",
+      "name": "华天科技",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 90,
+      "v2_factors": {
+        "code": "002185",
+        "is_zt": false,
+        "dist_60d": -3.0268199233716575,
+        "dist_250d": 6.077116512992453,
+        "swl_control": true,
+        "vol_ratio": 1.045549644745577,
+        "chg_60d": 104.77346278317152,
+        "is_sector_leader": 1
+      },
+      "days_watched": 4
+    },
+    "603726": {
+      "code": "603726",
+      "name": "朗迪集团",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 90,
+      "v2_factors": {
+        "code": "603726",
+        "is_zt": false,
+        "dist_60d": -9.138888888888888,
+        "dist_250d": -9.138888888888888,
+        "swl_control": true,
+        "vol_ratio": 1.797641799839636,
+        "chg_60d": 41.29589632829374,
+        "is_sector_leader": 0
+      },
+      "days_watched": 4
+    },
+    "603991": {
+      "code": "603991",
+      "name": "领先股份",
+      "signal_date": "2026-07-10",
+      "watch_start": "2026-07-10",
+      "score": 85,
+      "v2_factors": {
+        "code": "603991",
+        "is_zt": false,
+        "dist_60d": -9.37640449438202,
+        "dist_250d": -3.4418771698790853,
+        "swl_control": true,
+        "vol_ratio": 1.8091811617728941,
+        "chg_60d": 55.40462427745665,
+        "is_sector_leader": 1
+      },
+      "days_watched": 4
+    },
+    "600113": {
+      "code": "600113",
+      "name": "浙江东日",
+      "signal_date": "2026-07-13",
+      "watch_start": "2026-07-13",
+      "score": 65,
+      "v2_factors": {
+        "code": "600113",
+        "is_zt": false,
+        "top_line": 36.73692307692307,
+        "dist_60d": -38.237490664675136,
+        "dist_250d": -51.97444831591172,
+        "swl_control": false,
+        "vol_ratio": 0.6277243282467757,
+        "chg_60d": -28.860215053763444,
+        "is_sector_leader": 0
+      },
+      "days_watched": 1
+    }
+  },
+  "ready": {
+    "000608": {
+      "code": "000608",
+      "name": "阳光股份",
+      "signal_date": "2026-07-07",
+      "confirm_date": "2026-07-10",
+      "score": 76.0,
+      "buy_date": "2026-07-13",
+      "buy_price": 0,
+      "pullback_pct": 2.0,
+      "vol_shrink_ratio": 0.4
+    },
+    "688809": {
+      "code": "688809",
+      "name": "强一股份",
+      "signal_date": "2026-07-08",
+      "confirm_date": "2026-07-10",
+      "score": 81.0,
+      "buy_date": "2026-07-13",
+      "buy_price": 0,
+      "pullback_pct": 2.0,
+      "vol_shrink_ratio": 0.4
+    }
+  },
+  "holding": {},
+  "finished": {
+    "301072": {
+      "code": "301072",
+      "name": "中捷精工",
+      "signal_date": "2026-07-06",
+      "score": 69.0,
+      "days_watched": 4,
+      "status": "expired"
+    },
+    "200037": {
+      "code": "200037",
+      "name": "深南电B",
+      "signal_date": "2026-07-06",
+      "score": 67.0,
+      "days_watched": 4,
+      "status": "expired"
+    },
+    "000921": {
+      "code": "000921",
+      "name": "海信家电",
+      "signal_date": "2026-07-08",
+      "score": 66.0,
+      "days_watched": 5,
+      "status": "expired"
+    },
+    "603155": {
+      "code": "603155",
+      "name": "新亚强",
+      "signal_date": "2026-07-08",
+      "score": 61.0,
+      "days_watched": 5,
+      "status": "expired"
+    }
+  },
+  "last_update": "2026-07-14"
+}

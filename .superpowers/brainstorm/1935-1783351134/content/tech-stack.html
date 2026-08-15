@@ -1,0 +1,64 @@
+<h2>技术方案选择 — 图表的底层渲染引擎</h2>
+<p class="subtitle">K线图是最核心的组件，选对渲染引擎决定成败。三个方案各有取舍。</p>
+
+<div class="options">
+  <div class="option" data-choice="lightweight-charts" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>🥇 lightweight-charts（强烈推荐）</h3>
+      <p><strong>TradingView 官方开源</strong>的轻量级图表库。Canvas渲染，性能极高，原生支持K线图+指标叠加+时间周期切换+画线。压缩后仅43KB。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 优势</h4><ul>
+          <li>TradingView同一团队开发，K线交互体验最接近原版</li>
+          <li>原生支持：缩放拖拽、十字光标、时间周期、MA/MACD/RSI等常用指标</li>
+          <li>TypeScript编写，API设计优雅</li>
+          <li>体积极小，加载快</li>
+          <li>免费开源，MIT协议</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 局限</h4><ul>
+          <li>分时图需自己额外实现</li>
+          <li>不包含画线工具（需引用高级版或自建）</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="echarts" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>ECharts</h3>
+      <p>百度开源，国内生态好，K线图开箱即用。但本质是声明式图表库，交互体验不如专业交易图表。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 优势</h4><ul>
+          <li>中文文档完善，国内社区活跃</li>
+          <li>内置K线图类型，配置简单</li>
+          <li>移动端适配好</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 局限</h4><ul>
+          <li>大数据量下性能下降明显</li>
+          <li>缩放/拖拽体验生硬，不适合高频交互</li>
+          <li>指标叠加需要大量自定义</li>
+          <li>画线工具需完全自建</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="tradingview-widget" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>TradingView Widget 嵌入</h3>
+      <p>直接嵌入官方iframe组件，功能最全但有限制。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 优势</h4><ul>
+          <li>完整TradingView体验，包含所有画线工具和指标</li>
+          <li>零前端开发成本</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 局限</h4><ul>
+          <li><strong>A股数据需自行提供</strong>（官方不直接支持A股实时数据）</li>
+          <li>免费版有水印和功能限制</li>
+          <li>无法深度集成现有选股系统</li>
+          <li>自定义标注/策略买卖点受限</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

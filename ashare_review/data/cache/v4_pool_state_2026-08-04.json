@@ -1,0 +1,118 @@
+{
+  "_cached_date": "2026-08-04",
+  "_cached_at": "16:11:20",
+  "_namespace": "v4_pool_state",
+  "_payload": {
+    "date": "2026-08-04",
+    "last_update": "2026-08-04",
+    "market_mood": {
+      "date": "2026-08-03",
+      "zt_count": 75,
+      "multi_board": 17,
+      "max_consecutive": 6,
+      "mood": "偏强",
+      "advice": "正常开仓 · 优选强势板块",
+      "color": "#f59e0b",
+      "note": "",
+      "sh_close": 3809.66,
+      "sh_ma60": 4024.04,
+      "is_bull": false
+    },
+    "sim_buy_today": [
+      {
+        "code": "603221",
+        "name": "爱丽家居",
+        "signal_date": "2026-08-04",
+        "buy_date": "2026-08-05",
+        "buy_price": 22.54,
+        "shares": 4400,
+        "close": 22.54,
+        "top_line": 12.59,
+        "break_pct": 79.0,
+        "vol_ratio": 4.1,
+        "score": 95,
+        "limit_count": 16,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 21.86,
+        "buy_range_high": 23.89,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "pending",
+          "reason": "今日竞价未写入 · 9:25后刷新"
+        }
+      },
+      {
+        "code": "603696",
+        "name": "安记食品",
+        "signal_date": "2026-08-04",
+        "buy_date": "2026-08-05",
+        "buy_price": 13.34,
+        "shares": 7400,
+        "close": 13.34,
+        "top_line": 12.32,
+        "break_pct": 8.3,
+        "vol_ratio": 2.4,
+        "score": 95,
+        "limit_count": 17,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 12.94,
+        "buy_range_high": 14.14,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "pending",
+          "reason": "今日竞价未写入 · 9:25后刷新"
+        }
+      },
+      {
+        "code": "600936",
+        "name": "北投科技",
+        "signal_date": "2026-08-04",
+        "buy_date": "2026-08-05",
+        "buy_price": 5.87,
+        "shares": 17000,
+        "close": 5.87,
+        "top_line": 4.83,
+        "break_pct": 21.5,
+        "vol_ratio": 2.6,
+        "score": 90,
+        "limit_count": 12,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 5.69,
+        "buy_range_high": 6.22,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "pending",
+          "reason": "今日竞价未写入 · 9:25后刷新"
+        }
+      }
+    ],
+    "sim_sell_today": [],
+    "summary": {
+      "total_trades": 3,
+      "wins": 4,
+      "losses": -1,
+      "win_rate": 133.3,
+      "total_return": 2.8,
+      "avg_return": 0.93,
+      "watch_count": 83,
+      "buy_count": 3,
+      "sell_count": 0,
+      "holding_count": 1,
+      "ready_count": 3,
+      "pending_sell_count": 0,
+      "cash": 452237.38,
+      "positions_value": 100500.0,
+      "portfolio_value": 552737.38,
+      "initial_capital": 1000000.0,
+      "cumulative_return": -44.73,
+      "max_drawdown": 50.22,
+      "max_positions": 10,
+      "market_bull": false,
+      "sh_close": 3822.28,
+      "sh_ma60": 4017.33
+    }
+  }
+}

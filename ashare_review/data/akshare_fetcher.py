@@ -111,8 +111,8 @@ class AkshareFetcher:
         # 涨停时间: 首次封板时间 > 封板时间 > 涨停时间
         time_col = next((c for c in cols if c in ('首次封板时间', '封板时间', '涨停时间')), None)
 
-        # 封单额(元): 封单资金 > 封单额
-        seal_col = next((c for c in cols if c in ('封单资金', '封单额')), None)
+        # 封单额(元): 封板资金 > 封单资金 > 封单额
+        seal_col = next((c for c in cols if c in ('封板资金', '封单资金', '封单额')), None)
 
         # 成交额(元)
         turnover_col = next((c for c in cols if c == '成交额'), None)
@@ -131,6 +131,9 @@ class AkshareFetcher:
 
         # 所属行业
         industry_col = next((c for c in cols if c == '所属行业'), None)
+
+        # 最新价/收盘价
+        price_col = next((c for c in cols if c in ('最新价', '收盘价', '最新价格')), None)
 
         results = []
         for _, row in df.iterrows():
@@ -217,6 +220,14 @@ class AkshareFetcher:
             if industry_col:
                 board_type = str(row.get(industry_col, ''))
 
+            # 最新价
+            close_price = 0.0
+            if price_col:
+                try:
+                    close_price = float(row[price_col])
+                except (ValueError, TypeError):
+                    pass
+
             results.append(LimitUpInfo(
                 code=code,
                 name=str(row.get(name_col, '')) if name_col else '',
@@ -229,6 +240,7 @@ class AkshareFetcher:
                 is_seal=is_seal,
                 is_broken=is_broken,
                 board_type=board_type,
+                close_price=close_price,
             ))
 
         print(f"[akshare] 涨停池解析: {len(results)} 只 (总数{len(df)})")
@@ -239,7 +251,7 @@ class AkshareFetcher:
                 'seal_amount': r.seal_amount, 'turnover': r.turnover,
                 'float_market_cap': r.float_market_cap, 'consecutive': r.consecutive,
                 'is_first': r.is_first, 'is_seal': r.is_seal, 'is_broken': r.is_broken,
-                'board_type': r.board_type
+                'board_type': r.board_type, 'close_price': r.close_price,
             } for r in results]))
         return results
 
@@ -561,15 +573,16 @@ class AkshareFetcher:
         因此后续会走全量 push2ex 获取路径。
         """
         try:
-            from .tdx_reader import TdxReader, RECORD_SIZE as _REC
+            from .tdx_reader import TdxReader, RECORD_SIZE as _REC, is_a_share_stock
             tdx = TdxReader()
             stocks = tdx.list_stocks()
             results = []
             for code, market in stocks:
-                # 过滤北交所 + 非股票品种（可转债/基金/债券等）
+                # 过滤非股票品种（指数/可转债/基金/B股等）。is_a_share_stock 按市场过滤，
+                # 避免 sh000xxx 上证指数与 sz000xxx 深市股票同代码被重复计入股票列表
                 if market == 'bj':
                     continue
-                if not self._is_a_stock(code):
+                if not is_a_share_stock(market, code):
                     continue
                 # 读最后一条记录获取最新收盘价
                 mkt_dir = {'sh': 'sh', 'sz': 'sz'}.get(market, market)
@@ -713,45 +726,35 @@ class AkshareFetcher:
             self._cache_set(cache_key, df.to_json())
         return df if df is not None else pd.DataFrame()
 
-    def _try_fetch_board(self, kind: str) -> Optional[pd.DataFrame]:
+    def _try_fetch_board(self, kind: str, timeout: float = 4.0) -> Optional[pd.DataFrame]:
         """
-        尝试多种方式获取板块行情:
-        1. eastmoney (em) — 字段丰富但可能被代理拦截
-        2. 同花顺 (ths) — 只有 name+code，需额外获取详情
-        3. 从涨停池按行业聚合 — 兜底方案
+        尝试获取板块行情（仅 eastmoney）:
+        em 字段丰富；网络受限时 akshare 内部重试退避可能耗时 6-10s，
+        这里用 timeout 兜底，失败/超时直接返回 None → 调用方走涨停池聚合。
+        不再降级同花顺：ths 板块列表无涨跌幅，最终也会被判为"涨跌幅全为0"
+        而丢弃，纯浪费时间。
         """
-        # 方案1: eastmoney
-        try:
-            if kind == 'concept':
-                df = ak.stock_board_concept_name_em()
-            else:
-                df = ak.stock_board_industry_name_em()
-            if df is not None and not df.empty:
-                print(f"[akshare] {kind}板块(em): {len(df)} 条")
-                return df
-        except Exception as e:
-            print(f"[akshare] {kind}板块(em)失败: {e}")
+        import threading
+        import queue as _queue
 
-        # 方案2: 同花顺 (+ 详情)
-        try:
-            if kind == 'concept':
-                df = ak.stock_board_concept_name_ths()
-            else:
-                df = ak.stock_board_industry_name_ths()
-            if df is not None and not df.empty:
-                print(f"[akshare] {kind}板块(ths): {len(df)} 条, 列名: {list(df.columns)}")
-                # ths 只返回 name + code，格式化为统一结构
-                result_rows = []
-                for _, row in df.iterrows():
-                    result_rows.append({
-                        '名称': str(row.get('name', '')),
-                        '涨跌幅': 0.0,   # ths 列表无涨跌幅
-                        '领涨股票': '',
-                    })
-                return pd.DataFrame(result_rows)
-        except Exception as e:
-            print(f"[akshare] {kind}板块(ths)失败: {e}")
+        def _fetch():
+            try:
+                if kind == 'concept':
+                    return ak.stock_board_concept_name_em()
+                return ak.stock_board_industry_name_em()
+            except Exception:
+                return None
 
+        q = _queue.Queue(maxsize=1)
+        threading.Thread(target=lambda: q.put(_fetch()), daemon=True).start()
+        try:
+            df = q.get(timeout=timeout)
+        except _queue.Empty:
+            print(f"[akshare] {kind}板块(em)超时(>{timeout}s)，改用涨停池聚合")
+            return None
+        if df is not None and not df.empty:
+            print(f"[akshare] {kind}板块(em): {len(df)} 条")
+            return df
         return None
 
     # ------------------------------------------------------------------
@@ -929,14 +932,14 @@ class AkshareFetcher:
     def _fetch_spot_from_tdx(self) -> pd.DataFrame:
         """从 TDX 本地数据构造基础行情快照（无实时涨跌幅，作为 clist 回退）"""
         try:
-            from .tdx_reader import TdxReader, RECORD_SIZE as _REC
+            from .tdx_reader import TdxReader, RECORD_SIZE as _REC, is_a_share_stock
             tdx = TdxReader()
             stocks = tdx.list_stocks()
             rows = []
             for code, market in stocks:
                 if market == 'bj':
                     continue
-                if not self._is_a_stock(code):
+                if not is_a_share_stock(market, code):
                     continue
                 mkt_dir = {'sh': 'sh', 'sz': 'sz'}.get(market, market)
                 fpath = os.path.join(tdx._market_dir(mkt_dir), f'{mkt_dir}{code}.day')

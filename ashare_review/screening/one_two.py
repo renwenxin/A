@@ -22,7 +22,7 @@ import os, struct
 import pandas as pd
 from datetime import datetime
 from typing import List, Optional, Tuple, Dict
-from .base import BaseScreener
+from .base import BaseScreener, _code_segment
 from ..data.models import ScreeningResult, LimitUpInfo, AuctionInfo
 from ..data.tdx_reader import RECORD_SIZE
 from ..analysis.indicators import enrich_all
@@ -43,13 +43,15 @@ class OneTwoScreener(BaseScreener):
     EXPECTATION_AFTERNOON = '下午板'              # 预期平开或高开0-3%
     EXPECTATION_LATE = '尾盘板'                   # 预期平开或低开
 
-    def screen(self, night_mode: bool = True) -> List[ScreeningResult]:
-        limit_ups = self.ak.get_limit_up_pool()
+    def screen(self, night_mode: bool = True, trade_date: str = None) -> List[ScreeningResult]:
+        limit_ups = self.ak.get_limit_up_pool(trade_date=trade_date)
         auctions = {}
         if not night_mode:
             auctions = {a.code: a for a in self.ak.get_auction_data()}
 
         results = []
+        # 代码段跟随：统计当日晋级票(连板≥2)集中在哪个代码段，一次算好全池复用
+        segment_stats = self.segment_stats(limit_ups)
         for lu in limit_ups:
             if not lu.is_first:
                 continue
@@ -57,7 +59,7 @@ class OneTwoScreener(BaseScreener):
                 continue
 
             score, reasons, detail = self._evaluate_first_board(
-                lu, auctions.get(lu.code), night_mode
+                lu, auctions.get(lu.code), night_mode, segment_stats
             )
             if score > 0:
                 results.append(ScreeningResult(
@@ -74,7 +76,8 @@ class OneTwoScreener(BaseScreener):
     # ------------------------------------------------------------------
     def _evaluate_first_board(self, lu: LimitUpInfo,
                                auction: Optional[AuctionInfo] = None,
-                               night_mode: bool = True) -> Tuple[int, list, dict]:
+                               night_mode: bool = True,
+                               segment_stats: dict = None) -> Tuple[int, list, dict]:
         score = 0
         reasons = []
         detail: Dict = {
@@ -183,6 +186,22 @@ class OneTwoScreener(BaseScreener):
         elif limit_up_count <= 1:
             score -= 3
             reasons.append('股性待验证(年涨停≤1)')
+
+        # 7) 代码段跟随（逻辑哥接力战法：跟市场主攻代码段，不做逆势段）
+        #    市场晋级集中在 6 开头就做 6 票，只有 0 开头有强度就做 0 票。
+        if segment_stats and segment_stats.get('dominant'):
+            seg = _code_segment(lu.code)
+            if seg == segment_stats['dominant']:
+                score += 10
+                reasons.append(f'代码段跟随·主攻{segment_stats["label"]}')
+                detail['segment'] = seg
+                detail['segment_follow'] = segment_stats['label']
+            elif seg == 'other':
+                pass  # 北交所不参与代码段跟随判断
+            else:
+                score -= 6
+                reasons.append(f'代码段逆势({seg}≠主攻{segment_stats["label"]})')
+                detail['segment'] = seg
 
         # ============================================
         # 二、盘后模式：预判次日竞价预期（不依赖竞价数据）

@@ -1,0 +1,59 @@
+<h2>数据源约束 — 你能拿到哪些周期的K线数据？</h2>
+<p class="subtitle">当前系统用通达信 .day 文件（日线），akshare 补充在线数据。多周期切换需要更细粒度数据。</p>
+
+<div class="options">
+  <div class="option" data-choice="multi-full" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>🥇 全周期（日线+分钟线）— 推荐</h3>
+      <p>日线来自通达信 .day，分钟线（5/15/30/60分钟）通过 akshare 在线拉取，前端缓存 IndexedDB。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 体验最好</h4><ul>
+          <li>完整多周期切换：5分 → 15分 → 30分 → 60分 → 日线 → 周线</li>
+          <li>akshare <code>stock_zh_a_hist_min_em</code> 接口支持分钟K线（近期数据免费）</li>
+          <li>前端 IndexedDB 缓存，同一天内切换周期不重复请求</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 注意</h4><ul>
+          <li>历史分钟数据有限（通常近1-3个月免费）</li>
+          <li>每只股票首次加载需等待API响应（~1-3秒）</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="daily-only" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>仅日线 + 分时图</h3>
+      <p>K线只看日线/周线/月线，日内看分时走势图（当日）。用通达信数据，不依赖在线API。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 简单可靠</h4><ul>
+          <li>完全离线可用，通达信数据即可</li>
+          <li>开发简单，不需要处理多周期数据转换</li>
+          <li>分时图可以用 akshare 当日数据</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 限制</h4><ul>
+          <li><strong>无法看60分钟/30分钟K线</strong>——短线交易的核心需求</li>
+          <li>与"TradingView 体验"差距较大</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="tdx-minute" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>通达信本地分钟线（如果你有的话）</h3>
+      <p>通达信 vipdoc 目录下也有 .5 文件（5分钟线）和 .1 文件（1分钟线），如果你安装了完整数据。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>✅ 快速且完整</h4><ul>
+          <li>本地读取，速度最快</li>
+          <li>历史数据完整（取决于你的通达信数据订阅）</li>
+          <li>完全离线</li>
+        </ul></div>
+        <div class="cons"><h4>⚠️ 需要验证</h4><ul>
+          <li>需要确认你的通达信目录下是否有 <code>vipdoc/sz/minline/*.5</code> 文件</li>
+          <li>解析 .5/.1 文件格式与 .day 不同，需要额外开发</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>涨停复制</span>
+    </div>
+    <div class="page-date">📋 <strong>涨停复制战法 — 龙哥涨停双响炮+N字反包体系</strong></div>
+</div>
+<div class="content-area">
+
+<!-- ====== 策略口诀速查 ====== -->
+<div class="guide-banner" style="background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0e0;margin-bottom:10px;">
+    <div style="font-size:0.85em;line-height:1.7;text-align:center;">
+        💡 <strong>涨停激活股性 → 缩量回调到均线 → 放量复制涨停</strong> &nbsp;|&nbsp;
+        四类信号：<span style="color:#f87171;">🔥双响炮</span> · <span style="color:#fbbf24;">📈N字反包</span> · <span style="color:#4ade80;">🔍缩量回踩</span> · <span style="color:#60a5fa;">📊蓄势待发</span> &nbsp;|&nbsp;
+        <span style="color:#f87171;">-5%硬止损</span> · 连板持有断板卖 · 两天不涨就撤 · 板块联动确认
+    </div>
+</div>
+
+<!-- ====== 操作按钮 ====== -->
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+    <button onclick="runSimScan()" class="btn-screener-card btn-main-control" style="display:inline-flex;width:auto;padding:10px 24px;">
+        <span class="btn-icon">🔍</span>
+        <span class="btn-text"><span class="btn-label">运行扫描</span><span class="btn-desc">全量重建候选池 → 筛选涨停复制候选 → 检测买入信号（重量级）</span></span>
+    </button>
+    <button onclick="loadSimPanels()" class="btn-screener-card" style="display:inline-flex;width:auto;padding:10px 20px;">
+        <span class="btn-icon">🔄</span>
+        <span class="btn-text"><span class="btn-label">刷新状态</span><span class="btn-desc">基于现有候选刷新价格/信号（轻量级）</span></span>
+    </button>
+    <span id="scan-status" style="font-size:0.82em;color:#888;"></span>
+</div>
+
+<!-- ====== 策略规则（折叠面板） ====== -->
+<div class="guide-banner" style="padding:8px 16px;margin-bottom:14px;">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <details style="flex:1;min-width:180px;">
+            <summary style="cursor:pointer;font-weight:600;color:#e67e22;font-size:0.82em;">📋 选股条件</summary>
+            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
+                沪深主板 · 年涨停≥10 · 非ST<br>
+                近20日有过涨停（非一字板）<br>
+                涨停后缩量回调(量<涨停量×0.6)<br>
+                回调不破涨停低点+关键均线<br>
+                当天板块有联动(≥2只确认)<br>
+                回调2-4天最佳窗口
+            </div>
+        </details>
+        <details style="flex:1;min-width:180px;">
+            <summary style="cursor:pointer;font-weight:600;color:#16a34a;font-size:0.82em;">🎯 四类买入信号</summary>
+            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
+                <strong style="color:#dc2626;">🔥涨停双响炮：</strong>缩量回调后再次涨停 · 最强<br>
+                <strong style="color:#d97706;">📈N字反包：</strong>缩量+放量突破回调高点<br>
+                <strong style="color:#16a34a;">🔍缩量回踩均线：</strong>回踩5/10日线不破+放量<br>
+                <strong style="color:#2563eb;">📊蓄势待发：</strong>大涨5-9%未涨停 · 留力明天
+            </div>
+        </details>
+        <details style="flex:1;min-width:180px;">
+            <summary style="cursor:pointer;font-weight:600;color:#dc2626;font-size:0.82em;">💰 卖出纪律</summary>
+            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
+                -5%硬止损 · 涨停持有断板卖<br>
+                移动止盈: 最高回落>5%<br>
+                N字反包失败→离场<br>
+                持有≥5天兜底
+            </div>
+        </details>
+        <details style="flex:1;min-width:180px;">
+            <summary style="cursor:pointer;font-weight:600;color:#7c3aed;font-size:0.82em;">🧠 龙哥心法</summary>
+            <div style="font-size:0.75em;color:#555;line-height:1.7;margin-top:4px;">
+                涨停=大资金已进场<br>
+                缩量回调=洗盘不彻底<br>
+                再次放量=二次发力→跟上吃肉<br>
+                三种不能做：放量回调/破涨停低/超10天
+            </div>
+        </details>
+    </div>
+</div>
+
+<!-- ====== 1. 观察池（全宽） ====== -->
+<div class="screener-column" style="background:linear-gradient(135deg,#fff8f0,#fff);border:2px solid #f0c040;margin-bottom:14px;">
+    <div class="column-header" style="border-bottom-color:#f0c040;">
+        <h3 style="color:#e67e22;margin:0;">👀 观察池（涨停后回调企稳中）</h3>
+        <span class="column-badge" style="background:#fef3c7;color:#92400e;" id="watch-count">-</span>
+    </div>
+    <p style="font-size:0.78em;color:#999;margin:4px 0 8px;">
+        近20日有过涨停 · 缩量回调 · 不破涨停低点 · 等待放量突破信号
+    </p>
+    <div id="watch-panel" style="min-height:40px;max-height:400px;overflow-y:auto;">
+        <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+    </div>
+</div>
+
+<!-- ====== 2. 明日开盘买入 + 今日卖出（两栏） ====== -->
+<div class="screener-panel" style="grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+
+    <!-- 明日开盘买入 -->
+    <div class="screener-column" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:3px solid #22c55e;">
+        <div class="column-header" style="border-bottom-color:#22c55e;">
+            <h3 style="color:#16a34a;margin:0;">🟢 明日开盘买入</h3>
+            <span class="column-badge" style="background:#dcfce7;color:#166534;font-weight:600;" id="buy-count">-</span>
+        </div>
+        <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
+            涨停复制信号触发 → 次日竞价确认后开盘买入
+        </p>
+        <div id="buy-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
+            <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+        </div>
+    </div>
+
+    <!-- 今日卖出 -->
+    <div class="screener-column" style="background:linear-gradient(135deg,#fef2f2,#fff);border:3px solid #ef4444;">
+        <div class="column-header" style="border-bottom-color:#ef4444;">
+            <h3 style="color:#dc2626;margin:0;">🔴 今日卖出</h3>
+            <span class="column-badge" style="background:#fef2f2;color:#991b1b;font-weight:600;" id="sell-count">-</span>
+        </div>
+        <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
+            -5%止损 · 移动止盈(回落>5%) · 涨停后断板离场 · 持有到期
+        </p>
+        <div id="sell-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
+            <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- ====== 3. 模拟持仓（全宽） ====== -->
+<div class="screener-column" style="background:linear-gradient(135deg,#f5f3ff,#fff);border:2px solid #a78bfa;margin-bottom:14px;">
+    <div class="column-header" style="border-bottom-color:#a78bfa;">
+        <h3 style="color:#7c3aed;margin:0;">💼 模拟持仓</h3>
+        <span class="column-badge" style="background:#ede9fe;color:#5b21b6;font-weight:600;" id="hold-count">-</span>
+    </div>
+    <p style="font-size:0.78em;color:#999;margin:0 0 6px;">
+        当前持仓 · 实时浮盈 · 涨停复制标记 · 移动止盈状态 · N字反包等待
+    </p>
+    <div id="hold-panel" style="min-height:40px;max-height:300px;overflow-y:auto;">
+        <span style="color:#999;font-size:0.82em;">点击「运行扫描」加载...</span>
+    </div>
+</div>
+
+<!-- ====== 统计摘要 + 回测参考 ====== -->
+<div id="summary-bar" style="padding:10px 16px;background:#f0f4ff;border-radius:8px;border:1px solid #d0d7f0;font-size:0.82em;color:#666;display:none;margin-bottom:14px;"></div>
+
+<div style="padding:12px 16px;background:#f8f9ff;border-radius:8px;border:1px solid #e0e7ff;font-size:0.82em;color:#666;">
+    <strong style="color:#dc2626;">📋 涨停复制战法 — 龙哥实盘体系</strong><br>
+    <strong style="color:#1a1a2e;">核心逻辑：</strong>涨停激活股性 → 缩量回调企稳（主力洗盘不彻底）→ 放量复制涨停（二次发力）<br>
+    <strong style="color:#16a34a;">买入时机：</strong>回调到5日线/10日线企稳后，当天放量拉升时跟随入场 · 上午冲高回落企稳是上车机会<br>
+    <strong style="color:#dc2626;">卖出铁律：</strong>连板持有断板止盈 · 两天不涨就撤 · 跌破5日线注意 · -5%硬止损 · 冲高回落放量就走<br>
+    <strong style="color:#d97706;">⚠ 三种不能做：</strong>放量回调（主力出货）· 跌破涨停最低价（支撑无效）· 回调超10天（股性冷却）
+</div>
+
+<!-- ====== 已完成交易（可编辑） ====== -->
+<div class="card" style="margin-bottom:14px;">
+    <div class="card-header">
+        <h3>📝 已完成交易 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="finished-count"></span></h3>
+        <button onclick="loadFinished()" style="padding:5px 14px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;font-size:0.82em;font-family:inherit;">🔄 刷新</button>
+    </div>
+    <div class="card-body no-padding">
+        <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+            <table style="font-size:0.82em;">
+                <thead>
+                    <tr>
+                        <th>代码</th><th>名称</th><th>买入日</th><th>买入价</th>
+                        <th>卖出日</th><th>卖出价</th><th>收益%</th><th>结果</th>
+                        <th>天</th><th>信号</th><th>卖出原因</th><th style="width:50px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="finished-tbody">
+                    <tr><td colspan="12" style="text-align:center;color:#999;padding:12px;">点击「刷新」加载</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="padding:8px 14px;font-size:0.72em;color:#888;border-top:1px solid #f0f0f5;">
+            💡 点击数值可直接编辑 · 修改后统计自动重算 · 数据保存到 sim_zt_replica_state.json
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+let _scanning = false;
+
+async function runSimScan() {
+    if (_scanning) return;
+    _scanning = true;
+    const status = document.getElementById('scan-status');
+    const steps = ['⏳ 强制重建候选池（全市场扫描年涨停≥10）...', '⏳ 筛选近20日涨停+缩量回调企稳...', '⏳ 检测涨停复制信号...', '⏳ 检查卖出条件...'];
+    let step = 0;
+    const timer = setInterval(() => { status.textContent = steps[step % steps.length]; step++; }, 3000);
+
+    try {
+        const resp = await fetch('/api/zt_replica/simulation/scan', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        if (data.summary) renderAll(data.summary);
+        const s = data.stats || {};
+        status.textContent = '✅ 扫描完成 — 候选池已重建 · 观察池:' + (s.watch_count || 0) + '只 · 买入信号:' + (s.buy_count || 0) + '只 · 卖出:' + (s.sell_count || 0) + '只';
+    } catch (e) {
+        status.textContent = '❌ ' + e.message;
+        showToast('扫描失败: ' + e.message, 'error');
+    } finally {
+        clearInterval(timer);
+        _scanning = false;
+    }
+}
+
+async function loadSimPanels() {
+    const status = document.getElementById('scan-status');
+    status.textContent = '⏳ 刷新涨停复制状态...';
+    try {
+        const resp = await fetch('/api/zt_replica/simulation');
+        if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        renderAll(data);
+        const sum = data.summary || {};
+        status.textContent = '✅ 状态已刷新 — 观察池:' + (sum.watch_count || 0) + '只 · 买入:' + (sum.buy_count || 0) + '只 · 持仓:' + (sum.holding_count || 0) + '只';
+    } catch (e) {
+        status.textContent = '❌ ' + e.message;
+    }
+}
+
+function renderAll(data) {
+    renderWatchPool(data.watch_list || []);
+    renderBuyPanel(data.sim_buy_today || []);
+    renderSellPanel(data.sim_sell_today || []);
+    renderHoldPanel(data.holdings || []);
+    renderSummary(data.summary || {});
+    loadFinished();
+}
+
+// ── 观察池 ──
+function renderWatchPool(items) {
+    document.getElementById('watch-count').textContent = items.length + '只';
+    const el = document.getElementById('watch-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:14px;color:#bbb;">暂无涨停复制候选 · 运行扫描刷新</div>';
+        return;
+    }
+    items.sort((a, b) => (b.score || 0) - (a.score || 0));
+    let html = '';
+    items.forEach(s => {
+        const ztDays = s.zt_days_ago || 0;
+        const ztColor = ztDays <= 3 ? '#16a34a' : ztDays <= 5 ? '#d97706' : '#888';
+        const maInfo = s.ma_support ? ' <span style="font-size:0.7em;color:#7c3aed;">' + s.ma_support + '</span>' : '';
+        const sectorInfo = s.sector_name ? ' <span style="font-size:0.68em;color:#d97706;">' + s.sector_name + (s.sector_signals >= 2 ? '🔥' + s.sector_signals : '') + '</span>' : '';
+        html += '<div style="display:inline-block;background:#fff;border-radius:6px;padding:5px 9px;margin:2px 3px;border:1px solid #f0e0c0;vertical-align:top;min-width:170px;">';
+        html += '<div style="display:flex;justify-content:space-between;">';
+        html += '<a href="/stock/' + (s.code || '') + '" style="color:#e67e22;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
+        html += '<span style="font-size:0.78em;color:#888;">' + (s.name || '') + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.75em;color:#666;margin-top:2px;">';
+        html += '<span style="color:' + ztColor + ';font-weight:600;">涨停' + ztDays + '天前</span>';
+        html += ' | 现价 ' + (s.close || 0);
+        html += ' | 量比 ' + (s.vol_ratio || 0) + 'x';
+        html += '</div>';
+        html += '<div style="font-size:0.72em;color:#999;">';
+        html += (s.sig_type || '回调企稳中') + maInfo + sectorInfo;
+        html += ' | 涨停' + (s.limit_count || 0) + '次 | 评分' + (s.score || 0);
+        html += '</div>';
+        html += '</div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 今日买入 ──
+function renderBuyPanel(items) {
+    document.getElementById('buy-count').textContent = items.length + '只';
+    const el = document.getElementById('buy-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:12px;color:#16a34a;">✅ 今日无涨停复制买入信号</div>';
+        return;
+    }
+    let html = '';
+    items.forEach(s => {
+        const sigType = s.sig_type || 'N字反包';
+        let sigColor;
+        if (sigType.includes('双响炮')) sigColor = '#dc2626';
+        else if (sigType.includes('N字')) sigColor = '#d97706';
+        else if (sigType.includes('蓄势待发')) sigColor = '#2563eb';
+        else sigColor = '#16a34a';
+        const maInfo = s.ma_support ? ' <span style="font-size:0.7em;background:#ede9fe;color:#5b21b6;padding:1px 4px;border-radius:2px;">' + s.ma_support + '</span>' : '';
+        html += '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;margin-bottom:6px;border:1px solid #86efac;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<span><a href="/stock/' + (s.code || '') + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.05em;">' + (s.code || '') + '</a>';
+        html += ' <span style="color:#333;">' + (s.name || '') + '</span>' + maInfo + '</span>';
+        html += '<span style="font-weight:700;color:' + sigColor + ';">' + sigType + ' 评分 ' + (s.score || 0) + '</span>';
+        html += '</div>';
+        html += '<div style="margin-top:3px;font-size:0.82em;color:#555;">';
+        html += '涨停<strong>' + (s.zt_days_ago || 0) + '天前</strong>';
+        html += ' | 量比 <strong style="color:' + ((s.vol_ratio || 0) >= 2 ? '#e94560' : '#f59e0b') + ';">' + (s.vol_ratio || 0) + 'x</strong>';
+        if (s.break_pct) html += ' | 突破 <strong>+' + (s.break_pct || 0) + '%</strong>';
+        html += '</div>';
+        html += '<div style="margin-top:4px;font-size:0.78em;color:#16a34a;font-weight:500;">';
+        html += '📅 次日开盘买入 | 🎯 涨停持有/断板卖出/最多5天';
+        html += ' <button onclick="recordBuy(\'' + (s.code || '') + '\',' + (s.buy_price || s.close || 0) + ')" style="font-size:0.9em;padding:2px 10px;cursor:pointer;background:#16a34a;color:#fff;border:none;border-radius:4px;">✅ 记录买入</button>';
+        html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.8em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="取消">✕</button>';
+        html += '</div>';
+        html += '</div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 今日卖出 ──
+function renderSellPanel(items) {
+    document.getElementById('sell-count').textContent = items.length + '只';
+    const el = document.getElementById('sell-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:12px;color:#999;">无卖出信号</div>';
+        return;
+    }
+    let html = '';
+    items.forEach(s => {
+        const estRet = s.estimated_net_ret || 0;
+        const retColor = estRet > 0 ? '#dc2626' : '#16a34a';
+        html += '<div style="background:#fef2f2;border-radius:6px;padding:8px 10px;margin:3px 0;border:1px solid #fecaca;">';
+        html += '<div style="display:flex;justify-content:space-between;">';
+        html += '<a href="/stock/' + (s.code || '') + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
+        html += '<span>' + (s.name || '') + '</span>';
+        html += '<span style="font-weight:600;color:' + retColor + ';">预计' + (estRet > 0 ? '+' : '') + estRet.toFixed(2) + '%</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.78em;color:#666;margin-top:2px;">';
+        html += '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + (s.exit_reason || '到期');
+        html += ' <button onclick="recordSell(\'' + (s.code || '') + '\')" style="font-size:0.85em;padding:1px 8px;cursor:pointer;background:#dc2626;color:#fff;border:none;border-radius:4px;">📝 记录卖出</button>';
+        html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 5px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;">✕</button>';
+        html += '</div>';
+        html += '</div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 持仓 ──
+function renderHoldPanel(items) {
+    document.getElementById('hold-count').textContent = items.length + '只';
+    const el = document.getElementById('hold-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:12px;color:#999;">当前无持仓</div>';
+        return;
+    }
+    let html = '';
+    items.forEach(s => {
+        const pnl = s.unrealized_pnl_pct || 0;
+        const pnlColor = pnl > 0 ? '#dc2626' : (pnl < 0 ? '#16a34a' : '#666');
+        const bg = pnl > 0 ? '#fef2f2' : (pnl < 0 ? '#f0fdf4' : '#fafafa');
+        const ztTag = s.is_zt_today ? ' 🔥涨停复制!' : '';
+        const reversalTag = s.awaiting_reversal ? ' ⏳等反包' : '';
+        const drop = s.trailing_drop_pct || 0;
+        const dropTag = drop <= -5 ? ' ⚠回落' + drop + '%' : (drop < -3 ? ' 📉' + drop + '%' : '');
+        const sigTag = s.sig_type ? ' <span style="font-size:0.65em;background:#dc2626;color:#fff;padding:1px 4px;border-radius:2px;">' + s.sig_type + '</span>' : '';
+        html += '<div style="display:inline-block;background:' + bg + ';border-radius:6px;padding:8px 12px;margin:3px;border:1px solid #e5e7eb;vertical-align:top;min-width:200px;">';
+        html += '<div style="display:flex;justify-content:space-between;">';
+        html += '<a href="/stock/' + (s.code || '') + '" style="color:#7c3aed;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>';
+        html += '<span style="font-size:0.85em;">' + (s.name || '') + sigTag + ztTag + reversalTag + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.8em;color:#666;margin-top:2px;">';
+        html += '成本 ' + (s.buy_price || 0) + ' → 现价 ' + (s.current_price || 0);
+        html += '</div>';
+        html += '<div style="font-size:0.8em;margin-top:2px;">';
+        html += '<span style="font-weight:600;color:' + pnlColor + ';">浮盈 ' + (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '%</span>';
+        html += ' | 持' + (s.days_held || 0) + '天 | 评分' + (s.score || 0);
+        html += '</div>';
+        if (s.highest_close && s.highest_close > 0) {
+            html += '<div style="font-size:0.72em;color:#888;margin-top:1px;">';
+            html += '最高 ' + s.highest_close + dropTag;
+            if (s.awaiting_reversal) html += ' | 断板日收盘 ' + (s.reversal_day_close || '—');
+            html += '</div>';
+        }
+        html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.7em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="删除">✕</button>';
+        html += '</div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 统计摘要 ──
+function renderSummary(sum) {
+    const bar = document.getElementById('summary-bar');
+    if (!sum || sum.total_trades === undefined) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+    const wr = sum.win_rate || 0;
+    const totalRet = sum.cumulative_return || sum.total_return || 0;
+    const retColor = totalRet > 0 ? '#dc2626' : (totalRet < 0 ? '#16a34a' : '#666');
+    const bullStatus = sum.market_bull ? '🟢牛市' : '🔴熊市';
+    bar.innerHTML = '<strong style="color:#dc2626;">📈 模拟统计</strong> '
+        + '已完成 <strong>' + (sum.total_trades || 0) + '</strong>笔 | '
+        + '胜 <strong style="color:' + (wr >= 50 ? '#dc2626' : '#16a34a') + ';">' + wr.toFixed(1) + '%</strong> | '
+        + '观察池 <strong>' + (sum.watch_count || 0) + '</strong>只 | '
+        + '累计收益 <strong style="color:' + retColor + ';">' + (totalRet > 0 ? '+' : '') + totalRet.toFixed(2) + '%</strong> | '
+        + '仓位 <strong>' + (sum.positions_value / 10000).toFixed(1) + '万</strong> | '
+        + '现金 <strong>' + ((sum.cash || 0) / 10000).toFixed(1) + '万</strong> | '
+        + bullStatus + ' | '
+        + '持仓 <strong>' + (sum.holding_count || 0) + '</strong>只';
+}
+
+// ── 记录买入/卖出 ──
+async function recordBuy(code, price) {
+    const p = prompt('实际买入价（默认 ' + price + '）:', price);
+    if (!p) return;
+    try {
+        const resp = await fetch('/api/zt_replica/simulation/record_buy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code, price: parseFloat(p)})
+        });
+        const data = await resp.json();
+        if (data.success && data.summary) { renderAll(data.summary); showToast('✅ ' + code + ' 买入记录成功'); }
+    } catch (e) { showToast('失败: ' + e.message, 'error'); }
+}
+
+async function recordSell(code) {
+    const p = prompt('卖出价:');
+    if (!p) return;
+    try {
+        const resp = await fetch('/api/zt_replica/simulation/record_sell', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code, price: parseFloat(p)})
+        });
+        const data = await resp.json();
+        if (data.success && data.summary) { renderAll(data.summary); showToast('✅ ' + code + ' 卖出记录成功'); }
+    } catch (e) { showToast('失败: ' + e.message, 'error'); }
+}
+
+async function deleteEntry(code) {
+    if (!confirm('确定删除 ' + code + '？')) return;
+    try {
+        const resp = await fetch('/api/zt_replica/simulation/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code})
+        });
+        const data = await resp.json();
+        if (data.success && data.summary) { renderAll(data.summary); showToast('已删除 ' + code); }
+    } catch (e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+
+// ── 已完成交易（可编辑） ──
+let _ztFinishedCache = [];
+
+async function loadFinished() {
+    try {
+        const resp = await fetch('/api/zt_replica/simulation/finished');
+        const data = await resp.json();
+        _ztFinishedCache = data.finished || [];
+        renderFinished(_ztFinishedCache, data.stats);
+    } catch(e) { /* silent */ }
+}
+
+function renderFinished(items, stats) {
+    document.getElementById('finished-count').textContent =
+        '共 ' + (stats ? stats.total : items.length) + ' 笔 · 胜率 ' + (stats ? stats.win_rate : 0) + '% · 累计 ' + (stats ? stats.total_return : 0) + '%';
+
+    const tbody = document.getElementById('finished-tbody');
+    if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#999;padding:12px;">暂无已完成交易</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = items.map(t => {
+        const net = t.net_ret || 0;
+        const isWin = t.is_win;
+        const retColor = net >= 0 ? '#dc2626' : '#16a34a';
+        const badge = isWin ? '<span class="result-badge win">✅胜</span>' : '<span class="result-badge loss">❌负</span>';
+        return `<tr data-code="${t.code}">
+            <td><a href="/stock/${t.code}" style="color:#dc2626;font-weight:600;text-decoration:none;">${t.code}</a></td>
+            <td>${t.name || ''}</td>
+            <td>${t.buy_date || '-'}</td>
+            <td class="editable-cell" data-field="buy_price" data-code="${t.code}">${(t.buy_price || 0).toFixed(2)}</td>
+            <td>${t.sell_date || '-'}</td>
+            <td class="editable-cell" data-field="sell_price" data-code="${t.code}">${(t.sell_price || 0).toFixed(2)}</td>
+            <td class="editable-cell" data-field="net_ret" data-code="${t.code}" style="font-weight:600;color:${retColor};">${net >= 0 ? '+' : ''}${net.toFixed(2)}%</td>
+            <td class="editable-cell" data-field="is_win" data-code="${t.code}">${badge}</td>
+            <td class="editable-cell" data-field="days_held" data-code="${t.code}">${t.days_held || 0}</td>
+            <td style="font-size:0.75em;color:#dc2626;">${t.sig_type || t.mode || ''}</td>
+            <td class="editable-cell" data-field="exit_reason" data-code="${t.code}" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.exit_reason || ''}</td>
+            <td><button class="btn-del" onclick="deleteFinished('${t.code}')" title="删除">🗑</button></td>
+        </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.editable-cell').forEach(cell => {
+        cell.addEventListener('click', function(e) {
+            if (currentEditingCell) return;
+            startFinishedInlineEdit(this);
+        });
+    });
+}
+
+let currentEditingCell = null;
+
+function startFinishedInlineEdit(cell) {
+    const field = cell.dataset.field; const code = cell.dataset.code;
+    const originalHTML = cell.innerHTML;
+    currentEditingCell = cell;
+
+    if (field === 'is_win') {
+        const select = document.createElement('select');
+        select.innerHTML = '<option value="true">✅ 胜</option><option value="false">❌ 负</option>';
+        select.value = cell.textContent.includes('胜') ? 'true' : 'false';
+        cell.innerHTML = ''; cell.appendChild(select);
+        select.focus();
+        select.addEventListener('blur', () => finishFinishedEdit(cell, field, code, select.value === 'true'));
+        select.addEventListener('change', () => finishFinishedEdit(cell, field, code, select.value === 'true'));
+    } else if (field === 'exit_reason') {
+        const input = document.createElement('input');
+        input.value = cell.textContent.trim();
+        cell.innerHTML = ''; cell.appendChild(input);
+        input.focus(); input.select();
+        input.addEventListener('blur', () => finishFinishedEdit(cell, field, code, input.value));
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') finishFinishedEdit(cell, field, code, input.value); if (e.key === 'Escape') { cell.innerHTML = originalHTML; currentEditingCell = null; } });
+    } else {
+        const input = document.createElement('input');
+        input.type = 'number'; input.step = '0.01';
+        input.value = cell.textContent.replace(/[^0-9.\-]/g, '') || 0;
+        cell.innerHTML = ''; cell.appendChild(input);
+        input.focus(); input.select();
+        input.addEventListener('blur', () => finishFinishedEdit(cell, field, code, parseFloat(input.value) || 0));
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') finishFinishedEdit(cell, field, code, parseFloat(input.value) || 0); if (e.key === 'Escape') { cell.innerHTML = originalHTML; currentEditingCell = null; } });
+    }
+}
+
+async function finishFinishedEdit(cell, field, code, newValue) {
+    currentEditingCell = null;
+    try {
+        const body = {};
+        if (field === 'is_win') body.is_win = newValue;
+        else if (field === 'exit_reason') body.exit_reason = String(newValue);
+        else body[field] = parseFloat(newValue) || 0;
+
+        const resp = await fetch('/api/zt_replica/simulation/trade/' + code, {
+            method: 'PUT', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+        if (data.success) { renderFinished(data.finished || [], null); renderSummary(data.summary ? data.summary.summary : {}); }
+    } catch(e) { showToast('保存失败: ' + e.message, 'error'); }
+}
+
+async function deleteFinished(code) {
+    if (!confirm('确认删除 ' + code + ' 的已完成交易？')) return;
+    try {
+        const resp = await fetch('/api/zt_replica/simulation/trade/' + code, {method: 'DELETE'});
+        const data = await resp.json();
+        if (data.success) { renderFinished(data.finished || [], null); renderSummary(data.summary ? data.summary.summary : {}); showToast('已删除 ' + code); }
+    } catch(e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+function showToast(msg, type) {
+    let t = document.getElementById('toast-msg');
+    if (!t) {
+        t = document.createElement('div'); t.id = 'toast-msg';
+        t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;z-index:9999;font-size:0.9em;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity .3s;';
+        document.body.appendChild(t);
+    }
+    t.style.background = type === 'error' ? '#fef2f2' : '#f0fdf4';
+    t.style.color = type === 'error' ? '#991b1b' : '#166534';
+    t.style.border = type === 'error' ? '1px solid #fecaca' : '1px solid #bbf7d0';
+    t.textContent = msg; t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; }, 5000);
+}
+
+// 页面加载时自动加载状态
+document.addEventListener('DOMContentLoaded', function() { loadSimPanels(); loadFinished(); });
+</script>
+{% endblock %}

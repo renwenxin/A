@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>竞价分析</span>
+    </div>
+    <div class="page-date" id="page-time">📊 <strong>9:25竞价结束 · 四维分析</strong></div>
+</div>
+<div class="content-area">
+
+<!-- ====== 操作按钮 ====== -->
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+    <button onclick="runAuctionAnalysis()" class="btn-screener-card btn-main-control" id="btn-analyze"
+            style="display:inline-flex;width:auto;padding:10px 24px;">
+        <span class="btn-icon">🔍</span>
+        <span class="btn-text"><span class="btn-label">竞价分析</span><span class="btn-desc">全市场四维扫描：开盘·大盘·板块·梯队</span></span>
+    </button>
+    <button onclick="refreshPage()" class="btn-screener-card"
+            style="display:inline-flex;width:auto;padding:10px 18px;">
+        <span class="btn-icon">🔄</span>
+        <span class="btn-text"><span class="btn-label">刷新</span></span>
+    </button>
+    <span id="analysis-status" style="font-size:0.82em;color:#888;"></span>
+</div>
+
+<!-- ====== 市场情绪温度条 ====== -->
+<div id="sentiment-bar" style="display:none;margin-bottom:14px;padding:10px 16px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-weight:700;font-size:0.9em;">🌡️ 市场情绪</span>
+        <div style="flex:1;min-width:200px;height:12px;background:linear-gradient(90deg,#3b82f6,#22c55e,#eab308,#ef4444);border-radius:6px;position:relative;" id="temp-bar-bg">
+            <div id="temp-indicator" style="position:absolute;top:-4px;width:4px;height:20px;background:#1f2937;border-radius:2px;transition:left 0.5s;"></div>
+        </div>
+        <span id="temp-label" style="font-weight:700;font-size:1.1em;">--</span>
+        <span id="temp-advice" style="font-size:0.85em;padding:3px 10px;border-radius:4px;font-weight:600;">--</span>
+    </div>
+</div>
+
+<!-- ====== 关键指标条 ====== -->
+<div id="kpi-strip" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:14px;" class="kpi-strip"></div>
+
+<!-- ====== 四维面板 ====== -->
+
+<!-- 第一行：开盘竞价 + 大盘环境 -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+
+    <!-- 一、开盘竞价 -->
+    <div class="analysis-panel" style="background:linear-gradient(135deg,#fefce8,#fff);border:2px solid #fde68a;border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;color:#a16207;">🔔 一、开盘竞价</h3>
+            <span id="opening-mood" style="font-size:0.85em;font-weight:700;padding:3px 8px;border-radius:4px;">--</span>
+        </div>
+        <!-- 高开/低开分布柱状图 -->
+        <div id="open-dist" style="margin-bottom:10px;"></div>
+        <!-- 竞价爆量TOP -->
+        <details style="margin-bottom:6px;">
+            <summary style="cursor:pointer;font-weight:600;color:#d97706;font-size:0.85em;">💣 竞价爆量 TOP20</summary>
+            <div id="top-auction-amount" style="max-height:240px;overflow-y:auto;font-size:0.78em;margin-top:4px;"></div>
+        </details>
+        <!-- 抢筹异动 -->
+        <details style="margin-bottom:6px;">
+            <summary style="cursor:pointer;font-weight:600;color:#16a34a;font-size:0.85em;">⚡ 量价齐升·抢筹异动</summary>
+            <div id="rush-buy" style="max-height:200px;overflow-y:auto;font-size:0.78em;margin-top:4px;"></div>
+        </details>
+        <!-- 弱转强 -->
+        <details style="margin-bottom:6px;">
+            <summary style="cursor:pointer;font-weight:600;color:#7c3aed;font-size:0.85em;">🔄 弱转强候补</summary>
+            <div id="weak-to-strong" style="max-height:200px;overflow-y:auto;font-size:0.78em;margin-top:4px;"></div>
+        </details>
+        <!-- 抛压预警 -->
+        <details>
+            <summary style="cursor:pointer;font-weight:600;color:#dc2626;font-size:0.85em;">⚠ 高开低量·诱多预警</summary>
+            <div id="dump-warnings" style="max-height:160px;overflow-y:auto;font-size:0.78em;margin-top:4px;"></div>
+        </details>
+    </div>
+
+    <!-- 二、大盘环境 -->
+    <div class="analysis-panel" style="background:linear-gradient(135deg,#f0f4ff,#fff);border:2px solid #bfdbfe;border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;color:#2563eb;">📈 二、大盘环境</h3>
+            <span id="prev-trend" style="font-size:0.78em;color:#888;"></span>
+        </div>
+        <!-- 指数卡片 -->
+        <div id="index-cards" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
+        <!-- 涨跌家数 -->
+        <div id="breadth-bar" style="margin-bottom:8px;"></div>
+        <!-- 涨跌比可视化 -->
+        <div id="breadth-viz" style="margin-bottom:8px;"></div>
+        <!-- 成交额 -->
+        <div id="market-amount" style="font-size:0.82em;color:#666;margin-bottom:6px;"></div>
+    </div>
+
+</div>
+
+<!-- 第二行：板块热点 + 连板梯队 -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+
+    <!-- 三、板块热点 -->
+    <div class="analysis-panel" style="background:linear-gradient(135deg,#f0fdf4,#fff);border:2px solid #bbf7d0;border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;color:#16a34a;">🔥 三、板块热点</h3>
+            <span id="main-line" style="font-size:0.8em;font-weight:600;color:#166534;"></span>
+        </div>
+        <!-- 涨停板块分布 -->
+        <div style="font-weight:600;font-size:0.82em;color:#555;margin-bottom:4px;">📊 涨停板块分布 TOP15</div>
+        <div id="sector-zt-dist" style="margin-bottom:8px;"></div>
+        <!-- 板块竞价强度 -->
+        <details>
+            <summary style="cursor:pointer;font-weight:600;color:#d97706;font-size:0.82em;">⚡ 板块竞价强度 TOP10（高开率）</summary>
+            <div id="sector-auction-strength" style="max-height:200px;overflow-y:auto;font-size:0.78em;margin-top:4px;"></div>
+        </details>
+    </div>
+
+    <!-- 四、连板梯队 -->
+    <div class="analysis-panel" style="background:linear-gradient(135deg,#f5f3ff,#fff);border:2px solid #ddd6fe;border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;color:#7c3aed;">🏰 四、连板梯队</h3>
+            <span id="max-cons-badge" style="font-size:0.85em;font-weight:700;padding:3px 8px;border-radius:4px;">--</span>
+        </div>
+        <!-- 梯队总览 -->
+        <div id="ladder-summary" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;"></div>
+        <!-- 各梯队 -->
+        <div id="ladder-detail" style="max-height:340px;overflow-y:auto;font-size:0.78em;"></div>
+        <!-- 断板预警 -->
+        <div id="broken-warnings" style="margin-top:6px;"></div>
+        <!-- 1进2候补 -->
+        <details style="margin-top:6px;">
+            <summary style="cursor:pointer;font-weight:600;color:#d97706;font-size:0.82em;">🎯 1进2候补（竞价表现）</summary>
+            <div id="one-to-two" style="max-height:180px;overflow-y:auto;font-size:0.78em;margin-top:4px;"></div>
+        </details>
+    </div>
+
+</div>
+
+</div>
+
+<script>
+let _analyzing = false;
+
+async function runAuctionAnalysis() {
+    if (_analyzing) return;
+    _analyzing = true;
+    const btn = document.getElementById('btn-analyze');
+    const status = document.getElementById('analysis-status');
+    btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+    status.textContent = '⏳ 采集数据中...（竞价数据+涨停池+行情快照）';
+
+    try {
+        const resp = await fetch('/api/auction_analysis', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+        });
+        if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+
+        document.getElementById('page-time').innerHTML = '📊 <strong>9:25竞价结束 · 四维分析</strong> <span style="font-size:0.75em;color:#999;">' + (data.timestamp || '') + '</span>';
+
+        renderOpening(data.auction_opening || {});
+        renderMarket(data.market_env || {});
+        renderSectors(data.sector_heat || {});
+        renderLadder(data.limit_up_ladder || {});
+        renderSentimentBar(data.market_env || {});
+        renderKpiStrip(data);
+
+        status.textContent = '✅ 分析完成 (' + (data.timestamp || '') + ')';
+    } catch (e) {
+        status.textContent = '❌ ' + e.message;
+    } finally {
+        _analyzing = false;
+        btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+    }
+}
+
+function refreshPage() {
+    document.getElementById('analysis-status').textContent = '⏳ 刷新中...';
+    runAuctionAnalysis();
+}
+
+// ═══════════════════════════════════════════════════════
+// 情绪温度条
+// ═══════════════════════════════════════════════════════
+function renderSentimentBar(market) {
+    const bar = document.getElementById('sentiment-bar');
+    const sent = market.sentiment || {};
+    if (!sent.temperature && sent.temperature !== 0) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+
+    const temp = sent.temperature || 50;
+    document.getElementById('temp-indicator').style.left = temp + '%';
+    document.getElementById('temp-label').textContent = temp + '° ' + (sent.label || '');
+    document.getElementById('temp-label').style.color = temp >= 60 ? '#dc2626' : temp >= 40 ? '#d97706' : '#3b82f6';
+
+    const advice = sent.advice || '观望';
+    const adviceEl = document.getElementById('temp-advice');
+    adviceEl.textContent = '💡 ' + advice;
+    adviceEl.style.background = advice.includes('重仓') ? '#fef2f2' : advice.includes('中等') ? '#fffbeb' : advice.includes('轻仓') ? '#f0fdf4' : '#f3f4f6';
+    adviceEl.style.color = advice.includes('重仓') ? '#dc2626' : advice.includes('中等') ? '#d97706' : advice.includes('轻仓') ? '#16a34a' : '#6b7280';
+}
+
+// ═══════════════════════════════════════════════════════
+// KPI 横条
+// ═══════════════════════════════════════════════════════
+function renderKpiStrip(data) {
+    const strip = document.getElementById('kpi-strip');
+    strip.style.display = 'flex';
+
+    const opening = data.auction_opening || {};
+    const market = data.market_env || {};
+    const ladder = data.limit_up_ladder || {};
+    const breadth = market.breadth || {};
+
+    const kpis = [
+        {label: '竞价情绪', value: opening.opening_mood || '--', color: '#a16207'},
+        {label: '涨停总数', value: (ladder.total_limit_ups || 0) + '只', color: '#7c3aed'},
+        {label: '最高板', value: (ladder.max_consecutive || 0) + '连板', color: '#dc2626'},
+        {label: '上涨率', value: (breadth.up_ratio || 0) + '%', color: breadth.up_ratio >= 50 ? '#16a34a' : '#dc2626'},
+        {label: '涨停≈', value: (breadth.zt_approx || 0) + '只', color: '#dc2626'},
+        {label: '跌停≈', value: (breadth.dt_approx || 0) + '只', color: '#16a34a'},
+        {label: '涨>5%', value: (breadth.up_5pct || 0) + '只', color: '#d97706'},
+        {label: '跌>5%', value: (breadth.down_5pct || 0) + '只', color: '#3b82f6'},
+    ];
+
+    strip.innerHTML = kpis.map(k =>
+        `<div style="background:#fff;border-radius:6px;padding:6px 12px;border:1px solid ${k.color}30;text-align:center;min-width:80px;">
+            <div style="font-size:0.68em;color:#999;">${k.label}</div>
+            <div style="font-weight:700;font-size:0.95em;color:${k.color};">${k.value}</div>
+        </div>`
+    ).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// 一、开盘竞价
+// ═══════════════════════════════════════════════════════
+function renderOpening(data) {
+    document.getElementById('opening-mood').textContent = data.opening_mood || '--';
+    document.getElementById('opening-mood').style.background = (data.opening_mood || '').includes('火爆') ? '#fef2f2' : '#f0fdf4';
+
+    // 分布柱状图
+    const dist = data.distribution || {};
+    const distEl = document.getElementById('open-dist');
+    const entries = Object.entries(dist);
+    const maxVal = Math.max(...entries.map(e => e[1]), 1);
+    distEl.innerHTML = entries.map(([k, v]) => {
+        const pct = (v / maxVal * 100).toFixed(0);
+        const color = k.includes('高开') || k.includes('≥7') ? '#dc2626' :
+                      k.includes('平开') ? '#6b7280' : '#3b82f6';
+        return `<div style="display:flex;align-items:center;gap:6px;margin:2px 0;font-size:0.78em;">
+            <span style="width:90px;text-align:right;color:#555;">${k}</span>
+            <span style="flex:1;background:${color}15;height:16px;border-radius:3px;position:relative;">
+                <span style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color};border-radius:3px;opacity:0.6;"></span>
+            </span>
+            <span style="width:35px;font-weight:700;color:${color};">${v}</span>
+        </div>`;
+    }).join('');
+
+    // 竞价爆量TOP
+    const topAmt = data.top_auction_amount || [];
+    document.getElementById('top-auction-amount').innerHTML = topAmt.length === 0 ? '<span style="color:#999;">暂无数据</span>' :
+        '<table style="width:100%;border-collapse:collapse;">' +
+        '<tr style="color:#999;font-size:0.9em;"><td>代码</td><td>名称</td><td>竞价额</td><td>开盘</td></tr>' +
+        topAmt.map(a => `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td><a href="/stock/${a.code}" style="color:#d97706;text-decoration:none;font-weight:600;">${a.code}</a></td>
+            <td>${a.name || ''}</td>
+            <td style="color:#dc2626;font-weight:600;">${(a.amount/1e4).toFixed(0)}万</td>
+            <td style="color:${a.open_pct>0?'#dc2626':'#16a34a'}">${a.open_pct>0?'+':''}${a.open_pct}%</td>
+        </tr>`).join('') + '</table>';
+
+    // 抢筹异动
+    const rush = data.rush_buy_signals || [];
+    document.getElementById('rush-buy').innerHTML = rush.length === 0 ? '<span style="color:#999;">今日无量价齐升信号</span>' :
+        rush.map(r => `<span style="display:inline-block;background:#f0fdf4;border-radius:4px;padding:3px 8px;margin:2px;border:1px solid #bbf7d0;">
+            <a href="/stock/${r.code}" style="color:#16a34a;font-weight:600;">${r.code}</a> ${r.name||''}
+            <span style="color:#dc2626;">+${r.open_pct}%</span>
+            <span style="color:#888;">${(r.amount/1e4).toFixed(0)}万</span>
+            <span style="color:#d97706;">量比${r.vol_ratio}</span>
+        </span>`).join('');
+
+    // 弱转强
+    const w2s = data.weak_to_strong_candidates || [];
+    document.getElementById('weak-to-strong').innerHTML = w2s.length === 0 ? '<span style="color:#999;">无弱转强候补</span>' :
+        w2s.map(w => `<div style="margin:2px 0;padding:4px 8px;background:#f5f3ff;border-radius:4px;border-left:3px solid #7c3aed;">
+            <a href="/stock/${w.code}" style="color:#7c3aed;font-weight:600;">${w.code}</a> ${w.name||''}
+            <span style="color:#888;">${w.weak_reason}</span> →
+            <span style="color:#dc2626;font-weight:600;">竞价+${w.open_pct}%</span>
+            <span style="color:#888;">${(w.auction_amount/1e4).toFixed(0)}万</span>
+            <span style="color:#d97706;">${w.signal}</span>
+        </div>`).join('');
+
+    // 抛压预警
+    const dumps = data.dump_warnings || [];
+    document.getElementById('dump-warnings').innerHTML = dumps.length === 0 ? '<span style="color:#999;">无诱多预警</span>' :
+        dumps.map(d => `<span style="display:inline-block;background:#fef2f2;border-radius:4px;padding:3px 8px;margin:2px;border:1px solid #fecaca;">
+            <a href="/stock/${d.code}" style="color:#dc2626;font-weight:600;">${d.code}</a> ${d.name||''}
+            <span style="color:#dc2626;">+${d.open_pct}%</span>
+            <span style="color:#888;">量比仅${d.vol_ratio}</span>
+        </span>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// 二、大盘环境
+// ═══════════════════════════════════════════════════════
+function renderMarket(data) {
+    // 指数
+    const indices = data.indices || [];
+    document.getElementById('index-cards').innerHTML = indices.map(i => {
+        const color = i.change_pct > 0 ? '#dc2626' : i.change_pct < 0 ? '#16a34a' : '#666';
+        const openColor = i.open_change_pct > 0 ? '#dc2626' : '#16a34a';
+        return `<div style="background:#fff;border-radius:8px;padding:8px 14px;border:1px solid #e5e7eb;text-align:center;min-width:100px;">
+            <div style="font-size:0.72em;color:#999;">${i.name}</div>
+            <div style="font-weight:700;font-size:1.1em;">${i.close}</div>
+            <div style="font-weight:600;color:${color};">${i.change_pct>0?'+':''}${i.change_pct}%</div>
+            <div style="font-size:0.68em;color:${openColor};">开盘${i.open_change_pct>0?'+':''}${i.open_change_pct}%</div>
+        </div>`;
+    }).join('');
+
+    // 涨跌家数
+    const b = data.breadth || {};
+    document.getElementById('breadth-bar').innerHTML =
+        `<span style="font-size:0.85em;">📊 涨跌家数：</span>
+        <span style="color:#dc2626;font-weight:700;">↑${b.up||0}</span> /
+        <span style="color:#16a34a;font-weight:700;">↓${b.down||0}</span> /
+        <span style="color:#888;">→${b.flat||0}</span>
+        <span style="margin-left:10px;font-weight:600;color:${(b.up_ratio||0)>=50?'#dc2626':'#16a34a'};">上涨率 ${b.up_ratio||0}%</span>`;
+
+    // 涨跌比可视化条
+    const totalViz = (b.up||0) + (b.down||0) + (b.flat||0);
+    const upPct = totalViz > 0 ? (b.up||0)/totalViz*100 : 50;
+    const downPct = totalViz > 0 ? (b.down||0)/totalViz*100 : 50;
+    document.getElementById('breadth-viz').innerHTML =
+        `<div style="height:20px;border-radius:10px;overflow:hidden;display:flex;font-size:0.7em;line-height:20px;text-align:center;color:#fff;">
+            <div style="width:${upPct}%;background:#dc2626;min-width:${upPct>0?'30px':'0'};">↑${b.up||0}</div>
+            <div style="width:${downPct}%;background:#16a34a;min-width:${downPct>0?'30px':'0'};">↓${b.down||0}</div>
+        </div>`;
+
+    document.getElementById('market-amount').textContent =
+        `💰 全市场成交额约 ${data.total_amount_yi || 0} 亿` +
+        (data.prev_day && data.prev_day.trend ? ` | ${data.prev_day.trend}` : '');
+
+    const trendEl = document.getElementById('prev-trend');
+    if (data.prev_day && data.prev_day.trend) {
+        trendEl.textContent = data.prev_day.trend;
+        trendEl.style.color = data.prev_day.trend.includes('走强') ? '#dc2626' : '#16a34a';
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// 三、板块热点
+// ═══════════════════════════════════════════════════════
+function renderSectors(data) {
+    document.getElementById('main-line').textContent = '📌 ' + (data.main_line || '--');
+
+    // 涨停板块分布
+    const sectors = data.top_sectors || [];
+    const maxZT = Math.max(...sectors.map(s => s.zt_count), 1);
+    document.getElementById('sector-zt-dist').innerHTML = sectors.map(s => {
+        const barPct = (s.zt_count / maxZT * 100).toFixed(0);
+        return `<div style="display:flex;align-items:center;gap:6px;margin:2px 0;font-size:0.78em;">
+            <span style="width:75px;text-align:right;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.sector}">${s.sector}</span>
+            <span style="flex:1;background:#f0fdf4;height:14px;border-radius:3px;">
+                <span style="display:block;height:100%;width:${barPct}%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:3px;"></span>
+            </span>
+            <span style="width:42px;font-weight:700;color:#16a34a;">${s.zt_count}只</span>
+            <span style="width:50px;font-size:0.85em;color:#888;">${s.leader_name||''}</span>
+        </div>`;
+    }).join('');
+
+    // 板块竞价强度
+    const secStrength = data.strong_auction_sectors || [];
+    document.getElementById('sector-auction-strength').innerHTML = secStrength.length === 0 ?
+        '<span style="color:#999;">暂无</span>' :
+        secStrength.map(s => `<div style="margin:1px 0;font-size:0.82em;">
+            <span style="color:#555;">${s.sector}</span>
+            <span style="color:#d97706;font-weight:600;">高开率${s.high_open_ratio}%</span>
+            <span style="color:#888;">涨停${s.zt_count}只</span>
+            <span style="color:#999;">均竞价${(s.avg_auction_amount/1e4).toFixed(0)}万</span>
+        </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// 四、连板梯队
+// ═══════════════════════════════════════════════════════
+function renderLadder(data) {
+    const maxCons = data.max_consecutive || 0;
+    const badge = document.getElementById('max-cons-badge');
+    badge.textContent = maxCons + '连板 👑';
+    badge.style.background = maxCons >= 5 ? '#fef2f2' : maxCons >= 3 ? '#fffbeb' : '#f0fdf4';
+    badge.style.color = maxCons >= 5 ? '#dc2626' : maxCons >= 3 ? '#d97706' : '#16a34a';
+
+    // 梯队总览标签
+    const summary = data.summary || {};
+    document.getElementById('ladder-summary').innerHTML = Object.entries(summary).map(([k, v]) => {
+        const cons = parseInt(k);
+        const bg = cons >= 5 ? '#fef2f2' : cons >= 3 ? '#fffbeb' : cons >= 2 ? '#f0fdf4' : '#f3f4f6';
+        const color = cons >= 5 ? '#dc2626' : cons >= 3 ? '#d97706' : cons >= 2 ? '#16a34a' : '#6b7280';
+        return `<span style="background:${bg};color:${color};padding:3px 8px;border-radius:4px;font-size:0.78em;font-weight:600;">${k}: ${v}只</span>`;
+    }).join('');
+
+    // 各梯队详情
+    const ladder = data.ladder || [];
+    document.getElementById('ladder-detail').innerHTML = ladder.map(level => {
+        const stocks = level.stocks || [];
+        if (stocks.length === 0) return '';
+        return `<div style="margin-bottom:8px;">
+            <div style="font-weight:700;color:#7c3aed;font-size:0.9em;margin-bottom:3px;">
+                ${level.label} ${level.name} (${level.count}只)
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                ${stocks.map(s => {
+                    const openPct = s.auction ? s.auction.open_pct : 0;
+                    const openColor = openPct > 0 ? '#dc2626' : openPct < 0 ? '#16a34a' : '#666';
+                    const isYizi = s.board_type === '一字板';
+                    return `<span style="background:${isYizi?'#fef2f2':'#fff'};border-radius:4px;padding:3px 7px;border:1px solid ${isYizi?'#fecaca':'#e5e7eb'};font-size:0.85em;">
+                        <a href="/stock/${s.code}" style="color:#7c3aed;font-weight:600;text-decoration:none;">${s.code}</a>
+                        <span style="color:#555;">${s.name||''}</span>
+                        ${s.seal_quality}
+                        ${s.auction ? `<span style="color:${openColor};font-weight:600;">${openPct>0?'+':''}${openPct}%</span>` : ''}
+                        ${s.seal_amount > 0 ? `<span style="color:#888;font-size:0.85em;">${(s.seal_amount/1e4).toFixed(0)}万</span>` : ''}
+                    </span>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }).join('');
+
+    // 断板预警
+    const broken = data.broken_warnings || [];
+    document.getElementById('broken-warnings').innerHTML = broken.length === 0 ? '' :
+        '<div style="margin-top:6px;font-weight:600;color:#dc2626;font-size:0.82em;">⚠ 断板预警</div>' +
+        broken.map(w => `<div style="font-size:0.78em;color:#dc2626;background:#fef2f2;padding:2px 6px;margin:1px 0;border-radius:3px;">
+            <a href="/stock/${w.code}" style="color:#dc2626;font-weight:600;">${w.code}</a> ${w.name||''}
+            ${w.consecutive}连板 → 竞价${w.open_pct}% ${w.warning}
+        </div>`).join('');
+
+    // 1进2候补
+    const o2t = data.one_to_two_candidates || [];
+    document.getElementById('one-to-two').innerHTML = o2t.length === 0 ? '<span style="color:#999;">暂无</span>' :
+        o2t.map(c => `<div style="margin:2px 0;padding:3px 6px;background:#fffbeb;border-radius:4px;font-size:0.82em;">
+            <a href="/stock/${c.code}" style="color:#d97706;font-weight:600;">${c.code}</a> ${c.name||''}
+            <span style="color:#888;">${c.limit_up_time||''}封</span>
+            <span style="color:#dc2626;font-weight:600;">竞价+${c.open_pct}%</span>
+            <span style="color:#d97706;">量比${c.vol_ratio}</span>
+            <span style="font-weight:700;color:#7c3aed;">评分${c.score}</span>
+        </div>`).join('');
+}
+
+// 页面自动加载
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('analysis-status').textContent = '💡 点击「竞价分析」按钮开始全市场扫描';
+});
+</script>
+{% endblock %}

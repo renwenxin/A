@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>模拟持仓</span>
+    </div>
+    <div class="page-date">💼 <strong>统一模拟持仓管理</strong></div>
+</div>
+<div class="content-area">
+
+<!-- ====== 搜索添加 ====== -->
+<div class="card" style="margin-bottom:14px;">
+    <div class="card-body" style="padding:12px 16px;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="stock-search" placeholder="输入代码或名称搜索…"
+                style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #d0d5dd;border-radius:6px;font-size:0.9em;font-family:inherit;"
+                onkeydown="if(event.key==='Enter')searchStock()"
+                oninput="handleSearchInput(this.value)">
+            <button onclick="searchStock()" class="btn-screener-card" style="display:inline-flex;width:auto;padding:8px 16px;">
+                🔍 搜索
+            </button>
+            <span id="search-status" style="font-size:0.82em;color:#888;"></span>
+        </div>
+        <div id="search-results" style="margin-top:8px;display:none;"></div>
+    </div>
+</div>
+
+<!-- ====== 1. 备选标的 ====== -->
+<div class="card" style="margin-bottom:14px;border-left:4px solid #e67e22;">
+    <div class="card-header">
+        <h3>📋 备选标的 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="watch-count">-</span></h3>
+    </div>
+    <div class="card-body no-padding">
+        <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+            <table style="font-size:0.85em;">
+                <thead>
+                    <tr>
+                        <th>代码</th><th>名称</th><th>加入日期</th><th>备注</th>
+                        <th style="width:100px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="watch-tbody">
+                    <tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">
+                        暂无备选标的 · 在上方搜索框输入代码或名称添加
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 2. 模拟持仓 ====== -->
+<div class="card" style="margin-bottom:14px;border-left:4px solid #7c3aed;">
+    <div class="card-header">
+        <h3>💼 模拟持仓 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="hold-count">-</span></h3>
+    </div>
+    <div class="card-body no-padding">
+        <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+            <table style="font-size:0.85em;">
+                <thead>
+                    <tr>
+                        <th>代码</th><th>名称</th><th>买入日</th><th>成本均价</th>
+                        <th>股数</th><th>成本</th>
+                        <th style="width:180px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="hold-tbody">
+                    <tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">
+                        暂无持仓
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 统计摘要 ====== -->
+<div id="stats-bar" style="padding:10px 16px;background:#f0f4ff;border-radius:8px;border:1px solid #d0d7f0;font-size:0.82em;color:#666;display:none;margin-bottom:14px;"></div>
+
+<!-- ====== 3. 已完成交易 ====== -->
+<div class="card" style="margin-bottom:14px;">
+    <div class="card-header">
+        <h3>📝 已完成交易 <span style="font-weight:normal;color:#999;font-size:0.8em;" id="finished-count"></span></h3>
+        <button onclick="loadState()" style="padding:5px 14px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;font-size:0.82em;font-family:inherit;">🔄 刷新</button>
+    </div>
+    <div class="card-body no-padding">
+        <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+            <table style="font-size:0.82em;">
+                <thead>
+                    <tr>
+                        <th>代码</th><th>名称</th><th>买入日</th><th>买入价</th>
+                        <th>卖出日</th><th>卖出价</th><th>收益%</th><th>结果</th>
+                        <th>股数</th><th style="width:50px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="finished-tbody">
+                    <tr><td colspan="10" style="text-align:center;color:#999;padding:12px;">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="padding:8px 14px;font-size:0.72em;color:#888;border-top:1px solid #f0f0f5;">
+            💡 点击数值可直接编辑 · 修改后统计自动重算 · 数据保存到 sim_portfolio_state.json
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+// ── 搜索 ──
+let _searchTimer = null;
+
+function handleSearchInput(val) {
+    clearTimeout(_searchTimer);
+    if (val.trim().length < 1) {
+        document.getElementById('search-results').style.display = 'none';
+        return;
+    }
+    _searchTimer = setTimeout(() => searchStock(), 300);
+}
+
+async function searchStock() {
+    const q = document.getElementById('stock-search').value.trim();
+    if (!q) return;
+    const status = document.getElementById('search-status');
+    const results = document.getElementById('search-results');
+    status.textContent = '搜索中...';
+    try {
+        const resp = await fetch('/api/sim_portfolio/search?q=' + encodeURIComponent(q));
+        const data = await resp.json();
+        const items = data.results || [];
+        if (items.length === 0) {
+            status.textContent = '未找到匹配的股票';
+            results.style.display = 'none';
+            return;
+        }
+        status.textContent = '找到 ' + items.length + ' 只';
+        results.style.display = 'block';
+        results.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;">' +
+            items.map(s =>
+                '<div style="background:#f8f9ff;border:1px solid #d0d5f0;border-radius:6px;padding:6px 10px;display:flex;align-items:center;gap:8px;">' +
+                '<a href="/stock/' + s.code + '" style="color:#dc2626;font-weight:600;text-decoration:none;font-size:0.85em;">' + s.code + '</a>' +
+                '<span style="font-size:0.85em;">' + escapeHtml(s.name) + '</span>' +
+                '<button onclick="addToWatch(\'' + s.code + '\')" style="padding:2px 8px;background:#e67e22;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:0.78em;white-space:nowrap;">+ 备选</button>' +
+                '</div>'
+            ).join('') +
+            '</div>';
+    } catch(e) {
+        status.textContent = '搜索失败: ' + e.message;
+    }
+}
+
+// ── 备选操作 ──
+async function addToWatch(code) {
+    try {
+        const resp = await fetch('/api/sim_portfolio/watch/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code})
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showToast('✅ ' + code + ' 已加入备选');
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('stock-search').value = '';
+            document.getElementById('search-status').textContent = '';
+            loadState();
+        } else {
+            showToast(data.error || '添加失败', 'error');
+        }
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
+
+async function removeFromWatch(code) {
+    if (!confirm('确定从备选池移除 ' + code + '？')) return;
+    try {
+        await fetch('/api/sim_portfolio/watch/remove', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code})
+        });
+        loadState();
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
+
+// ── 买入（从备选池建仓） ──
+async function recordBuy(code) {
+    const price = prompt('买入价（元）:');
+    if (!price || isNaN(parseFloat(price))) return;
+    const shares = prompt('买入股数（默认100）:', '100');
+    const date = prompt('买入日期（留空=今天 YYYY-MM-DD）:', '');
+    try {
+        const body = {code: code, price: parseFloat(price), shares: parseInt(shares) || 100};
+        if (date) body.buy_date = date;
+        const resp = await fetch('/api/sim_portfolio/buy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const avg = data.trade && data.trade.avg_cost;
+            showToast('✅ ' + code + ' 买入记录成功 · 成本 ' + (avg ? avg.toFixed(2) : '?'));
+            loadState();
+        } else {
+            showToast(data.error || '买入失败', 'error');
+        }
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
+
+// ── 加仓（已持有同一代码，自动重算均价） ──
+async function addPosition(code) {
+    const price = prompt('加仓价（元）:');
+    if (!price || isNaN(parseFloat(price))) return;
+    const shares = prompt('加仓股数（默认100）:', '100');
+    const date = prompt('加仓日期（留空=今天 YYYY-MM-DD）:', '');
+    try {
+        const body = {code: code, price: parseFloat(price), shares: parseInt(shares) || 100};
+        if (date) body.buy_date = date;
+        const resp = await fetch('/api/sim_portfolio/buy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const avg = data.trade && data.trade.avg_cost;
+            showToast('✅ ' + code + ' 加仓成功 · 新均价 ' + (avg ? avg.toFixed(2) : '?'));
+            loadState();
+        } else {
+            showToast(data.error || '加仓失败', 'error');
+        }
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
+
+// ── 减仓（部分卖出，剩余继续持有） ──
+async function reducePosition(code) {
+    const price = prompt('减仓卖出价（元）:');
+    if (!price || isNaN(parseFloat(price))) return;
+    const shares = prompt('减仓股数:');
+    if (!shares || parseInt(shares) <= 0) { showToast('请输入有效的减仓股数', 'error'); return; }
+    const date = prompt('卖出日期（留空=今天 YYYY-MM-DD）:', '');
+    try {
+        const body = {code: code, price: parseFloat(price), shares: parseInt(shares)};
+        if (date) body.sell_date = date;
+        const resp = await fetch('/api/sim_portfolio/sell', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await resp.json();
+        if (data.success) {
+            const remain = data.remaining_shares || 0;
+            showToast('✅ ' + code + ' 减仓成功 · 剩余 ' + remain + ' 股 · 收益 ' + (data.trade ? data.trade.net_ret : '?') + '%');
+            loadState();
+        } else {
+            showToast(data.error || '减仓失败', 'error');
+        }
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
+
+// ── 清仓（全部卖出） ──
+async function clearPosition(code) {
+    const price = prompt('清仓卖出价（元）:');
+    if (!price || isNaN(parseFloat(price))) return;
+    const date = prompt('卖出日期（留空=今天 YYYY-MM-DD）:', '');
+    try {
+        const body = {code: code, price: parseFloat(price)};
+        if (date) body.sell_date = date;
+        const resp = await fetch('/api/sim_portfolio/sell', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showToast('✅ ' + code + ' 清仓成功 · 收益 ' + (data.trade ? data.trade.net_ret : '?') + '%');
+            loadState();
+        } else {
+            showToast(data.error || '清仓失败', 'error');
+        }
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
+
+// ── 加载状态 ──
+async function loadState() {
+    try {
+        const resp = await fetch('/api/sim_portfolio/state');
+        const data = await resp.json();
+        renderWatch(data.watch || []);
+        renderHolding(data.holding || []);
+        renderFinished(data.finished || []);
+        renderStats(data.stats || {});
+    } catch(e) { console.error('loadState:', e); }
+}
+
+function renderWatch(items) {
+    document.getElementById('watch-count').textContent = items.length + '只';
+    const tbody = document.getElementById('watch-tbody');
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">暂无备选标的 · 在上方搜索框输入代码或名称添加</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(s =>
+        '<tr>' +
+        '<td><a href="/stock/' + s.code + '" style="color:#e67e22;font-weight:600;text-decoration:none;">' + s.code + '</a></td>' +
+        '<td><strong>' + escapeHtml(s.name || '') + '</strong></td>' +
+        '<td>' + (s.added_date || '') + '</td>' +
+        '<td style="font-size:0.82em;color:#888;">' + escapeHtml(s.notes || '-') + '</td>' +
+        '<td>' +
+        '<button onclick="recordBuy(\'' + s.code + '\')" style="padding:2px 10px;background:#16a34a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.82em;">💰 买入</button> ' +
+        '<button onclick="removeFromWatch(\'' + s.code + '\')" style="padding:2px 8px;background:#e5e7eb;color:#999;border:none;border-radius:4px;cursor:pointer;font-size:0.82em;">✕</button>' +
+        '</td></tr>'
+    ).join('');
+}
+
+function renderHolding(items) {
+    document.getElementById('hold-count').textContent = items.length + '只';
+    const tbody = document.getElementById('hold-tbody');
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">暂无持仓</td></tr>';
+        return;
+    }
+    tbody.innerHTML = items.map(s => {
+        const cost = (s.buy_price || 0) * (s.shares || 0);
+        return '<tr>' +
+        '<td><a href="/stock/' + s.code + '" style="color:#7c3aed;font-weight:600;text-decoration:none;">' + s.code + '</a></td>' +
+        '<td><strong>' + escapeHtml(s.name || '') + '</strong></td>' +
+        '<td>' + (s.buy_date || '') + '</td>' +
+        '<td>' + (s.buy_price || 0).toFixed(2) + '</td>' +
+        '<td>' + (s.shares || 0) + '</td>' +
+        '<td>' + cost.toFixed(0) + '</td>' +
+        '<td>' +
+        '<button onclick="addPosition(\'' + s.code + '\')" style="padding:2px 9px;background:#16a34a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8em;">➕ 加仓</button> ' +
+        '<button onclick="reducePosition(\'' + s.code + '\')" style="padding:2px 9px;background:#f59e0b;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8em;">📉 减仓</button> ' +
+        '<button onclick="clearPosition(\'' + s.code + '\')" style="padding:2px 9px;background:#dc2626;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.8em;">📝 清仓</button>' +
+        '</td></tr>';
+    }).join('');
+}
+
+function renderFinished(items) {
+    if (!items || items.length === 0) {
+        document.getElementById('finished-count').textContent = '暂无';
+        document.getElementById('finished-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;padding:12px;">暂无已完成交易</td></tr>';
+        return;
+    }
+    document.getElementById('finished-count').textContent = '共 ' + items.length + ' 笔';
+    document.getElementById('finished-tbody').innerHTML = items.map(t => {
+        const net = t.net_ret || 0;
+        const retColor = net >= 0 ? '#dc2626' : '#16a34a';
+        const badge = t.is_win ? '<span class="result-badge win">✅胜</span>' : '<span class="result-badge loss">❌负</span>';
+        return '<tr data-tid="' + t.trade_id + '">' +
+            '<td><a href="/stock/' + t.code + '" style="color:#dc2626;font-weight:600;text-decoration:none;">' + t.code + '</a></td>' +
+            '<td>' + escapeHtml(t.name || '') + '</td>' +
+            '<td class="editable-cell" data-field="buy_date" data-tid="' + t.trade_id + '">' + (t.buy_date || '-') + '</td>' +
+            '<td class="editable-cell" data-field="buy_price" data-tid="' + t.trade_id + '">' + (t.buy_price || 0).toFixed(2) + '</td>' +
+            '<td class="editable-cell" data-field="sell_date" data-tid="' + t.trade_id + '">' + (t.sell_date || '-') + '</td>' +
+            '<td class="editable-cell" data-field="sell_price" data-tid="' + t.trade_id + '">' + (t.sell_price || 0).toFixed(2) + '</td>' +
+            '<td class="editable-cell" data-field="net_ret" data-tid="' + t.trade_id + '" style="font-weight:600;color:' + retColor + ';">' + (net >= 0 ? '+' : '') + net.toFixed(2) + '%</td>' +
+            '<td class="editable-cell" data-field="is_win" data-tid="' + t.trade_id + '">' + badge + '</td>' +
+            '<td class="editable-cell" data-field="shares" data-tid="' + t.trade_id + '">' + (t.shares || 0) + '</td>' +
+            '<td><button class="btn-del" onclick="deleteFinished(\'' + t.trade_id + '\',\'' + t.code + '\')" title="删除">🗑</button></td>' +
+            '</tr>';
+    }).join('');
+
+    // 可编辑单元格
+    document.querySelectorAll('#finished-tbody .editable-cell').forEach(cell => {
+        cell.addEventListener('click', function() {
+            if (_editing) return;
+            startEdit(this);
+        });
+    });
+}
+
+function renderStats(stats) {
+    const bar = document.getElementById('stats-bar');
+    if (!stats || stats.total_trades === undefined) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+    bar.innerHTML = '<strong>📈 交易统计</strong> '
+        + '已完成 <strong>' + (stats.total_trades || 0) + '</strong>笔 | '
+        + '胜 <strong style="color:#dc2626;">' + (stats.win_rate || 0).toFixed(1) + '%</strong> | '
+        + '累计收益 <strong style="color:' + ((stats.total_return || 0) >= 0 ? '#dc2626' : '#16a34a') + ';">'
+        + ((stats.total_return || 0) >= 0 ? '+' : '') + (stats.total_return || 0).toFixed(2) + '%</strong> | '
+        + '备选 <strong>' + (stats.watch_count || 0) + '</strong>只 | '
+        + '持仓 <strong>' + (stats.holding_count || 0) + '</strong>只';
+}
+
+// ── 可编辑 ──
+let _editing = null;
+
+function startEdit(cell) {
+    const field = cell.dataset.field;
+    const tid = cell.dataset.tid;
+    const origHTML = cell.innerHTML;
+    _editing = cell;
+
+    if (field === 'is_win') {
+        const sel = document.createElement('select');
+        sel.innerHTML = '<option value="true">✅ 胜</option><option value="false">❌ 负</option>';
+        sel.value = cell.textContent.includes('胜') ? 'true' : 'false';
+        cell.innerHTML = ''; cell.appendChild(sel);
+        sel.focus();
+        sel.addEventListener('blur', () => finishEdit(cell, field, tid, sel.value === 'true'));
+        sel.addEventListener('change', () => finishEdit(cell, field, tid, sel.value === 'true'));
+    } else if (field === 'buy_date' || field === 'sell_date') {
+        const input = document.createElement('input');
+        input.value = cell.textContent.trim();
+        cell.innerHTML = ''; cell.appendChild(input);
+        input.focus();
+        input.addEventListener('blur', () => finishEdit(cell, field, tid, input.value));
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') finishEdit(cell, field, tid, input.value);
+            if (e.key === 'Escape') { cell.innerHTML = origHTML; _editing = null; }
+        });
+    } else {
+        const input = document.createElement('input');
+        input.type = 'number'; input.step = '0.01';
+        input.value = cell.textContent.replace(/[^0-9.\-]/g, '') || 0;
+        cell.innerHTML = ''; cell.appendChild(input);
+        input.focus(); input.select();
+        input.addEventListener('blur', () => finishEdit(cell, field, tid, parseFloat(input.value) || 0));
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') finishEdit(cell, field, tid, parseFloat(input.value) || 0);
+            if (e.key === 'Escape') { cell.innerHTML = origHTML; _editing = null; }
+        });
+    }
+}
+
+async function finishEdit(cell, field, tid, newValue) {
+    _editing = null;
+    try {
+        const body = {};
+        if (field === 'is_win') body.is_win = newValue;
+        else if (field === 'buy_date' || field === 'sell_date') body[field] = String(newValue);
+        else body[field] = parseFloat(newValue) || 0;
+
+        const resp = await fetch('/api/sim_portfolio/trade/' + tid, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+        if (data.success && data.state) {
+            renderFinished(data.state.finished || []);
+            renderStats(data.state.stats || {});
+        }
+    } catch(e) { showToast('保存失败: ' + e.message, 'error'); }
+}
+
+async function deleteFinished(tid, code) {
+    if (!confirm('确认删除 ' + code + ' 的这笔交易？')) return;
+    try {
+        const resp = await fetch('/api/sim_portfolio/trade/' + tid, {method: 'DELETE'});
+        const data = await resp.json();
+        if (data.success && data.state) {
+            renderFinished(data.state.finished || []);
+            renderStats(data.state.stats || {});
+            showToast('已删除 ' + code + ' 的交易');
+        }
+    } catch(e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+
+// ── Toast ──
+function showToast(msg, type) {
+    let t = document.getElementById('toast-msg');
+    if (!t) {
+        t = document.createElement('div'); t.id = 'toast-msg';
+        t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;z-index:9999;font-size:0.9em;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity .3s;';
+        document.body.appendChild(t);
+    }
+    t.style.background = type === 'error' ? '#fef2f2' : '#f0fdf4';
+    t.style.color = type === 'error' ? '#991b1b' : '#166534';
+    t.style.border = type === 'error' ? '1px solid #fecaca' : '1px solid #bbf7d0';
+    t.textContent = msg; t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; }, 4000);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+// 页面加载
+document.addEventListener('DOMContentLoaded', function() { loadState(); });
+</script>
+{% endblock %}

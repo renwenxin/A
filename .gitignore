@@ -10,3 +10,10 @@ venv/
 dist/
 build/
 .DS_Store
+
+# 本地测试/运行缓存
+.pytest_cache/
+
+# gh CLI 本地认证配置（含 token，勿提交）
+.gh/
+

@@ -1,0 +1,965 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+/* ---- V4 Monitor Page Styles ---- */
+.monitor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.monitor-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.monitor-card.full {
+    grid-column: 1 / -1;
+}
+
+.monitor-card h3 {
+    font-size: 1.1em;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Checklist */
+.checklist { list-style: none; }
+.checklist li {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border-left: 4px solid transparent;
+    background: #fafbfc;
+    font-size: 0.92em;
+    line-height: 1.6;
+}
+.checklist li.pre { border-left-color: #f59e0b; }
+.checklist li.trade { border-left-color: #3b82f6; }
+.checklist li.risk { border-left-color: #ef4444; }
+.checklist li.record { border-left-color: #10b981; }
+.checklist li .tag {
+    display: inline-block;
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+.tag-time { background: #fef3c7; color: #92400e; }
+.tag-action { background: #dbeafe; color: #1e40af; }
+.tag-risk { background: #fee2e2; color: #991b1b; }
+.tag-record { background: #d1fae5; color: #065f46; }
+
+/* Flowchart */
+.flowchart {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: stretch;
+    font-size: 0.85em;
+}
+.flow-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 2px;
+}
+.flow-box {
+    background: #fff;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 16px;
+    min-width: 120px;
+    text-align: center;
+    font-weight: 600;
+    position: relative;
+}
+.flow-box.start { border-color: #10b981; background: #f0fdf4; color: #065f46; }
+.flow-box.condition { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+.flow-box.action { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+.flow-box.exit { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+.flow-box.stop { border-color: #7c3aed; background: #f5f3ff; color: #5b21b6; }
+.flow-box.diamond {
+    border-radius: 4px;
+    transform: rotate(0deg);
+    background: #fffbeb;
+    border-color: #f59e0b;
+    min-width: 140px;
+}
+.flow-arrow {
+    text-align: center;
+    font-size: 1.2em;
+    color: #9ca3af;
+    margin: 2px 0;
+    line-height: 1;
+}
+.flow-label {
+    font-size: 0.72em;
+    color: #6b7280;
+    font-weight: 400;
+    margin-top: 4px;
+}
+.flow-divider {
+    border-top: 2px dashed #e5e7eb;
+    margin: 12px 0;
+}
+
+/* Table styles */
+.rule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.rule-table th {
+    background: #374151;
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+}
+.rule-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.rule-table tr:nth-child(even) td { background: #f9fafb; }
+.rule-table .highlight { background: #fef3c7 !important; font-weight: 600; }
+
+/* CB log */
+.cb-log {
+    background: #1e1e2e;
+    color: #a6e3a1;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82em;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.cb-log .warn { color: #f9e2af; }
+.cb-log .crit { color: #f38ba8; }
+.cb-log .ok { color: #a6e3a1; }
+.cb-log .info { color: #89b4fa; }
+
+/* Recording template */
+.record-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+.record-table th {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 8px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.82em;
+}
+.record-table td {
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+    font-family: 'Consolas', monospace;
+    font-size: 0.85em;
+}
+.record-table tr.example td { background: #f0fdf4; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .monitor-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>策略监控</span>
+    </div>
+    <div class="page-date">📋 <strong>V4 启动突破 — 实盘监控手册</strong></div>
+</div>
+<div class="content-area">
+
+<!-- ====== Quick Reference Banner ====== -->
+<div class="guide-banner" style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;margin-bottom:16px;padding:14px 20px;border-radius:10px;">
+    <div style="font-size:0.88em;line-height:1.8;text-align:center;">
+        <strong>V4 核心规则速查</strong> &nbsp;|&nbsp;
+        🟢 <span style="color:#4ade80;">SH>MA20开仓</span> &nbsp;|&nbsp;
+        🟣 <span style="color:#c084fc;">涨停→断板离场</span> &nbsp;|&nbsp;
+        🟠 <span style="color:#fb923c;">非涨停→-3%移动止盈</span> &nbsp;|&nbsp;
+        🔴 <span style="color:#f87171;">-6%硬止损</span> &nbsp;|&nbsp;
+        ⚡ <span style="color:#fbbf24;">连亏3→减半/5→空仓2天</span>
+    </div>
+</div>
+
+<!-- ====== Section 1: Pre-Market Checklist & Flowchart ====== -->
+<div class="monitor-grid">
+
+    <!-- Left: Checklist -->
+    <div class="monitor-card">
+        <h3>🌅 一、每日开盘前检查清单（9:00-9:25）</h3>
+        <ul class="checklist">
+
+            <li class="pre">
+                <span class="tag tag-time">9:00</span>
+                <span class="tag tag-action">大盘 MA20 状态确认</span><br>
+                打开上证指数日线图，确认昨日收盘价与 MA20 的关系：<br>
+                &nbsp;&nbsp;✅ <strong>收盘 > MA20</strong> → 允许开仓，进入下一步<br>
+                &nbsp;&nbsp;❌ <strong>收盘 ≤ MA20</strong> → <span style="color:#ef4444;">今日禁止新开仓，仅管理现有持仓</span>
+            </li>
+
+            <li class="pre">
+                <span class="tag tag-time">9:10</span>
+                <span class="tag tag-action">检查现有持仓触发状态</span><br>
+                遍历所有持仓，按优先级检查：<br>
+                &nbsp;&nbsp;🔴 浮亏 ≥ 6% → <strong>今日开盘立即挂单卖出</strong>（硬止损）<br>
+                &nbsp;&nbsp;🟠 非涨停买入 & 从最高点回落 ≥ 3% → <strong>挂单卖出</strong>（移动止盈）<br>
+                &nbsp;&nbsp;🟣 涨停买入 & 昨日断板 & 今日为断板后第2天未反包 → <strong>挂单卖出</strong><br>
+                &nbsp;&nbsp;🟢 涨停买入 & 昨日首次断板 → <strong>观察一天（等N字反包）</strong>
+            </li>
+
+            <li class="risk">
+                <span class="tag tag-time">9:15</span>
+                <span class="tag tag-risk">熔断状态检查</span><br>
+                检查当前连续亏损笔数：<br>
+                &nbsp;&nbsp;📊 连亏 <strong>0-2</strong> 笔 → 正常，仓位 = 10%/票<br>
+                &nbsp;&nbsp;⚠️ 连亏 <strong>3-4</strong> 笔 → 仓位减半至 <strong>5%/票</strong><br>
+                &nbsp;&nbsp;🚫 连亏 <strong>≥ 5</strong> 笔 → 强制空仓 <strong>2个交易日</strong>，今日不开新仓<br>
+                &nbsp;&nbsp;✅ 出现一笔盈利 → 连亏计数<strong>归零</strong>，仓位恢复 10%
+            </li>
+
+            <li class="pre">
+                <span class="tag tag-time">9:20</span>
+                <span class="tag tag-action">集合竞价扫描</span><br>
+                检查昨日信号池中候选标的的竞价情况：<br>
+                &nbsp;&nbsp;❌ 低开 > 3% → 放弃该标的<br>
+                &nbsp;&nbsp;❌ 竞价量 < 前日量 × 50% → 放弃该标的<br>
+                &nbsp;&nbsp;❌ 开盘跌停 → 放弃该标的<br>
+                &nbsp;&nbsp;✅ 全部通过 → <strong>列入今日可买入清单</strong>
+            </li>
+
+            <li class="trade">
+                <span class="tag tag-time">9:25</span>
+                <span class="tag tag-action">确定买入计划</span><br>
+                从通过竞价确认的标的中，按评分排序，选取前 3 只：<br>
+                &nbsp;&nbsp;📌 单票仓位 = 当前熔断级别仓位（10% 或 5%）<br>
+                &nbsp;&nbsp;📌 总持仓 ≤ 10 只<br>
+                &nbsp;&nbsp;📌 记录 <strong>买入日是否涨停</strong> → 决定后续退出模式
+            </li>
+
+            <li class="record">
+                <span class="tag tag-time">开盘前</span>
+                <span class="tag tag-record">核对回测基线</span><br>
+                刷新系统面板，确认：<br>
+                &nbsp;&nbsp;📈 当前净值 vs 回测同期净值（允许 ±15% 偏差）<br>
+                &nbsp;&nbsp;📉 当前回撤 vs 回测最大回撤 17.5%<br>
+                &nbsp;&nbsp;📊 当前胜率 vs 回测胜率 50.6%
+            </li>
+        </ul>
+    </div>
+
+    <!-- Right: Flowchart -->
+    <div class="monitor-card">
+        <h3>🔄 二、V4 核心规则流程图</h3>
+
+        <!-- Entry Flow -->
+        <div style="font-weight:700;color:#374151;margin-bottom:8px;">▸ 开仓流程</div>
+        <div class="flowchart">
+            <div class="flow-row">
+                <div class="flow-box condition">
+                    ① SH > MA20？<br><span class="flow-label">上证收盘 > 20日均线</span>
+                </div>
+            </div>
+            <div class="flow-arrow">↓ YES &nbsp;&nbsp;&nbsp; → NO → 空仓等待</div>
+            <div class="flow-row">
+                <div class="flow-box condition">
+                    ② 熔断检查<br><span class="flow-label">连亏<3:正常 | 3-4:半仓 | ≥5:空2天</span>
+                </div>
+            </div>
+            <div class="flow-arrow">↓ 通过</div>
+            <div class="flow-row">
+                <div class="flow-box condition">
+                    ③ 突破信号<br><span class="flow-label">收盘>找顶线 & 量>MAVOL180×1.2</span>
+                </div>
+            </div>
+            <div class="flow-arrow">↓ 检测到</div>
+            <div class="flow-row">
+                <div class="flow-box condition">
+                    ④ 竞价确认<br><span class="flow-label">低开≤3% & 缩量≤50% & 非跌停</span>
+                </div>
+            </div>
+            <div class="flow-arrow">↓ 通过</div>
+            <div class="flow-row">
+                <div class="flow-box action">
+                    ⑤ 开盘买入<br><span class="flow-label">记录买入日是否涨停 → 决定退出路径</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-divider"></div>
+
+        <!-- Exit Flow -->
+        <div style="font-weight:700;color:#374151;margin-bottom:8px;">▸ 退出流程（每日收盘检查）</div>
+        <div class="flowchart">
+            <div class="flow-row">
+                <div class="flow-box action">
+                    买入日是否涨停？<br><span class="flow-label">决定退出路径</span>
+                </div>
+            </div>
+            <div class="flow-arrow">↙ YES (涨停买入) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↘ NO (非涨停买入)</div>
+            <div class="flow-row">
+                <div class="flow-box exit" style="min-width:200px;">
+                    🟣 涨停断板路径<br><span class="flow-label">涨停→断板(第1天)→等反包(第2天)<br>→收阳+放量=继续持有<br>→收阴/缩量=卖出</span>
+                </div>
+                <div class="flow-box exit" style="min-width:200px;">
+                    🟠 移动止盈路径<br><span class="flow-label">浮盈≥2%后启用<br>从最高价回落≥3%→卖出<br>最长持有5天</span>
+                </div>
+            </div>
+            <div class="flow-arrow">↓ 所有路径共同保护 ↓</div>
+            <div class="flow-row">
+                <div class="flow-box stop" style="min-width:300px;">
+                    🔴 -6% 硬止损（最高优先级）&nbsp;&nbsp;|&nbsp;&nbsp;
+                    🟢 今日涨停→继续持有&nbsp;&nbsp;|&nbsp;&nbsp;
+                    ⏱ 持有5天→到期卖出
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-divider"></div>
+
+        <!-- Circuit Breaker Flow -->
+        <div style="font-weight:700;color:#374151;margin-bottom:8px;">▸ 熔断流程（每笔卖出后触发）</div>
+        <div class="flowchart">
+            <div class="flow-row">
+                <div class="flow-box action">
+                    交易平仓 → 是否盈利？
+                </div>
+            </div>
+            <div class="flow-arrow">↙ 亏损 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↘ 盈利</div>
+            <div class="flow-row">
+                <div>
+                    <div class="flow-box stop">连亏计数 +1</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box stop">计数 = 3~4？→ 仓位减半至5%</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box stop">计数 ≥ 5？→ 强制空仓2天</div>
+                </div>
+                <div>
+                    <div class="flow-box start">连亏计数归零</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box start">仓位恢复至10%</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-box start">空仓期解除</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Section 3: Post-Market Recording Template ====== -->
+<div class="monitor-grid">
+    <div class="monitor-card full">
+        <h3>📝 三、盘后数据记录模板</h3>
+        <p style="color:#6b7280;font-size:0.85em;margin-bottom:12px;">
+            建议每日收盘后（15:30）填写以下数据，与回测基线对比。当连续 5 天偏差超过阈值时，触发异常调查流程。
+        </p>
+
+        <table class="rule-table" style="margin-bottom:20px;">
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>上证收盘</th>
+                    <th>SH>MA20?</th>
+                    <th>持仓数</th>
+                    <th>当日净值(万)</th>
+                    <th>累计收益%</th>
+                    <th>当前回撤%</th>
+                    <th>连亏笔数</th>
+                    <th>胜率%</th>
+                    <th>偏离回测?</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="example">
+                    <td>示例 2026-08-03</td>
+                    <td>3,245.18</td>
+                    <td>✅</td>
+                    <td>6</td>
+                    <td>152.3</td>
+                    <td>+52.3%</td>
+                    <td>-4.2%</td>
+                    <td>1</td>
+                    <td>51.2%</td>
+                    <td>🟢</td>
+                    <td>正常运行</td>
+                </tr>
+                <tr>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="font-weight:600;color:#374151;margin-bottom:8px;">▸ 持仓明细记录</div>
+        <table class="record-table" style="margin-bottom:16px;">
+            <thead>
+                <tr>
+                    <th>代码</th><th>名称</th><th>买入日</th><th>买入价</th>
+                    <th>今日收盘</th><th>浮盈%</th><th>最高收盘</th><th>回落%</th>
+                    <th>买入涨停?</th><th>退出模式</th><th>状态</th><th>计划操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="example">
+                    <td>000592</td><td>平潭发展</td><td>08-01</td><td>4.52</td>
+                    <td>5.18</td><td>+14.6%</td><td>5.45</td><td>-5.0%</td>
+                    <td>✅</td><td>涨停断板</td><td>断板Day1</td><td>观察等反包</td>
+                </tr>
+                <tr>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="color:#6b7280;font-size:0.8em;">
+            📌 <strong>对比频率建议</strong>：每周生成一次「实盘 vs 回测」对比报告。允许偏差范围：累计收益 ±15%、最大回撤 ±5pp、胜率 ±10pp、夏普 ±0.5。
+        </p>
+    </div>
+</div>
+
+<!-- ====== Section 4: Exception Handling ====== -->
+<div class="monitor-grid">
+    <div class="monitor-card">
+        <h3>🚨 四、异常情况应对流程</h3>
+
+        <div style="margin-bottom:20px;">
+            <h4 style="color:#ef4444;margin-bottom:10px;">场景 1：连续亏损触发熔断后的恢复流程</h4>
+            <div class="cb-log">
+<span class="warn">[CB] 5 consecutive losses → FORCE 2 DAYS EMPTY</span>
+<span class="info">Day 1 (空仓): 不进行任何买入操作，仅管理现有持仓的退出</span>
+<span class="info">Day 2 (空仓): 同上，等待强制空仓期结束</span>
+<span class="ok">Day 3 (恢复):</span>
+<span class="ok">  1. 连亏计数归零 → 仓位恢复至 10%</span>
+<span class="ok">  2. 检查 SH > MA20 → 如满足，按正常流程筛选候选标的</span>
+<span class="ok">  3. 每日最多开仓 3 只（非补仓——熔断恢复后从零开始）</span>
+<span class="ok">  4. 不要试图"追回亏损"——遵守标准仓位规则</span>
+<span class="crit">⚠ 如果恢复后第1笔交易再次亏损 → 连亏计数=1，但仓位仍为10%</span>
+<span class="crit">⚠ 如果恢复后3笔内再次触发熔断 → 考虑暂停本周交易（市场环境可能极端不利）</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h4 style="color:#ef4444;margin-bottom:10px;">场景 2：实盘净值显著偏离回测基线</h4>
+            <p style="font-size:0.85em;color:#6b7280;margin-bottom:8px;">
+                偏离阈值：累计收益偏差 > 15%、或最大回撤偏差 > 5pp、或胜率偏差 > 10pp。
+            </p>
+            <div class="cb-log">
+<span class="warn">[ALERT] 实盘净值偏离回测基线超过阈值</span>
+<span class="info">调查步骤：</span>
+<span class="info">  Step 1: 检查过去1周内是否有单日出现 3+ 笔同时亏损</span>
+<span class="info">         → 若有：大盘可能处于突发利空/系统性下跌，回顾当日 MA20 是否已破位</span>
+<span class="info">  Step 2: 检查是否有标的买入后未按退出规则执行（手动干预导致）</span>
+<span class="info">         → 若有：统计手动干预 vs 规则执行的收益差异</span>
+<span class="info">  Step 3: 检查滑点是否显著高于 0.05%（实盘买入价 vs 信号价）</span>
+<span class="info">         → 若有：暂停流动性差的标的，优先做日均成交 > 2亿的票</span>
+<span class="info">  Step 4: 检查最近一周胜率是否低于 35%（回测均值的 -15pp）</span>
+<span class="info">         → 若是：考虑将仓位降至 5%，等待胜率回归均值</span>
+<span class="crit">  Step 5: 若以上排查无果且偏离持续 > 5天 → 暂停策略，人工复盘全部交易</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="monitor-card">
+        <h3>📊 五、V4 回测基线参考值</h3>
+        <p style="color:#6b7280;font-size:0.85em;margin-bottom:12px;" id="v4-baseline-desc">
+            以下数据来自 V4 全周期回测（2022-01 ~ 2026-07，1108个交易日，0.20%成本）
+        </p>
+
+        <table class="rule-table" id="v4-baseline-table">
+            <thead>
+                <tr><th>指标</th><th>全周期</th><th>2022-2024 熊</th><th>2025-2026 牛</th></tr>
+            </thead>
+            <tbody>
+                <tr data-metric="total_trades"><td>总交易笔数</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="win_rate"><td>胜率</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="avg_net_return"><td>平均净收益/笔</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="avg_win"><td>平均盈利</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="avg_loss"><td>平均亏损</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="profit_factor"><td>盈亏比</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr class="highlight" data-metric="cumulative_return"><td><strong>累计收益</strong></td><td class="val-full"><strong>—</strong></td><td class="val-bear"><strong>—</strong></td><td class="val-bull"><strong>—</strong></td></tr>
+                <tr class="highlight" data-metric="annualized_return"><td><strong>年化收益</strong></td><td class="val-full"><strong>—</strong></td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr class="highlight" data-metric="max_drawdown"><td><strong>最大回撤</strong></td><td class="val-full"><strong>—</strong></td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="sharpe_ratio"><td>夏普比率</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="sh_above_ma20_pct"><td>SH > MA20 占比</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="avg_hold_days"><td>平均持有天数</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+                <tr data-metric="avg_positions"><td>平均同时持仓</td><td class="val-full">—</td><td class="val-bear">—</td><td class="val-bull">—</td></tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top:16px;padding:12px;background:#fef3c7;border-radius:8px;font-size:0.82em;">
+            <strong>⚠️ 偏差预警阈值：</strong><br>
+            🟢 正常：累计收益偏差 ≤ 10%、回撤偏差 ≤ 3pp、胜率偏差 ≤ 5pp<br>
+            🟡 关注：累计收益偏差 10-15%、回撤偏差 3-5pp、胜率偏差 5-10pp<br>
+            🔴 调查：累计收益偏差 > 15%、回撤偏差 > 5pp、胜率偏差 > 10pp → 启动场景2调查
+        </div>
+    </div>
+</div>
+
+<!-- ====== Section 6: Strategy Rules Reference ====== -->
+<div class="monitor-grid">
+    <div class="monitor-card full">
+        <h3>📖 六、V4 策略规则完整参考</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:0.85em;">
+
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;">
+                <strong style="color:#16a34a;">🟢 开仓条件</strong>
+                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+                    <li>上证收盘 > MA20</li>
+                    <li>沪深主板，非ST</li>
+                    <li>年涨停 ≥ 10次</li>
+                    <li>距找顶线 ≤ 10%</li>
+                    <li>收盘突破找顶线</li>
+                    <li>量 > MAVOL180 × 1.2</li>
+                    <li>量比 < 5.0x（非过度放量）</li>
+                    <li>距压力位不在 3-5%（非死亡区间）</li>
+                    <li>竞价：低开≤3%、缩量≤50%、非跌停</li>
+                </ul>
+            </div>
+
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;">
+                <strong style="color:#dc2626;">🔴 退出层级（优先级从高到低）</strong>
+                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+                    <li><strong>1. -6% 硬止损</strong>（无条件）</li>
+                    <li><strong>2. 涨停日买入：</strong>涨停→持有；断板→等N字反包1天→收阳放量=持有，否则=卖出</li>
+                    <li><strong>3. 非涨停日买入：</strong>浮盈≥2%后，从最高价回落≥3%→卖出</li>
+                    <li><strong>4. 今日涨停：</strong>继续持有</li>
+                    <li><strong>5. 持有5天：</strong>到期卖出</li>
+                </ul>
+            </div>
+
+            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:14px;">
+                <strong style="color:#7c3aed;">⚡ 仓位熔断</strong>
+                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+                    <li>正常：单票 10%</li>
+                    <li>最大持仓：10只</li>
+                    <li>每日最多新开：3只</li>
+                    <li><strong>连亏3-4笔：</strong>仓位减半至5%</li>
+                    <li><strong>连亏≥5笔：</strong>强制空仓2天</li>
+                    <li><strong>出现1笔盈利：</strong>计数归零，恢复10%</li>
+                </ul>
+            </div>
+
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;">
+                <strong style="color:#d97706;">🟡 过滤规则</strong>
+                <ul style="margin-top:8px;padding-left:16px;color:#555;line-height:1.8;">
+                    <li>死亡区间 3-5%：跳过</li>
+                    <li>过度放量 ≥ 5x：跳过</li>
+                    <li>非一字板：跳过</li>
+                    <li>次日开盘跌停：跳过</li>
+                    <li>开盘低开 > 3%：跳过</li>
+                    <li>竞价缩量 > 50%：跳过</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ====== Section 7: V4 实盘候选池（每日操盘模块） ====== -->
+<div class="monitor-card full" style="margin-bottom:16px;border:3px solid #7c3aed;background:linear-gradient(135deg,#f5f3ff,#fff);">
+    <h3>🚀 七、V4 实盘候选池（每日操盘）</h3>
+    <p style="font-size:0.85em;color:#6b7280;margin:-8px 0 14px;">
+        与启动突破共用同一候选池 · 「运行扫描」清空重建 → 9:25 后点「刷新状态」竞价确认昨日选出的标的
+    </p>
+
+    <!-- 市场情绪判断（基于上一交易日） -->
+    <div id="v4-mood-panel" style="padding:12px 16px;background:#f0f4ff;border:1px solid #d0d7f0;border-radius:8px;margin-bottom:14px;font-size:0.88em;">
+        ⏳ 加载市场情绪...
+    </div>
+
+    <!-- 操作按钮 -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+        <button onclick="v4RunScan()" class="btn-screener-card btn-main-control" style="display:inline-flex;width:auto;padding:10px 24px;">
+            <span class="btn-icon">🔍</span>
+            <span class="btn-text"><span class="btn-label">运行扫描</span><span class="btn-desc">清空候选池 → 重新全量筛选（重量级）</span></span>
+        </button>
+        <button onclick="v4Refresh(true)" class="btn-screener-card" style="display:inline-flex;width:auto;padding:10px 20px;">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-text"><span class="btn-label">刷新状态</span><span class="btn-desc">竞价确认昨日标的（9:25后生效）</span></span>
+        </button>
+        <span id="v4-status" style="font-size:0.82em;color:#888;"></span>
+    </div>
+
+    <!-- 买入 / 卖出信号两栏 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border:3px solid #22c55e;border-radius:10px;padding:12px 14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h4 style="color:#16a34a;margin:0;">🟢 符合买入信号标的</h4>
+                <span id="v4-buy-count" style="background:#dcfce7;color:#166534;font-weight:600;padding:2px 10px;border-radius:10px;font-size:0.8em;">-</span>
+            </div>
+            <p style="font-size:0.75em;color:#999;margin:6px 0;">收盘突破找顶线 + 量&gt;MAVOL180×1.2 · 含预估买入区间与竞价确认</p>
+            <div id="v4-buy-panel" style="max-height:380px;overflow-y:auto;min-height:40px;">
+                <span style="color:#999;font-size:0.82em;">点击「运行扫描」或「刷新状态」加载...</span>
+            </div>
+        </div>
+        <div style="background:linear-gradient(135deg,#fef2f2,#fff);border:3px solid #ef4444;border-radius:10px;padding:12px 14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h4 style="color:#dc2626;margin:0;">🔴 符合卖出信号标的</h4>
+                <span id="v4-sell-count" style="background:#fef2f2;color:#991b1b;font-weight:600;padding:2px 10px;border-radius:10px;font-size:0.8em;">-</span>
+            </div>
+            <p style="font-size:0.75em;color:#999;margin:6px 0;">-6%止损 · 移动止盈(回落5%) · 断板/到期 · 含预估卖出区间</p>
+            <div id="v4-sell-panel" style="max-height:380px;overflow-y:auto;min-height:40px;">
+                <span style="color:#999;font-size:0.82em;">点击「运行扫描」或「刷新状态」加载...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- V4 基线数据动态加载脚本 -->
+<script>
+(function() {
+    // V4 回测基线数据动态加载
+    // 从 /api/v4/baseline 获取牛熊市分割数据并填充第五节表格
+
+    var BASELINE_DEFAULTS = {
+        full_cycle: {
+            total_trades: 997, win_rate: 50.6, avg_net_return: 1.82,
+            avg_win: 9.22, avg_loss: -5.74, profit_factor: 1.64,
+            cumulative_return: 179.0, annualized_return: 26.3, max_drawdown: 17.53,
+            sharpe_ratio: 1.52, sh_above_ma20_pct: 50,
+            avg_hold_days: 4.8, avg_positions: 7.2
+        },
+        bear_2022_2024: {
+            total_trades: 551, win_rate: 48.6, avg_net_return: 0.79,
+            avg_win: null, avg_loss: null, profit_factor: null,
+            cumulative_return: 47.5, annualized_return: null, max_drawdown: null,
+            sharpe_ratio: 0.84, sh_above_ma20_pct: 44,
+            avg_hold_days: null, avg_positions: null
+        },
+        bull_2025_2026: {
+            total_trades: 446, win_rate: 52.9, avg_net_return: 3.10,
+            avg_win: null, avg_loss: null, profit_factor: null,
+            cumulative_return: 89.2, annualized_return: null, max_drawdown: null,
+            sharpe_ratio: 3.05, sh_above_ma20_pct: 63,
+            avg_hold_days: null, avg_positions: null
+        }
+    };
+
+    function formatMetricValue(key, value) {
+        if (value === null || value === undefined) return '—';
+        switch (key) {
+            case 'total_trades':
+                return String(value);
+            case 'win_rate':
+            case 'sh_above_ma20_pct':
+                return value.toFixed(1) + '%';
+            case 'avg_net_return':
+            case 'avg_win':
+            case 'avg_loss':
+                return (value >= 0 ? '+' : '') + value.toFixed(2) + '%';
+            case 'cumulative_return':
+            case 'annualized_return':
+                return (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
+            case 'max_drawdown':
+                return value.toFixed(2) + '%';
+            case 'profit_factor':
+            case 'sharpe_ratio':
+                return value.toFixed(2);
+            case 'avg_hold_days':
+                return value.toFixed(1) + ' 天';
+            case 'avg_positions':
+                return value.toFixed(1) + ' 只';
+            default:
+                return String(value);
+        }
+    }
+
+    function populateTable(baseline) {
+        var table = document.getElementById('v4-baseline-table');
+        if (!table) return;
+
+        var full = baseline.full_cycle || {};
+        var bear = baseline.bear_2022_2024 || {};
+        var bull = baseline.bull_2025_2026 || {};
+
+        var rows = table.querySelectorAll('tbody tr');
+        rows.forEach(function(row) {
+            var metric = row.getAttribute('data-metric');
+            if (!metric) return;
+
+            var valFull = row.querySelector('.val-full');
+            var valBear = row.querySelector('.val-bear');
+            var valBull = row.querySelector('.val-bull');
+
+            if (valFull && full[metric] !== undefined) {
+                valFull.innerHTML = formatMetricValue(metric, full[metric]);
+            }
+            if (valBear) {
+                var bearVal = bear[metric];
+                valBear.innerHTML = formatMetricValue(metric, bearVal);
+                if (bearVal === null || bearVal === undefined) {
+                    valBear.style.color = '#9ca3af';
+                }
+            }
+            if (valBull) {
+                var bullVal = bull[metric];
+                valBull.innerHTML = formatMetricValue(metric, bullVal);
+                if (bullVal === null || bullVal === undefined) {
+                    valBull.style.color = '#9ca3af';
+                }
+            }
+        });
+
+        // 更新描述文字中的数据来源信息
+        var descEl = document.getElementById('v4-baseline-desc');
+        if (descEl && baseline.meta) {
+            var meta = baseline.meta;
+            if (meta.backtest_period) {
+                descEl.textContent = '以下数据来自 V4 全周期回测（' + meta.backtest_period + '，0.20%成本）';
+            }
+            if (meta.note && meta.note.indexOf('estimates') >= 0) {
+                descEl.textContent += ' \\26A0\\FE0F 缓存文件不存在，显示默认估计值。运行 generate_v4_baseline.py 生成准确数据。';
+            }
+        }
+    }
+
+    // 先用默认值填充（确保页面立即可见）
+    populateTable(BASELINE_DEFAULTS);
+
+    // 异步加载 API 数据更新表格
+    fetch('/api/v4/baseline')
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            populateTable(data);
+        })
+        .catch(function(err) {
+            console.log('V4 baseline API unavailable, using defaults:', err);
+        });
+})();
+</script>
+
+<!-- ═══════════ V4 实盘候选池模块 JS ═══════════ -->
+<script>
+let _v4Busy = false;
+
+// ── 运行扫描：清空候选池并重新全量筛选 ──
+async function v4RunScan() {
+    if (_v4Busy) return;
+    _v4Busy = true;
+    const status = document.getElementById('v4-status');
+    const steps = ['⏳ 构建候选池(全市场年涨停≥10)...', '⏳ 筛选距找顶线≤10%...', '⏳ 检测突破信号...', '⏳ 检查卖出条件...'];
+    let step = 0;
+    const timer = setInterval(() => { status.textContent = steps[step % steps.length]; step++; }, 3000);
+    try {
+        const resp = await fetch('/api/v4_pool/scan', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        v4Render(data);
+        const s = data.summary || {};
+        status.textContent = '✅ 扫描完成 — 买入信号 ' + (data.sim_buy_today || []).length + '只 · 卖出信号 ' + (data.sim_sell_today || []).length + '只';
+        showToast('✅ V4 候选池已重建');
+    } catch (e) {
+        status.textContent = '❌ ' + e.message;
+        showToast('扫描失败: ' + e.message, 'error');
+    } finally {
+        clearInterval(timer);
+        _v4Busy = false;
+    }
+}
+
+// ── 刷新状态：竞价确认昨日标的（9:25后生效），fresh=1 绕过缓存 ──
+async function v4Refresh(fresh) {
+    if (_v4Busy) return;
+    _v4Busy = true;
+    const status = document.getElementById('v4-status');
+    status.textContent = '⏳ 刷新竞价确认与情绪...';
+    try {
+        const resp = await fetch('/api/v4_pool/state' + (fresh ? '?fresh=1' : ''));
+        if (!resp.ok) throw new Error('服务器错误 ' + resp.status);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        v4Render(data);
+        status.textContent = '✅ 已刷新 · 情绪:' + (data.market_mood ? data.market_mood.mood : '-') +
+            ' · 买入 ' + (data.sim_buy_today || []).length + '只 · 卖出 ' + (data.sim_sell_today || []).length + '只';
+    } catch (e) {
+        status.textContent = '❌ ' + e.message;
+    } finally {
+        _v4Busy = false;
+    }
+}
+
+function v4Render(data) {
+    v4RenderMood(data.market_mood);
+    v4RenderBuy(data.sim_buy_today || []);
+    v4RenderSell(data.sim_sell_today || []);
+}
+
+// ── 市场情绪面板 ──
+function v4RenderMood(mood) {
+    const el = document.getElementById('v4-mood-panel');
+    if (!el) return;
+    if (!mood || !mood.date) {
+        el.innerHTML = '<span style="color:#999;">市场情绪数据不可用</span>';
+        return;
+    }
+    const m = mood.mood || '未知';
+    const color = mood.color || '#9ca3af';
+    const bullTag = mood.is_bull
+        ? '<span style="color:#16a34a;font-weight:600;">上证站上MA60 ✓</span>'
+        : '<span style="color:#dc2626;font-weight:600;">上证跌破MA60 ✗</span>';
+    const note = mood.note ? '<span style="color:#b45309;"> ' + mood.note + '</span>' : '';
+    el.innerHTML =
+        '<div style="display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;">' +
+        '<span>📅 上一交易日 <strong>' + mood.date + '</strong></span>' +
+        '<span>💥 涨停 <strong>' + (mood.zt_count || 0) + '</strong>家</span>' +
+        '<span>🔗 连板 <strong>' + (mood.multi_board || 0) + '</strong>家</span>' +
+        '<span>🏔 最高板 <strong>' + (mood.max_consecutive || 0) + '</strong>板</span>' +
+        '<span>📊 上证 ' + (mood.sh_close || '-') + ' | ' + bullTag + '</span>' +
+        '<span style="margin-left:auto;font-size:1.05em;font-weight:700;color:' + color + ';">情绪：' + m + '</span>' +
+        '<span style="font-size:0.82em;color:#666;">→ ' + (mood.advice || '') + '</span>' +
+        '</div>' + note;
+}
+
+// ── 买入信号面板 ──
+function v4RenderBuy(items) {
+    document.getElementById('v4-buy-count').textContent = items.length + '只';
+    const el = document.getElementById('v4-buy-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:14px;color:#16a34a;">✅ 暂无符合买入信号的标的</div>';
+        return;
+    }
+    let html = '';
+    items.forEach(s => {
+        const auc = s.auction || {status: 'pending', reason: ''};
+        let aucTag = '';
+        if (auc.status === 'passed') {
+            aucTag = '<span style="color:#16a34a;font-weight:600;">✅ 竞价通过 ' + (auc.reason || '') + '</span>';
+        } else if (auc.status === 'rejected') {
+            aucTag = '<span style="color:#dc2626;font-weight:600;">⛔ 竞价否决：' + (auc.reason || '') + '</span>';
+        } else {
+            aucTag = '<span style="color:#9ca3af;">⏳ ' + (auc.reason || '待确认') + '</span>';
+        }
+        html += '<div style="background:#f0fdf4;border-radius:8px;padding:9px 12px;margin-bottom:6px;border:1px solid #86efac;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<span><a href="/stock/' + (s.code || '') + '" style="color:#16a34a;font-weight:700;text-decoration:none;font-size:1.02em;">' + (s.code || '') + '</a>' +
+            ' <span style="color:#333;">' + (s.name || '') + '</span></span>' +
+            '<span style="font-weight:700;color:#e94560;">评分 ' + (s.score || 0) + '</span></div>' +
+            '<div style="margin-top:3px;font-size:0.8em;color:#555;">' +
+            '收盘 <strong>' + (s.close || 0) + '</strong> | 压力线 <strong>' + (s.top_line || 0) + '</strong> | 突破 <strong>+' + (s.break_pct || 0) + '%</strong>' +
+            ' | 量比 <strong>' + (s.vol_ratio || 0) + 'x</strong>' +
+            ' | 涨停' + (s.limit_count || 0) + '次</div>' +
+            '<div style="margin-top:4px;font-size:0.82em;font-weight:600;color:#16a34a;">' +
+            '📏 预估买入区间 <strong>' + (s.buy_range_low || 0) + ' ~ ' + (s.buy_range_high || 0) + '</strong> 元' +
+            ' <span style="font-weight:400;color:#888;">(低开3%内接 / 追高≤' + (s.buy_range_pct || 6) + '%)</span></div>' +
+            '<div style="margin-top:4px;font-size:0.78em;">' + aucTag +
+            ' <span style="color:#16a34a;">📅 ' + (s.buy_date || '次日') + ' 开盘买入</span></div>' +
+            '<div style="margin-top:5px;">' +
+            '<button onclick="v4RecordBuy(\'' + (s.code || '') + '\',' + (s.close || 0) + ')" style="font-size:0.85em;padding:2px 10px;cursor:pointer;background:#16a34a;color:#fff;border:none;border-radius:4px;">✅ 记录买入</button> ' +
+            '<button onclick="v4DeleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="取消">✕</button>' +
+            '</div></div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 卖出信号面板 ──
+function v4RenderSell(items) {
+    document.getElementById('v4-sell-count').textContent = items.length + '只';
+    const el = document.getElementById('v4-sell-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:14px;color:#999;">无卖出信号</div>';
+        return;
+    }
+    let html = '';
+    items.forEach(s => {
+        const estRet = s.estimated_net_ret || 0;
+        const retColor = estRet > 0 ? '#dc2626' : '#16a34a';
+        html += '<div style="background:#fef2f2;border-radius:8px;padding:9px 12px;margin-bottom:6px;border:1px solid #fecaca;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<span><a href="/stock/' + (s.code || '') + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + (s.code || '') + '</a>' +
+            ' <span style="color:#333;">' + (s.name || '') + '</span></span>' +
+            '<span style="font-weight:600;color:' + retColor + ';">预计' + (estRet > 0 ? '+' : '') + estRet.toFixed(2) + '%</span></div>' +
+            '<div style="font-size:0.8em;color:#666;margin-top:2px;">' +
+            '买' + (s.buy_price || 0) + ' | 持' + (s.days_held || 0) + '天 | ' + (s.exit_reason || '到期') + '</div>' +
+            '<div style="margin-top:3px;font-size:0.82em;font-weight:600;color:#dc2626;">' +
+            '📏 预估卖出区间 <strong>' + (s.sell_range_low || 0) + ' ~ ' + (s.sell_range_high || 0) + '</strong> 元' +
+            ' <span style="font-weight:400;color:#888;">(' + (s.sell_range_basis || '') + ')</span></div>' +
+            '<div style="margin-top:5px;">' +
+            '<button onclick="v4RecordSell(\'' + (s.code || '') + '\')" style="font-size:0.85em;padding:2px 10px;cursor:pointer;background:#dc2626;color:#fff;border:none;border-radius:4px;">📝 记录卖出</button> ' +
+            '<button onclick="v4DeleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.75em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="删除">✕</button>' +
+            '</div></div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 记录买入/卖出/删除（复用启动突破 V3 引擎接口，同一持仓状态） ──
+async function v4RecordBuy(code, price) {
+    const p = prompt('实际买入价（默认 ' + price + '）:', price);
+    if (!p) return;
+    try {
+        const resp = await fetch('/api/breakout_v3/simulation/record_buy', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code, price: parseFloat(p)})
+        });
+        const data = await resp.json();
+        if (data.success) { showToast('✅ ' + code + ' 买入记录成功'); v4Refresh(true); }
+        else showToast('买入失败', 'error');
+    } catch (e) { showToast('失败: ' + e.message, 'error'); }
+}
+
+async function v4RecordSell(code) {
+    const p = prompt('卖出价:');
+    if (!p) return;
+    try {
+        const resp = await fetch('/api/breakout_v3/simulation/record_sell', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code, price: parseFloat(p)})
+        });
+        const data = await resp.json();
+        if (data.success) { showToast('✅ ' + code + ' 卖出记录成功'); v4Refresh(true); }
+        else showToast('卖出失败', 'error');
+    } catch (e) { showToast('失败: ' + e.message, 'error'); }
+}
+
+async function v4DeleteEntry(code) {
+    if (!confirm('确定从候选/持仓中删除 ' + code + '？')) return;
+    try {
+        const resp = await fetch('/api/breakout_v3/simulation/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code})
+        });
+        const data = await resp.json();
+        if (data.success) { showToast('已删除 ' + code); v4Refresh(true); }
+    } catch (e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+
+// 页面加载时自动加载（走缓存，快速展示上次扫描结果）
+document.addEventListener('DOMContentLoaded', function() { v4Refresh(false); });
+</script>
+</div>
+{% endblock %}

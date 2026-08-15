@@ -1,0 +1,2103 @@
+{
+  "_cached_date": "2026-08-13",
+  "_cached_at": "14:16:16",
+  "_namespace": "fund_scale_xq",
+  "_payload": {
+    "011269": {
+      "scale_yi": 0.5134479999999999,
+      "scale_raw": "5134.48万",
+      "manager": "张丽新",
+      "ftype": "股票型-普通",
+      "established": "2021-07-08"
+    },
+    "005304": {
+      "scale_yi": 2.36,
+      "scale_raw": "2.36亿",
+      "manager": "郝淼 孙晓晖",
+      "ftype": "股票型-普通",
+      "established": "2017-12-04"
+    },
+    "023037": {
+      "scale_yi": 19.45,
+      "scale_raw": "19.45亿",
+      "manager": "叶培培",
+      "ftype": "混合型-偏股",
+      "established": "2025-01-21"
+    },
+    "026663": {
+      "scale_yi": 0.114593,
+      "scale_raw": "1145.93万",
+      "manager": "蒋严泽 许杰",
+      "ftype": "混合型-偏股",
+      "established": "2026-02-10"
+    },
+    "202027": {
+      "scale_yi": 13.03,
+      "scale_raw": "13.03亿",
+      "manager": "张磊",
+      "ftype": "混合型-偏股",
+      "established": "2012-09-25"
+    },
+    "481006": {
+      "scale_yi": 3.82,
+      "scale_raw": "3.82亿",
+      "manager": "林念",
+      "ftype": "混合型-偏股",
+      "established": "2007-07-18"
+    },
+    "000711": {
+      "scale_yi": 7.41,
+      "scale_raw": "7.41亿",
+      "manager": "郝淼",
+      "ftype": "股票型-普通",
+      "established": "2014-08-13"
+    },
+    "013756": {
+      "scale_yi": 0.189052,
+      "scale_raw": "1890.52万",
+      "manager": "张艺敏",
+      "ftype": "混合型-偏股",
+      "established": "2021-11-09"
+    },
+    "024896": {
+      "scale_yi": 0.41596700000000003,
+      "scale_raw": "4159.67万",
+      "manager": "刘少军",
+      "ftype": "股票型-普通",
+      "established": "2025-08-12"
+    },
+    "008989": {
+      "scale_yi": 201.04,
+      "scale_raw": "201.04亿",
+      "manager": "郭玮羚",
+      "ftype": "混合型-偏股",
+      "established": "2020-04-29"
+    },
+    "011802": {
+      "scale_yi": 0.115604,
+      "scale_raw": "1156.04万",
+      "manager": "王文华 张艺敏",
+      "ftype": "混合型-偏债",
+      "established": "2021-05-06"
+    },
+    "021382": {
+      "scale_yi": 0.552537,
+      "scale_raw": "5525.37万",
+      "manager": "齐宁",
+      "ftype": "混合型-偏股",
+      "established": "2024-06-12"
+    },
+    "015527": {},
+    "000534": {
+      "scale_yi": 13.53,
+      "scale_raw": "13.53亿",
+      "manager": "郭堃",
+      "ftype": "混合型-灵活配置",
+      "established": "2014-03-25"
+    },
+    "007277": {
+      "scale_yi": 0.41513500000000003,
+      "scale_raw": "4151.35万",
+      "manager": "胡启聪",
+      "ftype": "混合型-偏股",
+      "established": "2020-01-19"
+    },
+    "011665": {
+      "scale_yi": 46.26,
+      "scale_raw": "46.26亿",
+      "manager": "杨瑨",
+      "ftype": "混合型-偏股",
+      "established": "2021-07-20"
+    },
+    "011068": {
+      "scale_yi": 9.06,
+      "scale_raw": "9.06亿",
+      "manager": "丁靖斐 杨奇",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-23"
+    },
+    "011374": {
+      "scale_yi": 1.39,
+      "scale_raw": "1.39亿",
+      "manager": "李佳存",
+      "ftype": "股票型-普通",
+      "established": "2021-06-22"
+    },
+    "019273": {
+      "scale_yi": 0.015013,
+      "scale_raw": "150.13万",
+      "manager": "赵凤飞",
+      "ftype": "混合型-灵活配置",
+      "established": "2023-09-12"
+    },
+    "004913": {
+      "scale_yi": 0.045592,
+      "scale_raw": "455.92万",
+      "manager": "吕文晔",
+      "ftype": "混合型-偏债",
+      "established": "2017-11-29"
+    },
+    "013566": {
+      "scale_yi": 38.07,
+      "scale_raw": "38.07亿",
+      "manager": "万方方",
+      "ftype": "混合型-灵活配置",
+      "established": "2021-12-06"
+    },
+    "008009": {
+      "scale_yi": 10.56,
+      "scale_raw": "10.56亿",
+      "manager": "陈夏琼 彭雾",
+      "ftype": "股票型-普通",
+      "established": "2019-12-10"
+    },
+    "011793": {
+      "scale_yi": 1.56,
+      "scale_raw": "1.56亿",
+      "manager": "张湘龙",
+      "ftype": "股票型-普通",
+      "established": "2021-09-10"
+    },
+    "022327": {
+      "scale_yi": 8.41,
+      "scale_raw": "8.41亿",
+      "manager": "孟杰",
+      "ftype": "股票型-普通",
+      "established": "2025-01-16"
+    },
+    "026662": {
+      "scale_yi": 0.41390299999999997,
+      "scale_raw": "4139.03万",
+      "manager": "蒋严泽 许杰",
+      "ftype": "混合型-偏股",
+      "established": "2026-02-10"
+    },
+    "024593": {},
+    "002251": {
+      "scale_yi": 44.74,
+      "scale_raw": "44.74亿",
+      "manager": "万方方",
+      "ftype": "混合型-灵活配置",
+      "established": "2016-03-22"
+    },
+    "022365": {
+      "scale_yi": 201.65,
+      "scale_raw": "201.65亿",
+      "manager": "任桀",
+      "ftype": "混合型-偏股",
+      "established": "2024-10-30"
+    },
+    "005661": {
+      "scale_yi": 6.98,
+      "scale_raw": "6.98亿",
+      "manager": "刘杰",
+      "ftype": "股票型-普通",
+      "established": "2018-10-22"
+    },
+    "013914": {
+      "scale_yi": 1.02,
+      "scale_raw": "1.02亿",
+      "manager": "李煜",
+      "ftype": "混合型-偏股",
+      "established": "2022-11-11"
+    },
+    "008855": {
+      "scale_yi": 1.9,
+      "scale_raw": "1.90亿",
+      "manager": "骆帅",
+      "ftype": "股票型-普通",
+      "established": "2020-02-21"
+    },
+    "360005": {
+      "scale_yi": 2.23,
+      "scale_raw": "2.23亿",
+      "manager": "崔书田 吴濛旸 岳子曈",
+      "ftype": "混合型-偏股",
+      "established": "2006-03-24"
+    },
+    "012994": {
+      "scale_yi": 0.17056500000000002,
+      "scale_raw": "1705.65万",
+      "manager": "蔡志文",
+      "ftype": "混合型-偏股",
+      "established": "2022-03-01"
+    },
+    "019032": {
+      "scale_yi": 38.24,
+      "scale_raw": "38.24亿",
+      "manager": "祁禾",
+      "ftype": "混合型-灵活配置",
+      "established": "2023-11-15"
+    },
+    "004683": {
+      "scale_yi": 1.09,
+      "scale_raw": "1.09亿",
+      "manager": "马牧青",
+      "ftype": "股票型-普通",
+      "established": "2017-07-18"
+    },
+    "010732": {
+      "scale_yi": 0.9333879999999999,
+      "scale_raw": "9333.88万",
+      "manager": "吴兴武 程文文",
+      "ftype": "混合型-偏股",
+      "established": "2021-03-19"
+    },
+    "018359": {
+      "scale_yi": 4.29,
+      "scale_raw": "4.29亿",
+      "manager": "王羿伟",
+      "ftype": "混合型-偏股",
+      "established": "2023-06-20"
+    },
+    "007305": {
+      "scale_yi": 1.54,
+      "scale_raw": "1.54亿",
+      "manager": "高诗",
+      "ftype": "混合型-偏股",
+      "established": "2019-09-27"
+    },
+    "011506": {
+      "scale_yi": 5.18,
+      "scale_raw": "5.18亿",
+      "manager": "黄子凌",
+      "ftype": "股票型-普通",
+      "established": "2021-04-27"
+    },
+    "013840": {
+      "scale_yi": 79.09,
+      "scale_raw": "79.09亿",
+      "manager": "方建",
+      "ftype": "混合型-偏股",
+      "established": "2021-12-08"
+    },
+    "019830": {
+      "scale_yi": 43.38,
+      "scale_raw": "43.38亿",
+      "manager": "施知序",
+      "ftype": "混合型-偏股",
+      "established": "2024-03-25"
+    },
+    "004914": {
+      "scale_yi": 0.011211,
+      "scale_raw": "112.11万",
+      "manager": "吕文晔",
+      "ftype": "混合型-偏债",
+      "established": "2017-11-29"
+    },
+    "003305": {
+      "scale_yi": 24.9,
+      "scale_raw": "24.90亿",
+      "manager": "吴国清",
+      "ftype": "混合型-灵活配置",
+      "established": "2016-10-17"
+    },
+    "013148": {
+      "scale_yi": 3.03,
+      "scale_raw": "3.03亿",
+      "manager": "刘昇",
+      "ftype": "混合型-偏股",
+      "established": "2021-09-14"
+    },
+    "009969": {
+      "scale_yi": 0.478858,
+      "scale_raw": "4788.58万",
+      "manager": "李恒",
+      "ftype": "混合型-偏股",
+      "established": "2020-08-20"
+    },
+    "009188": {
+      "scale_yi": 1.14,
+      "scale_raw": "1.14亿",
+      "manager": "李琢",
+      "ftype": "混合型-偏股",
+      "established": "2020-05-07"
+    },
+    "025209": {
+      "scale_yi": 293.23,
+      "scale_raw": "293.23亿",
+      "manager": "张海啸",
+      "ftype": "混合型-偏股",
+      "established": "2025-09-12"
+    },
+    "005674": {
+      "scale_yi": 0.47479899999999997,
+      "scale_raw": "4747.99万",
+      "manager": "朱红",
+      "ftype": "混合型-灵活配置",
+      "established": "2018-05-18"
+    },
+    "005660": {
+      "scale_yi": 7.35,
+      "scale_raw": "7.35亿",
+      "manager": "刘杰",
+      "ftype": "股票型-普通",
+      "established": "2018-10-22"
+    },
+    "019426": {
+      "scale_yi": 0.8747809999999999,
+      "scale_raw": "8747.81万",
+      "manager": "杨雷",
+      "ftype": "混合型-偏股",
+      "established": "2024-04-25"
+    },
+    "026489": {
+      "scale_yi": 0.740861,
+      "scale_raw": "7408.61万",
+      "manager": "马晓东",
+      "ftype": "股票型-普通",
+      "established": "2026-02-10"
+    },
+    "024895": {
+      "scale_yi": 1.02,
+      "scale_raw": "1.02亿",
+      "manager": "刘少军",
+      "ftype": "股票型-普通",
+      "established": "2025-08-12"
+    },
+    "005937": {
+      "scale_yi": 8.52,
+      "scale_raw": "8.52亿",
+      "manager": "刘欣然",
+      "ftype": "混合型-偏股",
+      "established": "2018-11-14"
+    },
+    "001742": {
+      "scale_yi": 3.33,
+      "scale_raw": "3.33亿",
+      "manager": "陈韫中",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-09-14"
+    },
+    "008988": {
+      "scale_yi": 48.72,
+      "scale_raw": "48.72亿",
+      "manager": "郭玮羚",
+      "ftype": "混合型-偏股",
+      "established": "2020-04-29"
+    },
+    "011082": {
+      "scale_yi": 0.443014,
+      "scale_raw": "4430.14万",
+      "manager": "刘泽序",
+      "ftype": "混合型-灵活配置",
+      "established": "2020-12-29"
+    },
+    "519056": {
+      "scale_yi": 2.34,
+      "scale_raw": "2.34亿",
+      "manager": "陆海燕",
+      "ftype": "混合型-偏股",
+      "established": "2013-12-19"
+    },
+    "001856": {
+      "scale_yi": 85.97,
+      "scale_raw": "85.97亿",
+      "manager": "祁禾",
+      "ftype": "混合型-灵活配置",
+      "established": "2017-06-02"
+    },
+    "024170": {
+      "scale_yi": 4.65,
+      "scale_raw": "4.65亿",
+      "manager": "冯明远",
+      "ftype": "股票型-普通",
+      "established": "2025-06-09"
+    },
+    "001678": {
+      "scale_yi": 5.96,
+      "scale_raw": "5.96亿",
+      "manager": "张媛",
+      "ftype": "股票型-普通",
+      "established": "2018-11-22"
+    },
+    "018612": {
+      "scale_yi": 0.397478,
+      "scale_raw": "3974.78万",
+      "manager": "杨飞",
+      "ftype": "混合型-偏股",
+      "established": "2023-07-11"
+    },
+    "015123": {},
+    "013339": {
+      "scale_yi": 2.63,
+      "scale_raw": "2.63亿",
+      "manager": "刘扬",
+      "ftype": "股票型-普通",
+      "established": "2021-09-28"
+    },
+    "000928": {
+      "scale_yi": 1.41,
+      "scale_raw": "1.41亿",
+      "manager": "郑玲",
+      "ftype": "混合型-灵活配置",
+      "established": "2014-12-16"
+    },
+    "010666": {
+      "scale_yi": 0.260327,
+      "scale_raw": "2603.27万",
+      "manager": "李喆",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-08"
+    },
+    "017102": {
+      "scale_yi": 134.71,
+      "scale_raw": "134.71亿",
+      "manager": "雷志勇",
+      "ftype": "混合型-偏股",
+      "established": "2023-03-02"
+    },
+    "020553": {
+      "scale_yi": 3.77,
+      "scale_raw": "3.77亿",
+      "manager": "郑晓曦",
+      "ftype": "股票型-普通",
+      "established": "2024-04-30"
+    },
+    "001475": {
+      "scale_yi": 67.12,
+      "scale_raw": "67.12亿",
+      "manager": "何崇恺",
+      "ftype": "混合型-偏股",
+      "established": "2015-06-19"
+    },
+    "015967": {
+      "scale_yi": 17.53,
+      "scale_raw": "17.53亿",
+      "manager": "张海啸",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-22"
+    },
+    "022868": {
+      "scale_yi": 0.866066,
+      "scale_raw": "8660.66万",
+      "manager": "张媛",
+      "ftype": "股票型-普通",
+      "established": "2024-12-16"
+    },
+    "026643": {
+      "scale_yi": 10.31,
+      "scale_raw": "10.31亿",
+      "manager": "罗擎",
+      "ftype": "混合型-偏股",
+      "established": "2026-02-10"
+    },
+    "001951": {
+      "scale_yi": 12.97,
+      "scale_raw": "12.97亿",
+      "manager": "韩广哲 李恒",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-12-02"
+    },
+    "001060": {
+      "scale_yi": 4.07,
+      "scale_raw": "4.07亿",
+      "manager": "魏淳",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-03-27"
+    },
+    "015145": {
+      "scale_yi": 0.9913959999999999,
+      "scale_raw": "9913.96万",
+      "manager": "赵勇",
+      "ftype": "股票型-普通",
+      "established": "2022-09-29"
+    },
+    "013930": {
+      "scale_yi": 0.15348699999999998,
+      "scale_raw": "1534.87万",
+      "manager": "王玉玺",
+      "ftype": "混合型-偏债",
+      "established": "2021-11-23"
+    },
+    "024423": {
+      "scale_yi": 0.884674,
+      "scale_raw": "8846.74万",
+      "manager": "周谧 梁少文",
+      "ftype": "混合型-偏股",
+      "established": "2025-06-06"
+    },
+    "012200": {
+      "scale_yi": 0.8670950000000001,
+      "scale_raw": "8670.95万",
+      "manager": "王永明",
+      "ftype": "混合型-灵活配置",
+      "established": "2021-05-26"
+    },
+    "013929": {
+      "scale_yi": 0.76076,
+      "scale_raw": "7607.60万",
+      "manager": "王玉玺",
+      "ftype": "混合型-偏债",
+      "established": "2021-11-23"
+    },
+    "000845": {
+      "scale_yi": 0.9671639999999999,
+      "scale_raw": "9671.64万",
+      "manager": "马柯",
+      "ftype": "混合型-灵活配置",
+      "established": "2014-12-03"
+    },
+    "014838": {
+      "scale_yi": 0.12044300000000001,
+      "scale_raw": "1204.43万",
+      "manager": "罗怡达",
+      "ftype": "混合型-偏股",
+      "established": "2022-02-23"
+    },
+    "012651": {
+      "scale_yi": 12.43,
+      "scale_raw": "12.43亿",
+      "manager": "吴渭",
+      "ftype": "混合型-偏股",
+      "established": "2021-07-20"
+    },
+    "014560": {
+      "scale_yi": 0.268957,
+      "scale_raw": "2689.57万",
+      "manager": "李瑞 张阳",
+      "ftype": "混合型-偏股",
+      "established": "2022-02-09"
+    },
+    "015980": {
+      "scale_yi": 0.030494,
+      "scale_raw": "304.94万",
+      "manager": "房雷",
+      "ftype": "混合型-偏股",
+      "established": "2022-11-10"
+    },
+    "021876": {},
+    "000409": {
+      "scale_yi": 12.77,
+      "scale_raw": "12.77亿",
+      "manager": "孟昊",
+      "ftype": "股票型-普通",
+      "established": "2014-03-07"
+    },
+    "005668": {
+      "scale_yi": 4.22,
+      "scale_raw": "4.22亿",
+      "manager": "王迪",
+      "ftype": "混合型-灵活配置",
+      "established": "2018-06-15"
+    },
+    "010421": {
+      "scale_yi": 5.98,
+      "scale_raw": "5.98亿",
+      "manager": "刘海啸",
+      "ftype": "混合型-偏股",
+      "established": "2021-04-14"
+    },
+    "012650": {
+      "scale_yi": 13.91,
+      "scale_raw": "13.91亿",
+      "manager": "吴渭",
+      "ftype": "混合型-偏股",
+      "established": "2021-07-20"
+    },
+    "009899": {
+      "scale_yi": 0.567537,
+      "scale_raw": "5675.37万",
+      "manager": "赵治烨 黄璜",
+      "ftype": "股票型-普通",
+      "established": "2020-08-24"
+    },
+    "519091": {
+      "scale_yi": 7.6,
+      "scale_raw": "7.60亿",
+      "manager": "赖庆鑫",
+      "ftype": "混合型-灵活配置",
+      "established": "2009-07-13"
+    },
+    "024424": {
+      "scale_yi": 8.45,
+      "scale_raw": "8.45亿",
+      "manager": "周谧 梁少文",
+      "ftype": "混合型-偏股",
+      "established": "2025-06-06"
+    },
+    "026659": {
+      "scale_yi": 0.914494,
+      "scale_raw": "9144.94万",
+      "manager": "杨雷",
+      "ftype": "混合型-偏股",
+      "established": "2026-01-15"
+    },
+    "006369": {},
+    "008854": {
+      "scale_yi": 9.45,
+      "scale_raw": "9.45亿",
+      "manager": "骆帅",
+      "ftype": "股票型-普通",
+      "established": "2020-02-21"
+    },
+    "213008": {
+      "scale_yi": 17.92,
+      "scale_raw": "17.92亿",
+      "manager": "赵国进",
+      "ftype": "混合型-偏股",
+      "established": "2008-04-15"
+    },
+    "001076": {
+      "scale_yi": 28.71,
+      "scale_raw": "28.71亿",
+      "manager": "陈皓",
+      "ftype": "混合型-偏股",
+      "established": "2015-04-23"
+    },
+    "240022": {
+      "scale_yi": 13.38,
+      "scale_raw": "13.38亿",
+      "manager": "丁靖斐 杨奇",
+      "ftype": "混合型-偏股",
+      "established": "2012-08-21"
+    },
+    "019764": {
+      "scale_yi": 3.44,
+      "scale_raw": "3.44亿",
+      "manager": "李帅",
+      "ftype": "股票型-普通",
+      "established": "2023-11-21"
+    },
+    "011453": {
+      "scale_yi": 1.67,
+      "scale_raw": "1.67亿",
+      "manager": "张弘",
+      "ftype": "混合型-偏股",
+      "established": "2021-01-27"
+    },
+    "000523": {
+      "scale_yi": 1.03,
+      "scale_raw": "1.03亿",
+      "manager": "刘泽序",
+      "ftype": "混合型-灵活配置",
+      "established": "2014-02-25"
+    },
+    "001069": {
+      "scale_yi": 10.32,
+      "scale_raw": "10.32亿",
+      "manager": "钱建江 骆梦涛",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-05-20"
+    },
+    "011599": {
+      "scale_yi": 1.42,
+      "scale_raw": "1.42亿",
+      "manager": "潘明",
+      "ftype": "混合型-偏股",
+      "established": "2021-05-18"
+    },
+    "024831": {
+      "scale_yi": 0.373578,
+      "scale_raw": "3735.78万",
+      "manager": "管浩阳",
+      "ftype": "混合型-偏股",
+      "established": "2025-08-04"
+    },
+    "015725": {
+      "scale_yi": 0.046936,
+      "scale_raw": "469.36万",
+      "manager": "党晶",
+      "ftype": "混合型-偏股",
+      "established": "2023-01-16"
+    },
+    "015528": {},
+    "004640": {
+      "scale_yi": 4.06,
+      "scale_raw": "4.06亿",
+      "manager": "吕佳玮",
+      "ftype": "股票型-普通",
+      "established": "2017-08-11"
+    },
+    "004075": {
+      "scale_yi": 15.65,
+      "scale_raw": "15.65亿",
+      "manager": "楼慧源",
+      "ftype": "股票型-普通",
+      "established": "2017-03-23"
+    },
+    "008734": {
+      "scale_yi": 6.24,
+      "scale_raw": "6.24亿",
+      "manager": "高扬",
+      "ftype": "混合型-偏股",
+      "established": "2020-01-20"
+    },
+    "018019": {
+      "scale_yi": 0.5569029999999999,
+      "scale_raw": "5569.03万",
+      "manager": "罗安安",
+      "ftype": "混合型-偏股",
+      "established": "2023-07-11"
+    },
+    "011666": {
+      "scale_yi": 2.81,
+      "scale_raw": "2.81亿",
+      "manager": "杨瑨",
+      "ftype": "混合型-偏股",
+      "established": "2021-07-20"
+    },
+    "011801": {
+      "scale_yi": 0.8254049999999999,
+      "scale_raw": "8254.05万",
+      "manager": "王文华 张艺敏",
+      "ftype": "混合型-偏债",
+      "established": "2021-05-06"
+    },
+    "024841": {
+      "scale_yi": 0.157575,
+      "scale_raw": "1575.75万",
+      "manager": "齐兴方",
+      "ftype": "混合型-偏股",
+      "established": "2025-11-11"
+    },
+    "009968": {
+      "scale_yi": 1.22,
+      "scale_raw": "1.22亿",
+      "manager": "李恒",
+      "ftype": "混合型-偏股",
+      "established": "2020-08-20"
+    },
+    "003025": {
+      "scale_yi": 1.04,
+      "scale_raw": "1.04亿",
+      "manager": "姚海明",
+      "ftype": "混合型-股债平衡",
+      "established": "2017-03-27"
+    },
+    "015850": {
+      "scale_yi": 0.897383,
+      "scale_raw": "8973.83万",
+      "manager": "邢军亮",
+      "ftype": "混合型-偏股",
+      "established": "2022-05-26"
+    },
+    "001898": {
+      "scale_yi": 4.23,
+      "scale_raw": "4.23亿",
+      "manager": "许征",
+      "ftype": "混合型-灵活配置",
+      "established": "2017-09-27"
+    },
+    "015060": {
+      "scale_yi": 20.09,
+      "scale_raw": "20.09亿",
+      "manager": "吕佳玮",
+      "ftype": "股票型-普通",
+      "established": "2022-02-22"
+    },
+    "015724": {
+      "scale_yi": 0.281551,
+      "scale_raw": "2815.51万",
+      "manager": "党晶",
+      "ftype": "混合型-偏股",
+      "established": "2023-01-16"
+    },
+    "000945": {
+      "scale_yi": 7.34,
+      "scale_raw": "7.34亿",
+      "manager": "王泽实",
+      "ftype": "混合型-偏股",
+      "established": "2015-02-02"
+    },
+    "002244": {
+      "scale_yi": 1.05,
+      "scale_raw": "1.05亿",
+      "manager": "孟棋",
+      "ftype": "混合型-灵活配置",
+      "established": "2016-03-11"
+    },
+    "002601": {
+      "scale_yi": 0.9759610000000001,
+      "scale_raw": "9759.61万",
+      "manager": "林博程 赵颖芳",
+      "ftype": "混合型-灵活配置",
+      "established": "2016-04-29"
+    },
+    "026642": {
+      "scale_yi": 5.95,
+      "scale_raw": "5.95亿",
+      "manager": "罗擎",
+      "ftype": "混合型-偏股",
+      "established": "2026-02-10"
+    },
+    "026488": {
+      "scale_yi": 0.51513,
+      "scale_raw": "5151.30万",
+      "manager": "马晓东",
+      "ftype": "股票型-普通",
+      "established": "2026-02-10"
+    },
+    "019829": {
+      "scale_yi": 22.4,
+      "scale_raw": "22.40亿",
+      "manager": "施知序",
+      "ftype": "混合型-偏股",
+      "established": "2024-03-25"
+    },
+    "519979": {
+      "scale_yi": 2.65,
+      "scale_raw": "2.65亿",
+      "manager": "许望伟",
+      "ftype": "混合型-偏股",
+      "established": "2011-10-20"
+    },
+    "025216": {
+      "scale_yi": 0.384981,
+      "scale_raw": "3849.81万",
+      "manager": "张海啸 冯自力",
+      "ftype": "混合型-偏股",
+      "established": "2025-08-21"
+    },
+    "690005": {
+      "scale_yi": 1.83,
+      "scale_raw": "1.83亿",
+      "manager": "尹涛",
+      "ftype": "混合型-偏股",
+      "established": "2011-01-28"
+    },
+    "017103": {
+      "scale_yi": 102.47,
+      "scale_raw": "102.47亿",
+      "manager": "雷志勇",
+      "ftype": "混合型-偏股",
+      "established": "2023-03-02"
+    },
+    "010422": {
+      "scale_yi": 15.57,
+      "scale_raw": "15.57亿",
+      "manager": "刘海啸",
+      "ftype": "混合型-偏股",
+      "established": "2021-04-14"
+    },
+    "007349": {
+      "scale_yi": 16.69,
+      "scale_raw": "16.69亿",
+      "manager": "高翔",
+      "ftype": "混合型-偏股",
+      "established": "2019-05-06"
+    },
+    "018462": {},
+    "017390": {
+      "scale_yi": 0.174904,
+      "scale_raw": "1749.04万",
+      "manager": "王玉玺",
+      "ftype": "混合型-偏债",
+      "established": "2023-06-19"
+    },
+    "001188": {
+      "scale_yi": 3.99,
+      "scale_raw": "3.99亿",
+      "manager": "王璐",
+      "ftype": "股票型-普通",
+      "established": "2015-04-28"
+    },
+    "012696": {
+      "scale_yi": 2.13,
+      "scale_raw": "2.13亿",
+      "manager": "麦健沛",
+      "ftype": "股票型-普通",
+      "established": "2021-07-26"
+    },
+    "011446": {
+      "scale_yi": 2.21,
+      "scale_raw": "2.21亿",
+      "manager": "张剑鑫",
+      "ftype": "混合型-偏股",
+      "established": "2021-04-14"
+    },
+    "014561": {
+      "scale_yi": 0.44519899999999996,
+      "scale_raw": "4451.99万",
+      "manager": "李瑞 张阳",
+      "ftype": "混合型-偏股",
+      "established": "2022-02-09"
+    },
+    "013755": {
+      "scale_yi": 0.9589139999999999,
+      "scale_raw": "9589.14万",
+      "manager": "张艺敏",
+      "ftype": "混合型-偏股",
+      "established": "2021-11-09"
+    },
+    "011507": {
+      "scale_yi": 2.0,
+      "scale_raw": "2.00亿",
+      "manager": "黄子凌",
+      "ftype": "股票型-普通",
+      "established": "2021-04-27"
+    },
+    "015097": {
+      "scale_yi": 4.2,
+      "scale_raw": "4.20亿",
+      "manager": "冯杰波",
+      "ftype": "混合型-偏股",
+      "established": "2022-03-01"
+    },
+    "015146": {
+      "scale_yi": 0.5059,
+      "scale_raw": "5059.00万",
+      "manager": "赵勇",
+      "ftype": "股票型-普通",
+      "established": "2022-09-29"
+    },
+    "021510": {
+      "scale_yi": 0.5886060000000001,
+      "scale_raw": "5886.06万",
+      "manager": "崔梦阳",
+      "ftype": "混合型-偏股",
+      "established": "2024-07-23"
+    },
+    "016569": {
+      "scale_yi": 0.41022200000000003,
+      "scale_raw": "4102.22万",
+      "manager": "刘杰 项静远",
+      "ftype": "混合型-偏股",
+      "established": "2023-03-31"
+    },
+    "012993": {
+      "scale_yi": 3.38,
+      "scale_raw": "3.38亿",
+      "manager": "蔡志文",
+      "ftype": "混合型-偏股",
+      "established": "2022-03-01"
+    },
+    "005939": {
+      "scale_yi": 18.7,
+      "scale_raw": "18.70亿",
+      "manager": "邢梦醒 张姝丽 高京霞",
+      "ftype": "混合型-偏股",
+      "established": "2018-11-14"
+    },
+    "013949": {
+      "scale_yi": 0.841461,
+      "scale_raw": "8414.61万",
+      "manager": "高扬",
+      "ftype": "混合型-偏股",
+      "established": "2021-10-29"
+    },
+    "015754": {
+      "scale_yi": 0.055590999999999995,
+      "scale_raw": "555.91万",
+      "manager": "赵治烨 黄璜",
+      "ftype": "股票型-普通",
+      "established": "2022-05-20"
+    },
+    "016568": {
+      "scale_yi": 0.447668,
+      "scale_raw": "4476.68万",
+      "manager": "刘杰 项静远",
+      "ftype": "混合型-偏股",
+      "established": "2023-03-31"
+    },
+    "012202": {
+      "scale_yi": 0.75463,
+      "scale_raw": "7546.30万",
+      "manager": "何英慧",
+      "ftype": "混合型-偏股",
+      "established": "2021-08-12"
+    },
+    "008619": {
+      "scale_yi": 4.33,
+      "scale_raw": "4.33亿",
+      "manager": "单林",
+      "ftype": "股票型-普通",
+      "established": "2020-05-20"
+    },
+    "018611": {
+      "scale_yi": 1.09,
+      "scale_raw": "1.09亿",
+      "manager": "杨飞",
+      "ftype": "混合型-偏股",
+      "established": "2023-07-11"
+    },
+    "017389": {
+      "scale_yi": 0.7797930000000001,
+      "scale_raw": "7797.93万",
+      "manager": "王玉玺",
+      "ftype": "混合型-偏债",
+      "established": "2023-06-19"
+    },
+    "001239": {
+      "scale_yi": 7.53,
+      "scale_raw": "7.53亿",
+      "manager": "代毅",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-06-04"
+    },
+    "015096": {
+      "scale_yi": 2.36,
+      "scale_raw": "2.36亿",
+      "manager": "冯杰波",
+      "ftype": "混合型-偏股",
+      "established": "2022-03-01"
+    },
+    "025208": {
+      "scale_yi": 35.93,
+      "scale_raw": "35.93亿",
+      "manager": "张海啸",
+      "ftype": "混合型-偏股",
+      "established": "2025-09-12"
+    },
+    "010731": {
+      "scale_yi": 3.61,
+      "scale_raw": "3.61亿",
+      "manager": "吴兴武 程文文",
+      "ftype": "混合型-偏股",
+      "established": "2021-03-19"
+    },
+    "013530": {},
+    "040025": {
+      "scale_yi": 32.67,
+      "scale_raw": "32.67亿",
+      "manager": "栾超",
+      "ftype": "混合型-偏股",
+      "established": "2011-12-20"
+    },
+    "011104": {
+      "scale_yi": 4.69,
+      "scale_raw": "4.69亿",
+      "manager": "王明旭",
+      "ftype": "股票型-普通",
+      "established": "2021-02-09"
+    },
+    "005207": {
+      "scale_yi": 2.9,
+      "scale_raw": "2.90亿",
+      "manager": "张磊",
+      "ftype": "混合型-偏股",
+      "established": "2017-12-01"
+    },
+    "015887": {
+      "scale_yi": 0.561712,
+      "scale_raw": "5617.12万",
+      "manager": "綦缚鹏",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-07"
+    },
+    "004934": {
+      "scale_yi": 1.9,
+      "scale_raw": "1.90亿",
+      "manager": "胡春霞",
+      "ftype": "混合型-灵活配置",
+      "established": "2018-03-22"
+    },
+    "017485": {
+      "scale_yi": 3.92,
+      "scale_raw": "3.92亿",
+      "manager": "郭堃",
+      "ftype": "混合型-灵活配置",
+      "established": "2022-12-01"
+    },
+    "016050": {
+      "scale_yi": 11.76,
+      "scale_raw": "11.76亿",
+      "manager": "陈夏琼 彭雾",
+      "ftype": "股票型-普通",
+      "established": "2022-07-07"
+    },
+    "021511": {
+      "scale_yi": 8.48,
+      "scale_raw": "8.48亿",
+      "manager": "崔梦阳",
+      "ftype": "混合型-偏股",
+      "established": "2024-07-23"
+    },
+    "021383": {
+      "scale_yi": 3.46,
+      "scale_raw": "3.46亿",
+      "manager": "齐宁",
+      "ftype": "混合型-偏股",
+      "established": "2024-06-12"
+    },
+    "016501": {
+      "scale_yi": 10.27,
+      "scale_raw": "10.27亿",
+      "manager": "高翔",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-19"
+    },
+    "015981": {
+      "scale_yi": 0.22429000000000002,
+      "scale_raw": "2242.90万",
+      "manager": "房雷",
+      "ftype": "混合型-偏股",
+      "established": "2022-11-10"
+    },
+    "011270": {
+      "scale_yi": 0.193448,
+      "scale_raw": "1934.48万",
+      "manager": "张丽新",
+      "ftype": "股票型-普通",
+      "established": "2021-07-08"
+    },
+    "007350": {
+      "scale_yi": 2.22,
+      "scale_raw": "2.22亿",
+      "manager": "高翔",
+      "ftype": "混合型-偏股",
+      "established": "2019-05-06"
+    },
+    "010235": {
+      "scale_yi": 2.87,
+      "scale_raw": "2.87亿",
+      "manager": "苏文杰",
+      "ftype": "股票型-普通",
+      "established": "2020-09-24"
+    },
+    "019427": {
+      "scale_yi": 4.85,
+      "scale_raw": "4.85亿",
+      "manager": "杨雷",
+      "ftype": "混合型-偏股",
+      "established": "2024-04-25"
+    },
+    "023036": {
+      "scale_yi": 8.84,
+      "scale_raw": "8.84亿",
+      "manager": "叶培培",
+      "ftype": "混合型-偏股",
+      "established": "2025-01-21"
+    },
+    "012211": {
+      "scale_yi": 0.32761,
+      "scale_raw": "3276.10万",
+      "manager": "李航",
+      "ftype": "股票型-普通",
+      "established": "2021-06-22"
+    },
+    "008618": {
+      "scale_yi": 0.7233109999999999,
+      "scale_raw": "7233.11万",
+      "manager": "单林",
+      "ftype": "股票型-普通",
+      "established": "2020-05-20"
+    },
+    "016352": {
+      "scale_yi": 0.505695,
+      "scale_raw": "5056.95万",
+      "manager": "马牧青",
+      "ftype": "股票型-普通",
+      "established": "2022-09-02"
+    },
+    "001008": {
+      "scale_yi": 7.43,
+      "scale_raw": "7.43亿",
+      "manager": "董明斌",
+      "ftype": "股票型-普通",
+      "established": "2015-01-27"
+    },
+    "015945": {
+      "scale_yi": 9.74,
+      "scale_raw": "9.74亿",
+      "manager": "何崇恺",
+      "ftype": "混合型-偏股",
+      "established": "2022-06-21"
+    },
+    "010176": {
+      "scale_yi": 0.23249099999999998,
+      "scale_raw": "2324.91万",
+      "manager": "何英慧",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-09"
+    },
+    "001158": {
+      "scale_yi": 27.08,
+      "scale_raw": "27.08亿",
+      "manager": "张剑峰",
+      "ftype": "股票型-普通",
+      "established": "2015-04-28"
+    },
+    "010892": {
+      "scale_yi": 7.1,
+      "scale_raw": "7.10亿",
+      "manager": "林博程 陆莎莎",
+      "ftype": "股票型-普通",
+      "established": "2021-01-20"
+    },
+    "005962": {
+      "scale_yi": 9.51,
+      "scale_raw": "9.51亿",
+      "manager": "叶秀贤",
+      "ftype": "股票型-普通",
+      "established": "2018-08-15"
+    },
+    "018358": {
+      "scale_yi": 1.7,
+      "scale_raw": "1.70亿",
+      "manager": "王羿伟",
+      "ftype": "混合型-偏股",
+      "established": "2023-06-20"
+    },
+    "470006": {
+      "scale_yi": 20.65,
+      "scale_raw": "20.65亿",
+      "manager": "郑磊",
+      "ftype": "混合型-偏股",
+      "established": "2010-09-21"
+    },
+    "012456": {
+      "scale_yi": 4.16,
+      "scale_raw": "4.16亿",
+      "manager": "张勋 章宏帆",
+      "ftype": "混合型-偏股",
+      "established": "2021-09-07"
+    },
+    "011373": {
+      "scale_yi": 5.27,
+      "scale_raw": "5.27亿",
+      "manager": "李佳存",
+      "ftype": "股票型-普通",
+      "established": "2021-06-22"
+    },
+    "009805": {
+      "scale_yi": 4.99,
+      "scale_raw": "4.99亿",
+      "manager": "王琳",
+      "ftype": "股票型-普通",
+      "established": "2020-08-27"
+    },
+    "019759": {
+      "scale_yi": 1.52,
+      "scale_raw": "1.52亿",
+      "manager": "李帅",
+      "ftype": "股票型-普通",
+      "established": "2023-11-21"
+    },
+    "012203": {
+      "scale_yi": 0.042944,
+      "scale_raw": "429.44万",
+      "manager": "何英慧",
+      "ftype": "混合型-偏股",
+      "established": "2021-08-12"
+    },
+    "018020": {
+      "scale_yi": 0.264358,
+      "scale_raw": "2643.58万",
+      "manager": "罗安安",
+      "ftype": "混合型-偏股",
+      "established": "2023-07-11"
+    },
+    "013340": {
+      "scale_yi": 5.13,
+      "scale_raw": "5.13亿",
+      "manager": "刘扬",
+      "ftype": "股票型-普通",
+      "established": "2021-09-28"
+    },
+    "001741": {
+      "scale_yi": 3.3,
+      "scale_raw": "3.30亿",
+      "manager": "陈韫中",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-09-14"
+    },
+    "012082": {
+      "scale_yi": 6.4,
+      "scale_raw": "6.40亿",
+      "manager": "肖瑞瑾 柏正奇",
+      "ftype": "混合型-偏股",
+      "established": "2021-06-18"
+    },
+    "026658": {
+      "scale_yi": 0.24185399999999999,
+      "scale_raw": "2418.54万",
+      "manager": "杨雷",
+      "ftype": "混合型-偏股",
+      "established": "2026-01-15"
+    },
+    "016500": {
+      "scale_yi": 6.27,
+      "scale_raw": "6.27亿",
+      "manager": "高翔",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-19"
+    },
+    "006503": {
+      "scale_yi": 59.35,
+      "scale_raw": "59.35亿",
+      "manager": "金梓才",
+      "ftype": "股票型-普通",
+      "established": "2018-11-29"
+    },
+    "020409": {
+      "scale_yi": 1.65,
+      "scale_raw": "1.65亿",
+      "manager": "刘力",
+      "ftype": "混合型-偏股",
+      "established": "2024-06-25"
+    },
+    "022328": {
+      "scale_yi": 18.5,
+      "scale_raw": "18.50亿",
+      "manager": "孟杰",
+      "ftype": "股票型-普通",
+      "established": "2025-01-16"
+    },
+    "017721": {
+      "scale_yi": 0.119551,
+      "scale_raw": "1195.51万",
+      "manager": "连骁",
+      "ftype": "混合型-偏股",
+      "established": "2023-02-15"
+    },
+    "017722": {
+      "scale_yi": 0.05942000000000001,
+      "scale_raw": "594.20万",
+      "manager": "连骁",
+      "ftype": "混合型-偏股",
+      "established": "2023-02-15"
+    },
+    "001410": {
+      "scale_yi": 86.09,
+      "scale_raw": "86.09亿",
+      "manager": "冯明远",
+      "ftype": "股票型-普通",
+      "established": "2015-07-31"
+    },
+    "011260": {
+      "scale_yi": 1.63,
+      "scale_raw": "1.63亿",
+      "manager": "李恒",
+      "ftype": "混合型-偏股",
+      "established": "2021-03-23"
+    },
+    "005844": {
+      "scale_yi": 37.96,
+      "scale_raw": "37.96亿",
+      "manager": "严凯",
+      "ftype": "混合型-偏股",
+      "established": "2018-06-07"
+    },
+    "017988": {
+      "scale_yi": 3.91,
+      "scale_raw": "3.91亿",
+      "manager": "张晓宇",
+      "ftype": "混合型-偏股",
+      "established": "2023-05-05"
+    },
+    "006397": {
+      "scale_yi": 0.046473,
+      "scale_raw": "464.73万",
+      "manager": "许望伟",
+      "ftype": "混合型-偏股",
+      "established": "2018-09-07"
+    },
+    "024830": {
+      "scale_yi": 0.443959,
+      "scale_raw": "4439.59万",
+      "manager": "管浩阳",
+      "ftype": "混合型-偏股",
+      "established": "2025-08-04"
+    },
+    "013147": {
+      "scale_yi": 17.64,
+      "scale_raw": "17.64亿",
+      "manager": "刘昇",
+      "ftype": "混合型-偏股",
+      "established": "2021-09-14"
+    },
+    "012210": {
+      "scale_yi": 0.734452,
+      "scale_raw": "7344.52万",
+      "manager": "李航",
+      "ftype": "股票型-普通",
+      "established": "2021-06-22"
+    },
+    "001255": {
+      "scale_yi": 1.04,
+      "scale_raw": "1.04亿",
+      "manager": "赵凤飞",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-06-09"
+    },
+    "011261": {
+      "scale_yi": 3.24,
+      "scale_raw": "3.24亿",
+      "manager": "李恒",
+      "ftype": "混合型-偏股",
+      "established": "2021-03-23"
+    },
+    "013841": {
+      "scale_yi": 199.41,
+      "scale_raw": "199.41亿",
+      "manager": "方建",
+      "ftype": "混合型-偏股",
+      "established": "2021-12-08"
+    },
+    "010177": {
+      "scale_yi": 0.144789,
+      "scale_raw": "1447.89万",
+      "manager": "何英慧",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-09"
+    },
+    "015888": {
+      "scale_yi": 0.208891,
+      "scale_raw": "2088.91万",
+      "manager": "綦缚鹏",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-07"
+    },
+    "005938": {
+      "scale_yi": 0.24485300000000002,
+      "scale_raw": "2448.53万",
+      "manager": "刘欣然",
+      "ftype": "混合型-偏股",
+      "established": "2018-11-14"
+    },
+    "006502": {
+      "scale_yi": 22.96,
+      "scale_raw": "22.96亿",
+      "manager": "金梓才",
+      "ftype": "股票型-普通",
+      "established": "2018-11-29"
+    },
+    "010893": {
+      "scale_yi": 0.258527,
+      "scale_raw": "2585.27万",
+      "manager": "林博程 陆莎莎",
+      "ftype": "股票型-普通",
+      "established": "2021-01-20"
+    },
+    "001490": {
+      "scale_yi": 3.51,
+      "scale_raw": "3.51亿",
+      "manager": "邵蕴奇",
+      "ftype": "股票型-普通",
+      "established": "2015-07-10"
+    },
+    "016591": {
+      "scale_yi": 0.230737,
+      "scale_raw": "2307.37万",
+      "manager": "张富盛",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-28"
+    },
+    "006233": {
+      "scale_yi": 0.962241,
+      "scale_raw": "9622.41万",
+      "manager": "汪洋",
+      "ftype": "混合型-偏股",
+      "established": "2019-10-23"
+    },
+    "110025": {
+      "scale_yi": 27.63,
+      "scale_raw": "27.63亿",
+      "manager": "朱运",
+      "ftype": "混合型-偏股",
+      "established": "2011-08-16"
+    },
+    "017811": {
+      "scale_yi": 313.28,
+      "scale_raw": "313.28亿",
+      "manager": "严凯",
+      "ftype": "混合型-偏股",
+      "established": "2023-02-22"
+    },
+    "021875": {},
+    "010665": {
+      "scale_yi": 0.204069,
+      "scale_raw": "2040.69万",
+      "manager": "李喆",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-08"
+    },
+    "020554": {
+      "scale_yi": 7.02,
+      "scale_raw": "7.02亿",
+      "manager": "郑晓曦",
+      "ftype": "股票型-普通",
+      "established": "2024-04-30"
+    },
+    "000831": {
+      "scale_yi": 21.95,
+      "scale_raw": "21.95亿",
+      "manager": "赵蓓 丁洋",
+      "ftype": "股票型-普通",
+      "established": "2014-11-18"
+    },
+    "005402": {
+      "scale_yi": 8.18,
+      "scale_raw": "8.18亿",
+      "manager": "苏文杰",
+      "ftype": "股票型-普通",
+      "established": "2017-12-14"
+    },
+    "007343": {
+      "scale_yi": 78.02,
+      "scale_raw": "78.02亿",
+      "manager": "王贵重",
+      "ftype": "混合型-偏股",
+      "established": "2019-05-07"
+    },
+    "001790": {
+      "scale_yi": 24.53,
+      "scale_raw": "24.53亿",
+      "manager": "王阳",
+      "ftype": "股票型-普通",
+      "established": "2017-08-01"
+    },
+    "020408": {
+      "scale_yi": 2.42,
+      "scale_raw": "2.42亿",
+      "manager": "刘力",
+      "ftype": "混合型-偏股",
+      "established": "2024-06-25"
+    },
+    "002168": {
+      "scale_yi": 32.24,
+      "scale_raw": "32.24亿",
+      "manager": "姚志鹏",
+      "ftype": "股票型-普通",
+      "established": "2016-02-04"
+    },
+    "005805": {
+      "scale_yi": 2.39,
+      "scale_raw": "2.39亿",
+      "manager": "张弘",
+      "ftype": "混合型-偏股",
+      "established": "2018-06-25"
+    },
+    "660001": {
+      "scale_yi": 14.31,
+      "scale_raw": "14.31亿",
+      "manager": "陈富权",
+      "ftype": "混合型-偏股",
+      "established": "2008-08-04"
+    },
+    "021542": {
+      "scale_yi": 0.08759600000000001,
+      "scale_raw": "875.96万",
+      "manager": "马柯",
+      "ftype": "混合型-灵活配置",
+      "established": "2024-05-30"
+    },
+    "003304": {
+      "scale_yi": 10.24,
+      "scale_raw": "10.24亿",
+      "manager": "吴国清",
+      "ftype": "混合型-灵活配置",
+      "established": "2016-10-17"
+    },
+    "016590": {
+      "scale_yi": 1.1,
+      "scale_raw": "1.10亿",
+      "manager": "张富盛",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-28"
+    },
+    "014046": {
+      "scale_yi": 1.54,
+      "scale_raw": "1.54亿",
+      "manager": "楼慧源",
+      "ftype": "股票型-普通",
+      "established": "2021-11-05"
+    },
+    "000960": {
+      "scale_yi": 12.99,
+      "scale_raw": "12.99亿",
+      "manager": "李佳存",
+      "ftype": "股票型-普通",
+      "established": "2015-01-30"
+    },
+    "012697": {
+      "scale_yi": 5.88,
+      "scale_raw": "5.88亿",
+      "manager": "麦健沛",
+      "ftype": "股票型-普通",
+      "established": "2021-07-26"
+    },
+    "014180": {
+      "scale_yi": 0.06113,
+      "scale_raw": "611.30万",
+      "manager": "刘航",
+      "ftype": "混合型-偏股",
+      "established": "2021-12-24"
+    },
+    "011326": {
+      "scale_yi": 1.49,
+      "scale_raw": "1.49亿",
+      "manager": "王琳",
+      "ftype": "股票型-普通",
+      "established": "2021-01-26"
+    },
+    "025686": {
+      "scale_yi": 1.75,
+      "scale_raw": "1.75亿",
+      "manager": "彭凌志",
+      "ftype": "混合型-偏股",
+      "established": "2025-10-14"
+    },
+    "005303": {
+      "scale_yi": 6.24,
+      "scale_raw": "6.24亿",
+      "manager": "郝淼 孙晓晖",
+      "ftype": "股票型-普通",
+      "established": "2017-12-04"
+    },
+    "660015": {
+      "scale_yi": 8.98,
+      "scale_raw": "8.98亿",
+      "manager": "邢军亮",
+      "ftype": "混合型-偏股",
+      "established": "2012-11-14"
+    },
+    "025687": {
+      "scale_yi": 24.84,
+      "scale_raw": "24.84亿",
+      "manager": "彭凌志",
+      "ftype": "混合型-偏股",
+      "established": "2025-10-14"
+    },
+    "009835": {
+      "scale_yi": 0.375338,
+      "scale_raw": "3753.38万",
+      "manager": "王迪",
+      "ftype": "混合型-灵活配置",
+      "established": "2020-07-29"
+    },
+    "011323": {
+      "scale_yi": 2.5,
+      "scale_raw": "2.50亿",
+      "manager": "王阳",
+      "ftype": "股票型-普通",
+      "established": "2021-01-25"
+    },
+    "024592": {},
+    "024842": {
+      "scale_yi": 0.21678200000000003,
+      "scale_raw": "2167.82万",
+      "manager": "齐兴方",
+      "ftype": "混合型-偏股",
+      "established": "2025-11-11"
+    },
+    "011447": {
+      "scale_yi": 8.1,
+      "scale_raw": "8.10亿",
+      "manager": "张剑鑫",
+      "ftype": "混合型-偏股",
+      "established": "2021-04-14"
+    },
+    "022415": {
+      "scale_yi": 0.82519,
+      "scale_raw": "8251.90万",
+      "manager": "田维",
+      "ftype": "混合型-偏股",
+      "established": "2024-12-06"
+    },
+    "014179": {
+      "scale_yi": 0.44172100000000003,
+      "scale_raw": "4417.21万",
+      "manager": "刘航",
+      "ftype": "混合型-偏股",
+      "established": "2021-12-24"
+    },
+    "013915": {
+      "scale_yi": 0.8758819999999999,
+      "scale_raw": "8758.82万",
+      "manager": "李煜",
+      "ftype": "混合型-偏股",
+      "established": "2022-11-11"
+    },
+    "017987": {
+      "scale_yi": 5.22,
+      "scale_raw": "5.22亿",
+      "manager": "张晓宇",
+      "ftype": "混合型-偏股",
+      "established": "2023-05-05"
+    },
+    "022364": {
+      "scale_yi": 144.75,
+      "scale_raw": "144.75亿",
+      "manager": "任桀",
+      "ftype": "混合型-偏股",
+      "established": "2024-10-30"
+    },
+    "015968": {
+      "scale_yi": 52.13,
+      "scale_raw": "52.13亿",
+      "manager": "张海啸",
+      "ftype": "混合型-偏股",
+      "established": "2022-09-22"
+    },
+    "016721": {
+      "scale_yi": 4.04,
+      "scale_raw": "4.04亿",
+      "manager": "魏淳",
+      "ftype": "混合型-灵活配置",
+      "established": "2024-12-11"
+    },
+    "012457": {
+      "scale_yi": 5.1,
+      "scale_raw": "5.10亿",
+      "manager": "张勋 章宏帆",
+      "ftype": "混合型-偏股",
+      "established": "2021-09-07"
+    },
+    "022414": {
+      "scale_yi": 0.39548099999999997,
+      "scale_raw": "3954.81万",
+      "manager": "田维",
+      "ftype": "混合型-偏股",
+      "established": "2024-12-06"
+    },
+    "006234": {
+      "scale_yi": 0.298469,
+      "scale_raw": "2984.69万",
+      "manager": "汪洋",
+      "ftype": "混合型-偏股",
+      "established": "2019-10-23"
+    },
+    "013490": {},
+    "012245": {
+      "scale_yi": 0.19312100000000001,
+      "scale_raw": "1931.21万",
+      "manager": "冉宇航 丁朝飞",
+      "ftype": "股票型-普通",
+      "established": "2021-06-29"
+    },
+    "020193": {},
+    "016374": {
+      "scale_yi": 14.0,
+      "scale_raw": "14.00亿",
+      "manager": "杨景涵",
+      "ftype": "混合型-灵活配置",
+      "established": "2022-08-04"
+    },
+    "011124": {
+      "scale_yi": 0.201522,
+      "scale_raw": "2015.22万",
+      "manager": "董浩",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-29"
+    },
+    "010312": {
+      "scale_yi": 0.10444400000000001,
+      "scale_raw": "1044.44万",
+      "manager": "刘腾",
+      "ftype": "混合型-偏股",
+      "established": "2020-10-16"
+    },
+    "001054": {
+      "scale_yi": 10.21,
+      "scale_raw": "10.21亿",
+      "manager": "鄢耀 刘欣然",
+      "ftype": "股票型-普通",
+      "established": "2015-03-19"
+    },
+    "012244": {
+      "scale_yi": 0.226223,
+      "scale_raw": "2262.23万",
+      "manager": "冉宇航 丁朝飞",
+      "ftype": "股票型-普通",
+      "established": "2021-06-29"
+    },
+    "014041": {
+      "scale_yi": 0.063812,
+      "scale_raw": "638.12万",
+      "manager": "冯嵩越",
+      "ftype": "混合型-偏股",
+      "established": "2022-08-02"
+    },
+    "005662": {
+      "scale_yi": 1.38,
+      "scale_raw": "1.38亿",
+      "manager": "张露",
+      "ftype": "股票型-普通",
+      "established": "2018-03-14"
+    },
+    "001393": {
+      "scale_yi": 0.023007,
+      "scale_raw": "230.07万",
+      "manager": "赵宇烨",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-06-09"
+    },
+    "020194": {},
+    "004871": {
+      "scale_yi": 0.413304,
+      "scale_raw": "4133.04万",
+      "manager": "刘腾",
+      "ftype": "混合型-偏股",
+      "established": "2017-09-28"
+    },
+    "000251": {
+      "scale_yi": 9.33,
+      "scale_raw": "9.33亿",
+      "manager": "鄢耀 刘欣然",
+      "ftype": "混合型-偏股",
+      "established": "2013-08-26"
+    },
+    "010696": {
+      "scale_yi": 1.64,
+      "scale_raw": "1.64亿",
+      "manager": "鄢耀 刘欣然",
+      "ftype": "混合型-偏股",
+      "established": "2020-11-23"
+    },
+    "006652": {
+      "scale_yi": 0.27107600000000004,
+      "scale_raw": "2710.76万",
+      "manager": "董浩",
+      "ftype": "混合型-偏股",
+      "established": "2018-12-27"
+    },
+    "013355": {
+      "scale_yi": 0.9290959999999999,
+      "scale_raw": "9290.96万",
+      "manager": "鄢耀 刘欣然",
+      "ftype": "股票型-普通",
+      "established": "2021-08-23"
+    },
+    "005663": {
+      "scale_yi": 0.35483899999999996,
+      "scale_raw": "3548.39万",
+      "manager": "张露",
+      "ftype": "股票型-普通",
+      "established": "2018-03-14"
+    },
+    "001392": {
+      "scale_yi": 0.04356,
+      "scale_raw": "435.60万",
+      "manager": "赵宇烨",
+      "ftype": "混合型-灵活配置",
+      "established": "2015-06-09"
+    },
+    "005576": {
+      "scale_yi": 12.36,
+      "scale_raw": "12.36亿",
+      "manager": "杨景涵",
+      "ftype": "混合型-灵活配置",
+      "established": "2018-03-08"
+    },
+    "014040": {
+      "scale_yi": 0.052976999999999996,
+      "scale_raw": "529.77万",
+      "manager": "冯嵩越",
+      "ftype": "混合型-偏股",
+      "established": "2022-08-02"
+    },
+    "013491": {},
+    "015143": {
+      "scale_yi": 3.24,
+      "scale_raw": "3.24亿",
+      "manager": "邵洁",
+      "ftype": "混合型-偏股",
+      "established": "2022-03-22"
+    },
+    "002861": {
+      "scale_yi": 8.46,
+      "scale_raw": "8.46亿",
+      "manager": "林念",
+      "ftype": "股票型-普通",
+      "established": "2017-06-21"
+    },
+    "006863": {
+      "scale_yi": 0.227069,
+      "scale_raw": "2270.69万",
+      "manager": "高诗",
+      "ftype": "混合型-偏股",
+      "established": "2019-04-25"
+    },
+    "015144": {
+      "scale_yi": 3.58,
+      "scale_raw": "3.58亿",
+      "manager": "邵洁",
+      "ftype": "混合型-偏股",
+      "established": "2022-03-22"
+    },
+    "020197": {},
+    "015196": {},
+    "022710": {
+      "scale_yi": 4.62,
+      "scale_raw": "4.62亿",
+      "manager": "林念",
+      "ftype": "股票型-普通",
+      "established": "2024-11-26"
+    },
+    "005802": {
+      "scale_yi": 29.2,
+      "scale_raw": "29.20亿",
+      "manager": "董超",
+      "ftype": "股票型-普通",
+      "established": "2018-04-23"
+    },
+    "001476": {
+      "scale_yi": 12.81,
+      "scale_raw": "12.81亿",
+      "manager": "周斌",
+      "ftype": "股票型-普通",
+      "established": "2015-06-19"
+    },
+    "012181": {
+      "scale_yi": 2.37,
+      "scale_raw": "2.37亿",
+      "manager": "周斌",
+      "ftype": "股票型-普通",
+      "established": "2021-05-14"
+    },
+    "005609": {
+      "scale_yi": 23.62,
+      "scale_raw": "23.62亿",
+      "manager": "孟浩之",
+      "ftype": "混合型-偏股",
+      "established": "2018-03-29"
+    },
+    "011592": {},
+    "008960": {
+      "scale_yi": 14.26,
+      "scale_raw": "14.26亿",
+      "manager": "宋海岸",
+      "ftype": "混合型-灵活配置",
+      "established": "2020-02-21"
+    },
+    "011113": {
+      "scale_yi": 3.31,
+      "scale_raw": "3.31亿",
+      "manager": "孟浩之",
+      "ftype": "混合型-偏股",
+      "established": "2020-12-28"
+    },
+    "004224": {
+      "scale_yi": 25.99,
+      "scale_raw": "25.99亿",
+      "manager": "邹承原",
+      "ftype": "混合型-灵活配置",
+      "established": "2017-03-08"
+    },
+    "002983": {
+      "scale_yi": 5.62,
+      "scale_raw": "5.62亿",
+      "manager": "宋海岸",
+      "ftype": "混合型-灵活配置",
+      "established": "2017-01-05"
+    },
+    "011148": {
+      "scale_yi": 8.4,
+      "scale_raw": "8.40亿",
+      "manager": "邹承原",
+      "ftype": "混合型-灵活配置",
+      "established": "2021-01-15"
+    },
+    "004698": {
+      "scale_yi": 16.32,
+      "scale_raw": "16.32亿",
+      "manager": "曾鹏",
+      "ftype": "股票型-普通",
+      "established": "2017-07-04"
+    },
+    "020488": {
+      "scale_yi": 0.264691,
+      "scale_raw": "2646.91万",
+      "manager": "王羿伟",
+      "ftype": "混合型-偏股",
+      "established": "2024-01-10"
+    },
+    "410009": {
+      "scale_yi": 0.44703999999999994,
+      "scale_raw": "4470.40万",
+      "manager": "王羿伟",
+      "ftype": "混合型-偏股",
+      "established": "2011-04-01"
+    },
+    "006281": {
+      "scale_yi": 13.22,
+      "scale_raw": "13.22亿",
+      "manager": "耿嘉洲",
+      "ftype": "混合型-偏股",
+      "established": "2019-01-25"
+    },
+    "005963": {
+      "scale_yi": 5.78,
+      "scale_raw": "5.78亿",
+      "manager": "叶秀贤",
+      "ftype": "股票型-普通",
+      "established": "2018-08-15"
+    },
+    "005729": {
+      "scale_yi": 7.38,
+      "scale_raw": "7.38亿",
+      "manager": "罗安安",
+      "ftype": "混合型-偏股",
+      "established": "2018-10-12"
+    },
+    "001986": {
+      "scale_yi": 6.6,
+      "scale_raw": "6.60亿",
+      "manager": "魏淳 梁策",
+      "ftype": "混合型-灵活配置",
+      "established": "2016-05-04"
+    },
+    "014162": {
+      "scale_yi": 9.22,
+      "scale_raw": "9.22亿",
+      "manager": "耿嘉洲",
+      "ftype": "混合型-偏股",
+      "established": "2021-11-19"
+    },
+    "023286": {
+      "scale_yi": 1.07,
+      "scale_raw": "1.07亿",
+      "manager": "魏淳 梁策",
+      "ftype": "混合型-灵活配置",
+      "established": "2025-01-20"
+    },
+    "009875": {
+      "scale_yi": 0.314333,
+      "scale_raw": "3143.33万",
+      "manager": "于洋",
+      "ftype": "股票型-普通",
+      "established": "2020-08-20"
+    },
+    "009476": {
+      "scale_yi": 0.760591,
+      "scale_raw": "7605.91万",
+      "manager": "王麟锴",
+      "ftype": "股票型-普通",
+      "established": "2020-08-26"
+    },
+    "009876": {
+      "scale_yi": 0.7469359999999999,
+      "scale_raw": "7469.36万",
+      "manager": "于洋",
+      "ftype": "股票型-普通",
+      "established": "2020-08-20"
+    },
+    "013289": {
+      "scale_yi": 0.34773000000000004,
+      "scale_raw": "3477.30万",
+      "manager": "张玮升",
+      "ftype": "混合型-偏股",
+      "established": "2021-10-22"
+    },
+    "014864": {
+      "scale_yi": 0.442899,
+      "scale_raw": "4428.99万",
+      "manager": "王麟锴",
+      "ftype": "股票型-普通",
+      "established": "2022-01-28"
+    },
+    "013290": {
+      "scale_yi": 0.34179299999999996,
+      "scale_raw": "3417.93万",
+      "manager": "张玮升",
+      "ftype": "混合型-偏股",
+      "established": "2021-10-22"
+    },
+    "018937": {
+      "scale_yi": 0.304702,
+      "scale_raw": "3047.02万",
+      "manager": "骆莹",
+      "ftype": "混合型-偏股",
+      "established": "2024-03-27"
+    },
+    "005689": {
+      "scale_yi": 3.97,
+      "scale_raw": "3.97亿",
+      "manager": "李文广",
+      "ftype": "混合型-灵活配置",
+      "established": "2018-06-13"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "watch": {},
+  "holding": {
+    "003040": {
+      "code": "003040",
+      "name": "楚天龙",
+      "buy_date": "2026-08-07",
+      "buy_price": 12.85,
+      "shares": 500
+    }
+  },
+  "finished": [
+    {
+      "code": "605287",
+      "name": "德才股份",
+      "buy_date": "2026-08-03",
+      "buy_price": 35.8,
+      "sell_date": "2026-08-04",
+      "sell_price": 37.0,
+      "shares": 500,
+      "gross_ret": 3.35,
+      "net_ret": 3.05,
+      "is_win": true,
+      "sig_type": "",
+      "trade_id": "T0001"
+    }
+  ],
+  "last_update": "2026-08-07",
+  "seq": 1
+}

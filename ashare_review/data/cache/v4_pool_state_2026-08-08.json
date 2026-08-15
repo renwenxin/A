@@ -1,0 +1,123 @@
+{
+  "_cached_date": "2026-08-08",
+  "_cached_at": "15:06:45",
+  "_namespace": "v4_pool_state",
+  "_payload": {
+    "date": "2026-08-08",
+    "last_update": "2026-08-07",
+    "market_mood": {
+      "date": "2026-08-07",
+      "zt_count": 74,
+      "multi_board": 13,
+      "max_consecutive": 4,
+      "mood": "中性",
+      "advice": "谨慎开仓 · 精选核心标的",
+      "color": "#4f46e5",
+      "note": "",
+      "sh_close": 3940.04,
+      "sh_ma60": 4002.06,
+      "is_bull": false
+    },
+    "sim_buy_today": [
+      {
+        "code": "001267",
+        "name": "汇绿生态",
+        "signal_date": "2026-08-07",
+        "buy_date": "2026-08-10",
+        "buy_price": 38.81,
+        "shares": 2500,
+        "close": 38.81,
+        "top_line": 34.6,
+        "break_pct": 12.2,
+        "vol_ratio": 1.5,
+        "score": 95,
+        "limit_count": 26,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 37.65,
+        "buy_range_high": 41.14,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "pending",
+          "reason": "今日竞价未写入 · 9:25后刷新"
+        }
+      },
+      {
+        "code": "603115",
+        "name": "海星股份",
+        "signal_date": "2026-08-07",
+        "buy_date": "2026-08-10",
+        "buy_price": 79.93,
+        "shares": 1200,
+        "close": 79.93,
+        "top_line": 75.0,
+        "break_pct": 6.6,
+        "vol_ratio": 1.5,
+        "score": 95,
+        "limit_count": 30,
+        "mode": "v3",
+        "market_bull": false,
+        "buy_range_low": 77.53,
+        "buy_range_high": 84.73,
+        "buy_range_pct": 6.0,
+        "auction": {
+          "status": "pending",
+          "reason": "今日竞价未写入 · 9:25后刷新"
+        }
+      }
+    ],
+    "sim_sell_today": [
+      {
+        "code": "600936",
+        "name": "北投科技",
+        "signal_date": "2026-08-04",
+        "buy_date": "2026-08-05",
+        "buy_price": 6.0,
+        "shares": 16600,
+        "close": 5.87,
+        "top_line": 4.83,
+        "break_pct": 21.5,
+        "vol_ratio": 2.6,
+        "score": 90,
+        "limit_count": 12,
+        "mode": "v3",
+        "market_bull": false,
+        "status": "holding",
+        "had_zt": false,
+        "highest_close": 6.0,
+        "awaiting_reversal": false,
+        "sell_price_today": 5.6,
+        "estimated_net_ret": -7.02,
+        "exit_reason": "止损-6%",
+        "days_held": 3,
+        "sell_range_basis": "止损-6%附近",
+        "sell_range_low": 5.58,
+        "sell_range_high": 5.7
+      }
+    ],
+    "summary": {
+      "total_trades": 3,
+      "wins": 4,
+      "losses": -1,
+      "win_rate": 133.3,
+      "total_return": 2.8,
+      "avg_return": 0.93,
+      "watch_count": 73,
+      "buy_count": 2,
+      "sell_count": 1,
+      "holding_count": 5,
+      "ready_count": 2,
+      "pending_sell_count": 0,
+      "cash": 54395.07,
+      "positions_value": 509134.0,
+      "portfolio_value": 563529.07,
+      "initial_capital": 1000000.0,
+      "cumulative_return": -43.65,
+      "max_drawdown": 50.22,
+      "max_positions": 10,
+      "market_bull": false,
+      "sh_close": 3940.04,
+      "sh_ma60": 4002.06
+    }
+  }
+}

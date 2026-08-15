@@ -1,0 +1,1487 @@
+{
+  "_cached_date": "2026-08-14",
+  "_cached_at": "14:50:42",
+  "_namespace": "screen_one_two",
+  "_payload": {
+    "strategy": "one_two",
+    "strategy_name": "1进2",
+    "total": 30,
+    "top_3": [
+      {
+        "code": "002774",
+        "name": "快意电梯",
+        "score": 88,
+        "reasons": [
+          "流通市值49亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比0.56>0.5·封单充足",
+          "封单强度0.022·资金坚决",
+          "封死未炸板",
+          "股性活跃(10次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093827",
+          "seal_amount": 10772.0,
+          "board_type": "专用设备",
+          "float_market_cap": 49.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.56,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0218,
+          "limit_up_count": 10,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认",
+          "ma_bullish": true
+        },
+        "analysis": {
+          "tech": {
+            "close": 15.95,
+            "change_pct": -2.0,
+            "ma_status": [
+              {
+                "period": 5,
+                "above": false,
+                "ma_price": 16.44,
+                "pct_from_ma": -3.0
+              },
+              {
+                "period": 10,
+                "above": true,
+                "ma_price": 15.75,
+                "pct_from_ma": 1.3
+              },
+              {
+                "period": 20,
+                "above": true,
+                "ma_price": 15.59,
+                "pct_from_ma": 2.3
+              },
+              {
+                "period": 60,
+                "above": true,
+                "ma_price": 13.97,
+                "pct_from_ma": 14.2
+              },
+              {
+                "period": 89,
+                "above": true,
+                "ma_price": 13.29,
+                "pct_from_ma": 20.0
+              },
+              {
+                "period": 250,
+                "above": true,
+                "ma_price": 11.58,
+                "pct_from_ma": 37.8
+              }
+            ],
+            "above_ma_count": 5,
+            "ma_arrangement": "偏多整理",
+            "ma_summary": "5日线破位·短线风险；20日线向上·中线健康；站上5线·强势",
+            "macd_state": "金叉红柱·缩短",
+            "macd_zone": "零轴上",
+            "macd_divergence": "",
+            "vol_state": "量价平稳",
+            "vol_ratio": 1.7,
+            "vol_5_20_ratio": 0.91,
+            "support": 15.75,
+            "support_label": "MA10均线",
+            "resistance": 16.44,
+            "resistance_label": "MA5反压",
+            "atr_pct": 4.4,
+            "support_quality": "承接强·低点抬升",
+            "chip_avg_cost": 14.34,
+            "chip_concentration": 0.36,
+            "chip_above_ratio": 75.9
+          },
+          "suggestion": {
+            "entry_zone": "15.79-16.27",
+            "stop_loss": 15.67,
+            "target": 16.44,
+            "risk_pct": 1.8,
+            "reward_pct": 3.1,
+            "rr_ratio": 1.7,
+            "position": "半仓(5成)",
+            "strategy_tip": "1进2核心是次日竞价确认。弱于预期=直接放弃；符合预期=看前15分钟量能和分时承接；超预期(烂板高开)=弱转强买点。开盘后换手充分(前15分钟达昨日30%)且价格维持在均线上方可持有。",
+            "risk_note": "趋势向好，可积极操作。严格按止损执行。"
+          }
+        }
+      },
+      {
+        "code": "002907",
+        "name": "华森制药",
+        "score": 86,
+        "reasons": [
+          "流通市值51亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比2.39>1.0·极强",
+          "封单强度0.038·资金坚决",
+          "封死未炸板",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "092500",
+          "seal_amount": 19320.0,
+          "board_type": "中药Ⅱ",
+          "float_market_cap": 51.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 2.39,
+          "volume_type": "缩量加速",
+          "seal_strength": 0.0377,
+          "limit_up_count": 2,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率一字板或T字板，竞价涨幅+7%以上",
+          "action_plan": "若次日竞价缩量高开→持仓不动；若竞价爆量→看承接再决定",
+          "ma_bullish": true
+        },
+        "analysis": {
+          "tech": {
+            "close": 13.87,
+            "change_pct": 1.2,
+            "ma_status": [
+              {
+                "period": 5,
+                "above": true,
+                "ma_price": 13.73,
+                "pct_from_ma": 1.0
+              },
+              {
+                "period": 10,
+                "above": true,
+                "ma_price": 13.35,
+                "pct_from_ma": 3.9
+              },
+              {
+                "period": 20,
+                "above": true,
+                "ma_price": 13.0,
+                "pct_from_ma": 6.7
+              },
+              {
+                "period": 60,
+                "above": true,
+                "ma_price": 13.0,
+                "pct_from_ma": 6.7
+              },
+              {
+                "period": 89,
+                "above": true,
+                "ma_price": 13.27,
+                "pct_from_ma": 4.5
+              },
+              {
+                "period": 250,
+                "above": false,
+                "ma_price": 14.99,
+                "pct_from_ma": -7.5
+              }
+            ],
+            "above_ma_count": 5,
+            "ma_arrangement": "偏多整理",
+            "ma_summary": "5/10日线支撑有效；20日线向上·中线健康；站上5线·强势",
+            "macd_state": "金叉红柱·放大",
+            "macd_zone": "零轴上",
+            "macd_divergence": "",
+            "vol_state": "量价平稳",
+            "vol_ratio": 0.9,
+            "vol_5_20_ratio": 1.07,
+            "support": 13.39,
+            "support_label": "3日低点",
+            "resistance": 14.1,
+            "resistance_label": "10日高点",
+            "atr_pct": 5.1,
+            "support_quality": "盘中探底回升·承接尚可",
+            "chip_avg_cost": 13.85,
+            "chip_concentration": 0.68,
+            "chip_above_ratio": 53.2
+          },
+          "suggestion": {
+            "entry_zone": "13.73-14.15",
+            "stop_loss": 13.66,
+            "target": 15.53,
+            "risk_pct": 1.5,
+            "reward_pct": 12.0,
+            "rr_ratio": 8.0,
+            "position": "标准仓(7-8成)",
+            "strategy_tip": "1进2核心是次日竞价确认。弱于预期=直接放弃；符合预期=看前15分钟量能和分时承接；超预期(烂板高开)=弱转强买点。开盘后换手充分(前15分钟达昨日30%)且价格维持在均线上方可持有。",
+            "risk_note": "趋势向好，可积极操作。严格按止损执行。"
+          }
+        }
+      },
+      {
+        "code": "002651",
+        "name": "利君股份",
+        "score": 83,
+        "reasons": [
+          "流通市值47亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比1.30>1.0·极强",
+          "封单强度0.039·资金坚决",
+          "封死未炸板",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列"
+        ],
+        "detail": {
+          "limit_up_time": "094500",
+          "seal_amount": 18706.0,
+          "board_type": "航空装备",
+          "float_market_cap": 47.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 1.3,
+          "volume_type": "缩量加速",
+          "seal_strength": 0.0394,
+          "limit_up_count": 3,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率一字板或T字板，竞价涨幅+7%以上",
+          "action_plan": "若次日竞价缩量高开→持仓不动；若竞价爆量→看承接再决定",
+          "ma_bullish": true
+        },
+        "analysis": {
+          "tech": {
+            "close": 7.63,
+            "change_pct": -1.9,
+            "ma_status": [
+              {
+                "period": 5,
+                "above": false,
+                "ma_price": 7.78,
+                "pct_from_ma": -1.9
+              },
+              {
+                "period": 10,
+                "above": false,
+                "ma_price": 7.83,
+                "pct_from_ma": -2.6
+              },
+              {
+                "period": 20,
+                "above": true,
+                "ma_price": 7.59,
+                "pct_from_ma": 0.5
+              },
+              {
+                "period": 60,
+                "above": false,
+                "ma_price": 7.77,
+                "pct_from_ma": -1.9
+              },
+              {
+                "period": 89,
+                "above": false,
+                "ma_price": 8.34,
+                "pct_from_ma": -8.5
+              },
+              {
+                "period": 250,
+                "above": false,
+                "ma_price": 10.39,
+                "pct_from_ma": -26.6
+              }
+            ],
+            "above_ma_count": 1,
+            "ma_arrangement": "偏空整理",
+            "ma_summary": "5日线破位·短线风险；20日线向上·中线健康",
+            "macd_state": "金叉红柱·缩短",
+            "macd_zone": "零轴上",
+            "macd_divergence": "",
+            "vol_state": "量价平稳",
+            "vol_ratio": 1.2,
+            "vol_5_20_ratio": 0.8,
+            "support": 7.6,
+            "support_label": "3日低点",
+            "resistance": 7.77,
+            "resistance_label": "MA60反压",
+            "atr_pct": 2.2,
+            "support_quality": "承接良好·支撑有效",
+            "chip_avg_cost": 9.58,
+            "chip_concentration": 0.45,
+            "chip_above_ratio": 23.8
+          },
+          "suggestion": {
+            "entry_zone": "7.55-7.78",
+            "stop_loss": 7.25,
+            "target": 7.77,
+            "risk_pct": 5.0,
+            "reward_pct": 1.8,
+            "rr_ratio": 0.4,
+            "position": "观察仓(1-2成)",
+            "strategy_tip": "1进2核心是次日竞价确认。弱于预期=直接放弃；符合预期=看前15分钟量能和分时承接；超预期(烂板高开)=弱转强买点。开盘后换手充分(前15分钟达昨日30%)且价格维持在均线上方可持有。",
+            "risk_note": "信号中性，严格按止损执行，不破位可持有。"
+          }
+        }
+      }
+    ],
+    "results": [
+      {
+        "code": "002774",
+        "name": "快意电梯",
+        "score": 88,
+        "reasons": [
+          "流通市值49亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比0.56>0.5·封单充足",
+          "封单强度0.022·资金坚决",
+          "封死未炸板",
+          "股性活跃(10次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093827",
+          "seal_amount": 10772.0,
+          "board_type": "专用设备",
+          "float_market_cap": 49.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.56,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0218,
+          "limit_up_count": 10,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认",
+          "ma_bullish": true
+        },
+        "analysis": {
+          "tech": {
+            "close": 15.95,
+            "change_pct": -2.0,
+            "ma_status": [
+              {
+                "period": 5,
+                "above": false,
+                "ma_price": 16.44,
+                "pct_from_ma": -3.0
+              },
+              {
+                "period": 10,
+                "above": true,
+                "ma_price": 15.75,
+                "pct_from_ma": 1.3
+              },
+              {
+                "period": 20,
+                "above": true,
+                "ma_price": 15.59,
+                "pct_from_ma": 2.3
+              },
+              {
+                "period": 60,
+                "above": true,
+                "ma_price": 13.97,
+                "pct_from_ma": 14.2
+              },
+              {
+                "period": 89,
+                "above": true,
+                "ma_price": 13.29,
+                "pct_from_ma": 20.0
+              },
+              {
+                "period": 250,
+                "above": true,
+                "ma_price": 11.58,
+                "pct_from_ma": 37.8
+              }
+            ],
+            "above_ma_count": 5,
+            "ma_arrangement": "偏多整理",
+            "ma_summary": "5日线破位·短线风险；20日线向上·中线健康；站上5线·强势",
+            "macd_state": "金叉红柱·缩短",
+            "macd_zone": "零轴上",
+            "macd_divergence": "",
+            "vol_state": "量价平稳",
+            "vol_ratio": 1.7,
+            "vol_5_20_ratio": 0.91,
+            "support": 15.75,
+            "support_label": "MA10均线",
+            "resistance": 16.44,
+            "resistance_label": "MA5反压",
+            "atr_pct": 4.4,
+            "support_quality": "承接强·低点抬升",
+            "chip_avg_cost": 14.34,
+            "chip_concentration": 0.36,
+            "chip_above_ratio": 75.9
+          },
+          "suggestion": {
+            "entry_zone": "15.79-16.27",
+            "stop_loss": 15.67,
+            "target": 16.44,
+            "risk_pct": 1.8,
+            "reward_pct": 3.1,
+            "rr_ratio": 1.7,
+            "position": "半仓(5成)",
+            "strategy_tip": "1进2核心是次日竞价确认。弱于预期=直接放弃；符合预期=看前15分钟量能和分时承接；超预期(烂板高开)=弱转强买点。开盘后换手充分(前15分钟达昨日30%)且价格维持在均线上方可持有。",
+            "risk_note": "趋势向好，可积极操作。严格按止损执行。"
+          }
+        }
+      },
+      {
+        "code": "002907",
+        "name": "华森制药",
+        "score": 86,
+        "reasons": [
+          "流通市值51亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比2.39>1.0·极强",
+          "封单强度0.038·资金坚决",
+          "封死未炸板",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "092500",
+          "seal_amount": 19320.0,
+          "board_type": "中药Ⅱ",
+          "float_market_cap": 51.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 2.39,
+          "volume_type": "缩量加速",
+          "seal_strength": 0.0377,
+          "limit_up_count": 2,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率一字板或T字板，竞价涨幅+7%以上",
+          "action_plan": "若次日竞价缩量高开→持仓不动；若竞价爆量→看承接再决定",
+          "ma_bullish": true
+        },
+        "analysis": {
+          "tech": {
+            "close": 13.87,
+            "change_pct": 1.2,
+            "ma_status": [
+              {
+                "period": 5,
+                "above": true,
+                "ma_price": 13.73,
+                "pct_from_ma": 1.0
+              },
+              {
+                "period": 10,
+                "above": true,
+                "ma_price": 13.35,
+                "pct_from_ma": 3.9
+              },
+              {
+                "period": 20,
+                "above": true,
+                "ma_price": 13.0,
+                "pct_from_ma": 6.7
+              },
+              {
+                "period": 60,
+                "above": true,
+                "ma_price": 13.0,
+                "pct_from_ma": 6.7
+              },
+              {
+                "period": 89,
+                "above": true,
+                "ma_price": 13.27,
+                "pct_from_ma": 4.5
+              },
+              {
+                "period": 250,
+                "above": false,
+                "ma_price": 14.99,
+                "pct_from_ma": -7.5
+              }
+            ],
+            "above_ma_count": 5,
+            "ma_arrangement": "偏多整理",
+            "ma_summary": "5/10日线支撑有效；20日线向上·中线健康；站上5线·强势",
+            "macd_state": "金叉红柱·放大",
+            "macd_zone": "零轴上",
+            "macd_divergence": "",
+            "vol_state": "量价平稳",
+            "vol_ratio": 0.9,
+            "vol_5_20_ratio": 1.07,
+            "support": 13.39,
+            "support_label": "3日低点",
+            "resistance": 14.1,
+            "resistance_label": "10日高点",
+            "atr_pct": 5.1,
+            "support_quality": "盘中探底回升·承接尚可",
+            "chip_avg_cost": 13.85,
+            "chip_concentration": 0.68,
+            "chip_above_ratio": 53.2
+          },
+          "suggestion": {
+            "entry_zone": "13.73-14.15",
+            "stop_loss": 13.66,
+            "target": 15.53,
+            "risk_pct": 1.5,
+            "reward_pct": 12.0,
+            "rr_ratio": 8.0,
+            "position": "标准仓(7-8成)",
+            "strategy_tip": "1进2核心是次日竞价确认。弱于预期=直接放弃；符合预期=看前15分钟量能和分时承接；超预期(烂板高开)=弱转强买点。开盘后换手充分(前15分钟达昨日30%)且价格维持在均线上方可持有。",
+            "risk_note": "趋势向好，可积极操作。严格按止损执行。"
+          }
+        }
+      },
+      {
+        "code": "002651",
+        "name": "利君股份",
+        "score": 83,
+        "reasons": [
+          "流通市值47亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比1.30>1.0·极强",
+          "封单强度0.039·资金坚决",
+          "封死未炸板",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列"
+        ],
+        "detail": {
+          "limit_up_time": "094500",
+          "seal_amount": 18706.0,
+          "board_type": "航空装备",
+          "float_market_cap": 47.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 1.3,
+          "volume_type": "缩量加速",
+          "seal_strength": 0.0394,
+          "limit_up_count": 3,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率一字板或T字板，竞价涨幅+7%以上",
+          "action_plan": "若次日竞价缩量高开→持仓不动；若竞价爆量→看承接再决定",
+          "ma_bullish": true
+        },
+        "analysis": {
+          "tech": {
+            "close": 7.63,
+            "change_pct": -1.9,
+            "ma_status": [
+              {
+                "period": 5,
+                "above": false,
+                "ma_price": 7.78,
+                "pct_from_ma": -1.9
+              },
+              {
+                "period": 10,
+                "above": false,
+                "ma_price": 7.83,
+                "pct_from_ma": -2.6
+              },
+              {
+                "period": 20,
+                "above": true,
+                "ma_price": 7.59,
+                "pct_from_ma": 0.5
+              },
+              {
+                "period": 60,
+                "above": false,
+                "ma_price": 7.77,
+                "pct_from_ma": -1.9
+              },
+              {
+                "period": 89,
+                "above": false,
+                "ma_price": 8.34,
+                "pct_from_ma": -8.5
+              },
+              {
+                "period": 250,
+                "above": false,
+                "ma_price": 10.39,
+                "pct_from_ma": -26.6
+              }
+            ],
+            "above_ma_count": 1,
+            "ma_arrangement": "偏空整理",
+            "ma_summary": "5日线破位·短线风险；20日线向上·中线健康",
+            "macd_state": "金叉红柱·缩短",
+            "macd_zone": "零轴上",
+            "macd_divergence": "",
+            "vol_state": "量价平稳",
+            "vol_ratio": 1.2,
+            "vol_5_20_ratio": 0.8,
+            "support": 7.6,
+            "support_label": "3日低点",
+            "resistance": 7.77,
+            "resistance_label": "MA60反压",
+            "atr_pct": 2.2,
+            "support_quality": "承接良好·支撑有效",
+            "chip_avg_cost": 9.58,
+            "chip_concentration": 0.45,
+            "chip_above_ratio": 23.8
+          },
+          "suggestion": {
+            "entry_zone": "7.55-7.78",
+            "stop_loss": 7.25,
+            "target": 7.77,
+            "risk_pct": 5.0,
+            "reward_pct": 1.8,
+            "rr_ratio": 0.4,
+            "position": "观察仓(1-2成)",
+            "strategy_tip": "1进2核心是次日竞价确认。弱于预期=直接放弃；符合预期=看前15分钟量能和分时承接；超预期(烂板高开)=弱转强买点。开盘后换手充分(前15分钟达昨日30%)且价格维持在均线上方可持有。",
+            "risk_note": "信号中性，严格按止损执行，不破位可持有。"
+          }
+        }
+      },
+      {
+        "code": "002811",
+        "name": "郑中设计",
+        "score": 83,
+        "reasons": [
+          "流通市值32亿·接力佳",
+          "上午封板(≤10:30)",
+          "封成比1.17>1.0·极强",
+          "封单强度0.034·资金坚决",
+          "封死未炸板",
+          "股性尚可(5次)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "102227",
+          "seal_amount": 10879.0,
+          "board_type": "装修装饰",
+          "float_market_cap": 32.0,
+          "next_day_expect": "次日预期高开3-6%",
+          "seal_ratio": 1.17,
+          "volume_type": "缩量加速",
+          "seal_strength": 0.0341,
+          "limit_up_count": 5,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率一字板或T字板，竞价涨幅+7%以上",
+          "action_plan": "若次日竞价缩量高开→持仓不动；若竞价爆量→看承接再决定",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002658",
+        "name": "雪迪龙",
+        "score": 74,
+        "reasons": [
+          "流通市值30亿·接力佳",
+          "上午封板(≤10:30)",
+          "封成比0.59>0.5·封单充足",
+          "封单强度0.037·资金坚决",
+          "封死未炸板",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "102433",
+          "seal_amount": 10810.0,
+          "board_type": "环保设备",
+          "float_market_cap": 30.0,
+          "next_day_expect": "次日预期高开3-6%",
+          "seal_ratio": 0.59,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0366,
+          "limit_up_count": 3,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "603095",
+        "name": "越剑智能",
+        "score": 72,
+        "reasons": [
+          "流通市值39亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比0.65>0.5·封单充足",
+          "封单强度0.020·资金坚决",
+          "封死未炸板",
+          "股性活跃(11次年涨停)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093542",
+          "seal_amount": 7724.0,
+          "board_type": "专用设备",
+          "float_market_cap": 39.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.65,
+          "volume_type": "健康换手",
+          "seal_strength": 0.02,
+          "limit_up_count": 11,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002766",
+        "name": "索菱股份",
+        "score": 70,
+        "reasons": [
+          "流通市值39亿·接力佳",
+          "封成比0.81>0.5·封单充足",
+          "封单强度0.066·资金坚决",
+          "封死未炸板",
+          "股性活跃(10次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列"
+        ],
+        "detail": {
+          "limit_up_time": "131618",
+          "seal_amount": 25420.0,
+          "board_type": "汽车零部",
+          "float_market_cap": 39.0,
+          "next_day_expect": "次日预期平开或小幅高开",
+          "seal_ratio": 0.81,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0659,
+          "limit_up_count": 10,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002820",
+        "name": "桂发祥",
+        "score": 68,
+        "reasons": [
+          "流通市值20亿·接力佳",
+          "午前封板",
+          "封成比0.63>0.5·封单充足",
+          "封单强度0.039·资金坚决",
+          "封死未炸板",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "110724",
+          "seal_amount": 7923.0,
+          "board_type": "休闲食品",
+          "float_market_cap": 20.0,
+          "next_day_expect": "次日预期高开1-3%",
+          "seal_ratio": 0.63,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0389,
+          "limit_up_count": 4,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+1~3%，竞价量需达昨日3-5%",
+          "action_plan": "竞价符合预期→观察前15分钟量能和分时承接再决定",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002989",
+        "name": "中天精装",
+        "score": 66,
+        "reasons": [
+          "流通市值50亿·接力佳",
+          "封成比0.50",
+          "封单强度0.023·资金坚决",
+          "封死未炸板",
+          "股性活跃(13次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "135630",
+          "seal_amount": 11571.0,
+          "board_type": "装修装饰",
+          "float_market_cap": 50.0,
+          "next_day_expect": "次日预期平开或小幅高开",
+          "seal_ratio": 0.5,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0231,
+          "limit_up_count": 13,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002988",
+        "name": "豪美新材",
+        "score": 65,
+        "reasons": [
+          "流通市值58亿·接力佳",
+          "封成比0.90>0.5·封单充足",
+          "封单强度0.020·资金坚决",
+          "封死未炸板",
+          "股性尚可(5次)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "143409",
+          "seal_amount": 11820.0,
+          "board_type": "工业金属",
+          "float_market_cap": 58.0,
+          "next_day_expect": "次日预期平开或低开，关注弱转强",
+          "seal_ratio": 0.9,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0203,
+          "limit_up_count": 5,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "300684",
+        "name": "中石科技",
+        "score": 61,
+        "reasons": [
+          "流通市值138亿",
+          "早盘秒板(≤10:00)",
+          "封成比5.13>1.0·极强",
+          "封单强度0.106·资金坚决",
+          "封死未炸板",
+          "股性待验证(年涨停≤1)",
+          "代码段逆势(sz3≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "092500",
+          "seal_amount": 145389.0,
+          "board_type": "电子化学",
+          "float_market_cap": 138.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 5.13,
+          "volume_type": "缩量加速",
+          "seal_strength": 0.1055,
+          "limit_up_count": 1,
+          "segment": "sz3",
+          "auction_forecast": "次日大概率一字板或T字板，竞价涨幅+7%以上",
+          "action_plan": "若次日竞价缩量高开→持仓不动；若竞价爆量→看承接再决定",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002418",
+        "name": "康盛股份",
+        "score": 61,
+        "reasons": [
+          "流通市值46亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封单适量",
+          "股性活跃(15次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093100",
+          "seal_amount": 8974.0,
+          "board_type": "家电零部",
+          "float_market_cap": 46.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.28,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0194,
+          "limit_up_count": 15,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002951",
+        "name": "金时科技",
+        "score": 61,
+        "reasons": [
+          "流通市值73亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封单适量",
+          "股性活跃(22次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093330",
+          "seal_amount": 7462.0,
+          "board_type": "其他电源",
+          "float_market_cap": 73.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.26,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0103,
+          "limit_up_count": 22,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "603382",
+        "name": "海阳科技",
+        "score": 60,
+        "reasons": [
+          "流通市值24亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封成比0.35",
+          "封单强度0.021·资金坚决",
+          "封死未炸板",
+          "股性尚可(5次)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "094438",
+          "seal_amount": 5018.0,
+          "board_type": "化学纤维",
+          "float_market_cap": 24.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.35,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0208,
+          "limit_up_count": 5,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002645",
+        "name": "华宏科技",
+        "score": 60,
+        "reasons": [
+          "流通市值146亿",
+          "封成比0.46",
+          "封单强度0.033·资金坚决",
+          "封死未炸板",
+          "股性活跃(14次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "135648",
+          "seal_amount": 48112.0,
+          "board_type": "环保设备",
+          "float_market_cap": 146.0,
+          "next_day_expect": "次日预期平开或小幅高开",
+          "seal_ratio": 0.46,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0329,
+          "limit_up_count": 14,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "603177",
+        "name": "德创环保",
+        "score": 55,
+        "reasons": [
+          "流通市值21亿·接力佳",
+          "午前封板",
+          "封成比0.66>0.5·封单充足",
+          "封单强度0.030·资金坚决",
+          "封死未炸板",
+          "股性尚可(8次)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "110157",
+          "seal_amount": 6289.0,
+          "board_type": "环境治理",
+          "float_market_cap": 21.0,
+          "next_day_expect": "次日预期高开1-3%",
+          "seal_ratio": 0.66,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0301,
+          "limit_up_count": 8,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+1~3%，竞价量需达昨日3-5%",
+          "action_plan": "竞价符合预期→观察前15分钟量能和分时承接再决定",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "000620",
+        "name": "盈新发展",
+        "score": 55,
+        "reasons": [
+          "流通市值142亿",
+          "分歧回封·关注弱转强",
+          "封单强度0.028·资金坚决",
+          "封死未炸板",
+          "股性活跃(23次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "133400",
+          "seal_amount": 39182.0,
+          "board_type": "房地产开",
+          "float_market_cap": 142.0,
+          "next_day_expect": "次日预期平开或小幅高开",
+          "seal_ratio": 0.25,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0277,
+          "limit_up_count": 23,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "000950",
+        "name": "重药控股",
+        "score": 53,
+        "reasons": [
+          "流通市值108亿",
+          "早盘秒板(≤10:00)",
+          "分歧回封·关注弱转强",
+          "封死未炸板",
+          "股性尚可(7次)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "094630",
+          "seal_amount": 6781.0,
+          "board_type": "医药商业",
+          "float_market_cap": 108.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.19,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0063,
+          "limit_up_count": 7,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "002628",
+        "name": "成都路桥",
+        "score": 46,
+        "reasons": [
+          "流通市值42亿·接力佳",
+          "分歧回封·关注弱转强",
+          "封单适量",
+          "封死未炸板",
+          "股性尚可(7次)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "142109",
+          "seal_amount": 7588.0,
+          "board_type": "基础建设",
+          "float_market_cap": 42.0,
+          "next_day_expect": "次日预期平开或低开，关注弱转强",
+          "seal_ratio": 0.27,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0181,
+          "limit_up_count": 7,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "301419",
+        "name": "阿莱德",
+        "score": 45,
+        "reasons": [
+          "流通市值37亿·接力佳",
+          "午前封板",
+          "封成比0.41",
+          "封单强度0.049·资金坚决",
+          "封死未炸板",
+          "代码段逆势(sz3≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "103142",
+          "seal_amount": 18130.0,
+          "board_type": "通信设备",
+          "float_market_cap": 37.0,
+          "next_day_expect": "次日预期高开1-3%",
+          "seal_ratio": 0.41,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0486,
+          "limit_up_count": 2,
+          "segment": "sz3",
+          "auction_forecast": "次日竞价涨幅+1~3%，竞价量需达昨日3-5%",
+          "action_plan": "竞价符合预期→观察前15分钟量能和分时承接再决定",
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "600288",
+        "name": "大恒科技",
+        "score": 44,
+        "reasons": [
+          "流通市值58亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封单强度0.031·资金坚决",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "094135",
+          "seal_amount": 17843.0,
+          "board_type": "软件开发",
+          "float_market_cap": 58.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.28,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0309,
+          "limit_up_count": 4,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "003031",
+        "name": "中瓷电子",
+        "score": 44,
+        "reasons": [
+          "封成比0.38",
+          "封单适量",
+          "封死未炸板",
+          "股性活跃(14次年涨停)",
+          "代码段跟随·主攻深主板(0)",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "142630",
+          "seal_amount": 60303.0,
+          "board_type": "通信设备",
+          "float_market_cap": 442.0,
+          "next_day_expect": "次日预期平开或低开，关注弱转强",
+          "seal_ratio": 0.38,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0136,
+          "limit_up_count": 14,
+          "segment": "sz0",
+          "segment_follow": "深主板(0)",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "603725",
+        "name": "天安新材",
+        "score": 42,
+        "reasons": [
+          "流通市值37亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封单强度0.021·资金坚决",
+          "股性尚可(9次)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093452",
+          "seal_amount": 8010.0,
+          "board_type": "家居用品",
+          "float_market_cap": 37.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.21,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0215,
+          "limit_up_count": 9,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true
+        }
+      },
+      {
+        "code": "600829",
+        "name": "人民同泰",
+        "score": 42,
+        "reasons": [
+          "流通市值69亿·接力佳",
+          "分歧回封·关注弱转强",
+          "封单强度0.021·资金坚决",
+          "封死未炸板",
+          "股性活跃(12次年涨停)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "144204",
+          "seal_amount": 14086.0,
+          "board_type": "医药商业",
+          "float_market_cap": 69.0,
+          "next_day_expect": "次日预期平开或低开，关注弱转强",
+          "seal_ratio": 0.26,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0205,
+          "limit_up_count": 12,
+          "segment": "sh6",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "603186",
+        "name": "华正新材",
+        "score": 41,
+        "reasons": [
+          "早盘秒板(≤10:00)",
+          "封成比0.31",
+          "封单适量",
+          "封死未炸板",
+          "股性活跃(18次年涨停)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093730",
+          "seal_amount": 47532.0,
+          "board_type": "元件",
+          "float_market_cap": 263.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.31,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0181,
+          "limit_up_count": 18,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认"
+        }
+      },
+      {
+        "code": "603079",
+        "name": "圣达生物",
+        "score": 41,
+        "reasons": [
+          "流通市值25亿·接力佳",
+          "午前封板",
+          "封成比0.74>0.5·封单充足",
+          "封单强度0.034·资金坚决",
+          "股性待验证(年涨停≤1)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "104402",
+          "seal_amount": 8590.0,
+          "board_type": "化学制品",
+          "float_market_cap": 25.0,
+          "next_day_expect": "次日预期高开1-3%",
+          "seal_ratio": 0.74,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0339,
+          "limit_up_count": 1,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+1~3%，竞价量需达昨日3-5%",
+          "action_plan": "竞价符合预期→观察前15分钟量能和分时承接再决定【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "600272",
+        "name": "开开实业",
+        "score": 40,
+        "reasons": [
+          "流通市值28亿·接力佳",
+          "早盘秒板(≤10:00)",
+          "封单适量",
+          "股性尚可(7次)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "094400",
+          "seal_amount": 4316.0,
+          "board_type": "医药商业",
+          "float_market_cap": 28.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.06,
+          "volume_type": "分歧较大",
+          "seal_strength": 0.0153,
+          "limit_up_count": 7,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "603089",
+        "name": "正裕工业",
+        "score": 40,
+        "reasons": [
+          "流通市值23亿·接力佳",
+          "上午封板(≤10:30)",
+          "封成比0.62>0.5·封单充足",
+          "封单适量",
+          "股性待验证(年涨停≤1)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "101502",
+          "seal_amount": 3609.0,
+          "board_type": "汽车零部",
+          "float_market_cap": 23.0,
+          "next_day_expect": "次日预期高开3-6%",
+          "seal_ratio": 0.62,
+          "volume_type": "健康换手",
+          "seal_strength": 0.0154,
+          "limit_up_count": 1,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "600815",
+        "name": "厦工股份",
+        "score": 40,
+        "reasons": [
+          "流通市值71亿·接力佳",
+          "封成比0.30",
+          "封单适量",
+          "封死未炸板",
+          "股性活跃(16次年涨停)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "142019",
+          "seal_amount": 12938.0,
+          "board_type": "工程机械",
+          "float_market_cap": 71.0,
+          "next_day_expect": "次日预期平开或低开，关注弱转强",
+          "seal_ratio": 0.3,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0183,
+          "limit_up_count": 16,
+          "segment": "sh6",
+          "auction_forecast": "次日大概率平开或低开-3%~0%",
+          "action_plan": "若竞价高开3%以上→弱转强超预期=买点；平低开=符合预期→观察承接【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      },
+      {
+        "code": "600198",
+        "name": "大唐电信",
+        "score": 39,
+        "reasons": [
+          "流通市值102亿",
+          "早盘秒板(≤10:00)",
+          "封成比0.41",
+          "封单适量",
+          "股性尚可(7次)",
+          "代码段逆势(sh6≠主攻深主板(0))",
+          "10日线>20日线·多头排列",
+          "5日线上·短线强势"
+        ],
+        "detail": {
+          "limit_up_time": "093623",
+          "seal_amount": 16821.0,
+          "board_type": "通信设备",
+          "float_market_cap": 102.0,
+          "next_day_expect": "次日预期高开5-9%或一字板",
+          "seal_ratio": 0.41,
+          "volume_type": "适度分歧",
+          "seal_strength": 0.0165,
+          "limit_up_count": 7,
+          "segment": "sh6",
+          "auction_forecast": "次日竞价涨幅+4~7%，竞价量需达昨日5-10%",
+          "action_plan": "竞价高开+放量=超预期→可竞价上车；缩量高开=诱多→等分时回调确认【弱转强候补】若次日高开3%以上且竞价量>昨日5%，构成弱转强买点",
+          "weak_to_strong_candidate": true,
+          "ma_bullish": true
+        }
+      }
+    ],
+    "segment_stats": {
+      "dominant": "sz0",
+      "label": "深主板(0)",
+      "counts": {
+        "sh6": 3,
+        "sz0": 6,
+        "sz3": 2,
+        "other": 0
+      },
+      "max_cons": {
+        "sh6": 3,
+        "sz0": 3,
+        "sz3": 5,
+        "other": 0
+      },
+      "total": 11
+    },
+    "_cached": false
+  }
+}

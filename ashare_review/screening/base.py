@@ -1,5 +1,5 @@
 """筛选器基类"""
-import os, struct
+import os, struct, threading
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict
 from ..data.models import ScreeningResult
@@ -25,6 +25,21 @@ def _board_limit_threshold(code: str) -> float:
     return _BOARD_LIMIT['main']
 
 
+def _code_segment(code: str) -> str:
+    """股票代码段分组：沪(6) / 深主板(0) / 创业板(3) / 其他(北交所等)
+
+    逻辑哥接力战法"代码段跟随"用：市场晋级集中在哪个代码段就跟哪个——
+    晋级都是 6 开头(沪)就都做 6 票，只有 0 开头(深)有强度就做 0 票。
+    """
+    if code.startswith('6'):
+        return 'sh6'
+    if code.startswith('0'):
+        return 'sz0'
+    if code.startswith('3'):
+        return 'sz3'
+    return 'other'
+
+
 class BaseScreener(ABC):
     def __init__(self, tdx: TdxReader = None, ak_fetcher: AkshareFetcher = None):
         self.tdx = tdx or TdxReader()
@@ -33,30 +48,50 @@ class BaseScreener(ABC):
         self._name_map_loaded = False
         self._limit_up_cache: Dict[str, int] = {}  # code -> count
 
+        # 实例级别缓存（修复类级别共享导致的多线程竞态）
+        self._name_lock = threading.Lock()
+        self._auction_name_map: Dict[str, str] = {}
+        self._auction_name_loaded = False
+        self._sector_map: Dict[str, str] = {}
+        self._sector_map_loaded = False
+
     def _get_name(self, code: str) -> str:
-        """根据代码获取股票名称"""
+        """根据代码获取股票名称（多源回退）"""
         if not self._name_map_loaded:
             self._load_name_map()
-        return self._name_map.get(code, '')
+        name = self._name_map.get(code, '')
+        # 回退到竞价数据
+        if not name:
+            name = self._get_name_from_auction(code)
+        return name
 
     def _load_name_map(self):
-        """从akshare或TDX缓存加载代码→名称映射"""
-        try:
-            spot_df = self.ak.get_spot_df()
-            for _, row in spot_df.iterrows():
-                c = str(row.get('代码', '')).zfill(6)
-                n = str(row.get('名称', ''))
-                if c and n:
-                    self._name_map[c] = n
-        except Exception:
-            pass
-        self._name_map_loaded = True
+        """从多个数据源加载代码→名称映射（线程安全）"""
+        with self._name_lock:
+            if self._name_map_loaded:
+                return
+            # 1. spot_df（行情快照，覆盖面最广）
+            try:
+                spot_df = self.ak.get_spot_df()
+                for _, row in spot_df.iterrows():
+                    c = str(row.get('代码', '')).zfill(6)
+                    n = str(row.get('名称', ''))
+                    if c and n:
+                        self._name_map[c] = n
+            except Exception:
+                pass
 
-    _auction_name_map: Dict[str, str] = {}
-    _auction_name_loaded = False
+            # 2. 涨停池（通常有名字，且包含最近活跃股票）
+            try:
+                limit_ups = self.ak.get_limit_up_pool()
+                for lu in limit_ups:
+                    if lu.code and lu.name:
+                        if lu.code not in self._name_map or not self._name_map[lu.code]:
+                            self._name_map[lu.code] = lu.name
+            except Exception:
+                pass
 
-    _sector_map: Dict[str, str] = {}
-    _sector_map_loaded = False
+            self._name_map_loaded = True
 
     def _get_sector(self, code: str) -> str:
         """获取股票所属板块/行业（从涨停池的 board_type 字段）。
@@ -124,6 +159,44 @@ class BaseScreener(ABC):
             prev_close = close
         self._limit_up_cache[code] = count
         return count
+
+    def segment_stats(self, limit_ups: list = None) -> dict:
+        """统计涨停池晋级(连板≥2)票的代码段分布，判断市场主攻方向（代码段跟随）。
+
+        逻辑哥接力战法：市场连板晋级集中在哪个代码段就跟哪个——
+        晋级都是 6 开头(沪)就都做 6 票，只有 0 开头(深)有强度就做 0 票。
+        晋级信号太弱(<3只晋级票)或主攻段落在北交所时返回 dominant=None，
+        调用方跳过该加分（避免低信号日误伤）。
+
+        Returns:
+            {'dominant': 'sh6'|'sz0'|'sz3'|None, 'label': str,
+             'counts': {...}, 'max_cons': {...}, 'total': int}
+        """
+        if limit_ups is None:
+            try:
+                limit_ups = self.ak.get_limit_up_pool()
+            except Exception:
+                limit_ups = []
+        labels = {'sh6': '沪主板/科创(6)', 'sz0': '深主板(0)',
+                  'sz3': '创业板(3)', 'other': '北交所/其他'}
+        counts = {'sh6': 0, 'sz0': 0, 'sz3': 0, 'other': 0}
+        max_cons = {'sh6': 0, 'sz0': 0, 'sz3': 0, 'other': 0}
+        for lu in limit_ups:
+            cons = getattr(lu, 'consecutive', 0) or 0
+            if cons < 2:
+                continue  # 只看晋级票
+            seg = _code_segment(lu.code)
+            counts[seg] += 1
+            max_cons[seg] = max(max_cons[seg], cons)
+        total = sum(counts.values())
+        dominant = max(counts, key=lambda s: (counts[s], max_cons[s]))
+        if total < 3 or counts[dominant] == 0 or dominant == 'other':
+            dominant = None
+        return {
+            'dominant': dominant,
+            'label': labels.get(dominant, ''),
+            'counts': counts, 'max_cons': max_cons, 'total': total,
+        }
 
     @abstractmethod
     def screen(self, **kwargs) -> List[ScreeningResult]:

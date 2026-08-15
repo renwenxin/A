@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A股复盘选股系统</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="">首页</a>
+        <a href="/screening" class="">选股面板</a>
+        <a href="/review" class="active">复盘报告</a>
+        <a href="/chat" class="">AI投研</a>
+    </nav>
+    <main>
+<h1>复盘报告 — 2026-06-19</h1>
+
+<!-- AI 市场综述 -->
+<div class="ai-summary-box" id="ai-summary-box">
+    <button onclick="loadAISummary()" class="btn-ai-summary">🤖 生成AI市场综述</button>
+    <div id="ai-summary-content"></div>
+</div>
+
+<script>
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function loadAISummary() {
+    const el = document.getElementById('ai-summary-content');
+    el.innerHTML = '<p>生成中...</p>';
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            message: '请根据以下复盘数据生成今日A股市场综述：涨停总数0，封板率0.0%，最高连板0板... 请给出：1.市场总览 2.热点板块 3.情绪周期 4.竞价预期 5.操作建议。'
+        })
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('服务器错误 ' + r.status);
+        return r.json();
+    })
+    .then(data => {
+        if (!data.task_id) throw new Error('未获取到分析任务');
+        let es = new EventSource('/api/chat/stream/' + data.task_id);
+        es.onmessage = function(e) {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'trading_plan') {
+                    el.innerHTML = '<div class="ai-review">' + escapeHtml(msg.data.rationale || '') + '</div>';
+                } else if (msg.type === 'error') {
+                    el.innerHTML = '<p class="error">生成失败: ' + escapeHtml(msg.data.message || '') + '</p>';
+                    es.close();
+                } else if (msg.type === 'done') {
+                    es.close();
+                }
+            } catch (err) {}
+        };
+        es.onerror = function() {
+            if (el.innerHTML === '<p>生成中...</p>') {
+                el.innerHTML = '<p class="error">连接中断，请重试</p>';
+            }
+            es.close();
+        };
+    })
+    .catch(e => {
+        el.innerHTML = '<p class="error">请求失败: ' + escapeHtml(e.message) + '</p>';
+    });
+}
+</script>
+
+
+<!-- ====== 情绪周期节点（新增） ====== -->
+
+<div class="cycle-box cycle-bingdian">
+    <div class="cycle-header">
+        <span class="cycle-stage">📍 ❄ 冰点期</span>
+        <span class="cycle-risk">风险等级: <strong>极高</strong></span>
+    </div>
+    <p class="cycle-desc">市场情绪降至谷底，涨停家数稀少仅0只，封板率仅0%。连板高度被压至0板，恐慌情绪浓厚。但冰点往往意味着否极泰来——如果出现新题材超预期竞价，可能是新周期萌芽。此时应空仓或极小仓位试错首板启动。</p>
+    <p class="cycle-action"><strong>💡 操作建议：</strong>空仓观望或极小仓位试错新题材首板</p>
+    
+    <div class="cycle-metrics">
+        <span>涨停0只</span>
+        <span>封板率0.0%</span>
+        <span>最高0连板</span>
+        <span>一字板占比0.0%</span>
+        <span>高度受压制，需等待破局者出现</span>
+    </div>
+    
+</div>
+
+
+<!-- ====== 涨停总览 ====== -->
+<div class="stats">
+    <div class="stat-card"><strong>0</strong><br>涨停总数</div>
+    <div class="stat-card"><strong>0</strong><br>封死</div>
+    <div class="stat-card"><strong>0</strong><br>炸板</div>
+    <div class="stat-card"><strong>0.0%</strong><br>封板率</div>
+    <div class="stat-card"><strong>0</strong><br>最高连板</div>
+</div>
+
+<!-- ====== 竞价预期预测（新增） ====== -->
+
+<h2>🔮 次日竞价预期</h2>
+<div class="forecast-box forecast-观望">
+    <p><strong>预期：观望</strong></p>
+    <p>涨停力度不足，次日竞价大概率平淡。等竞价结束后看清方向再动手。</p>
+    <div class="forecast-stats">
+        <span>🏃 早盘秒板: <strong>0</strong>只</span>
+        <span>☀️ 上午封板: <strong>0</strong>只</span>
+        <span>🌤 下午封板: <strong>0</strong>只</span>
+        <span>🔒 一字板: <strong>0</strong>只</span>
+    </div>
+    
+</div>
+
+
+<!-- ====== 涨停时间分布 ====== -->
+<h2>⏱ 涨停时间分布</h2>
+<ul>
+    <li>早盘(&lt;10:30): <strong>0</strong>只</li>
+    <li>上午(10:30-11:30): <strong>0</strong>只</li>
+    <li>下午: <strong>0</strong>只</li></ul>
+
+<!-- ====== 大盘表现 ====== -->
+<h2>📊 大盘表现</h2>
+
+<div class="stats">
+    <div class="stat-card"><strong>0</strong><br>成交额(亿)</div>
+    <div class="stat-card up"><strong>0</strong><br>上涨</div>
+    <div class="stat-card down"><strong>0</strong><br>下跌</div>
+    <div class="stat-card"><strong>0</strong><br>平盘</div>
+    <div class="stat-card"><strong>0.0%</strong><br>平均涨跌</div>
+</div>
+
+<!-- ====== 板块涨停潮分析（新增） ====== -->
+
+<h2>🔥 板块涨停分布</h2>
+
+
+
+
+
+
+
+<!-- ====== 热点板块 ====== -->
+
+<h2>🔥 涨停行业分布 Top 15</h2>
+<p class="section-note">概念/行业板块行情接口暂时不可用，以下为涨停池按行业聚合</p>
+
+
+
+<!-- ====== 连板梯队 ====== -->
+<h2>🪜 连板梯队</h2>
+<table>
+    <tr><th>代码</th><th>名称</th><th>连板</th><th>板型</th><th>涨停时间</th><th>封单(万)</th><th>成交额(亿)</th></tr>
+    
+</table>
+
+<!-- ====== 弱转强候选（新增） ====== -->
+
+
+<!-- ====== 筹码分布信号（新增） ====== -->
+
+
+<!-- ====== 短线情绪 + 精选标的 ====== -->
+
+<h2>💡 短线情绪判断</h2>
+<div class="sentiment-box mood-冰点">
+    <p><strong>情绪等级：冰点</strong></p>
+    <p>市场情绪降至谷底，涨停家数稀少仅0只，封板率仅0%。连板高度被压至0板，恐慌情绪浓厚。但冰点往往意味着否极泰来——如果出现新题材超预期竞价，可能是新周期萌芽。此时应空仓或极小仓位试错首板启动。</p>
+    <p class="sentiment-summary">涨停0只，封板率0.0%，炸板0只（0.0%），最高连板0板。周期阶段：冰点期。空仓观望或极小仓位试错新题材首板</p>
+</div>
+
+
+<p class="empty-hint">今日暂无满足条件的精选标的，建议观望</p>
+
+
+
+<!-- ====== 龙虎榜 ====== -->
+<h2>🐉 龙虎榜 Top 10</h2>
+
+<p class="empty-hint">暂无龙虎榜数据 — 今日可能无上榜标的，或检查 akshare 版本</p>
+
+
+<!-- ====== 事件驱动日历（新增） ====== -->
+
+
+<!-- 持续性主题 -->
+
+<h2>🔥 当前市场主线主题</h2>
+<div class="event-themes">
+    
+    <div class="theme-card theme-ongoing">
+        <div class="theme-header">
+            <span class="theme-name">⭐⭐⭐⭐⭐ 半导体涨价周期</span>
+            <span class="theme-status status-ongoing">进行中</span>
+        </div>
+        <div class="theme-sectors">
+            
+            <span class="sector-tag">模拟芯片</span>
+            
+            <span class="sector-tag">功率半导体</span>
+            
+            <span class="sector-tag">存储芯片</span>
+            
+            <span class="sector-tag">晶圆代工</span>
+            
+        </div>
+        <p class="theme-desc">德州仪器/英飞凌涨价传导，AI驱动供需错配。模拟芯片/功率半导体/MCU全线上涨，板块β行情。</p>
+    </div>
+    
+    <div class="theme-card theme-ongoing">
+        <div class="theme-header">
+            <span class="theme-name">⭐⭐⭐⭐ 中报业绩预告密集披露期</span>
+            <span class="theme-status status-ongoing">进行中</span>
+        </div>
+        <div class="theme-sectors">
+            
+            <span class="sector-tag">全市场</span>
+            
+            <span class="sector-tag">业绩超预期</span>
+            
+        </div>
+        <p class="theme-desc">中报预告窗口开启，业绩超预期标的将获资金追捧，不达预期面临调整。重点关注AI算力链业绩兑现情况。</p>
+    </div>
+    
+    <div class="theme-card theme-ongoing">
+        <div class="theme-header">
+            <span class="theme-name">⭐⭐⭐⭐ 厄尔尼诺夏季高温主题</span>
+            <span class="theme-status status-ongoing">进行中</span>
+        </div>
+        <div class="theme-sectors">
+            
+            <span class="sector-tag">空调/白电</span>
+            
+            <span class="sector-tag">电力/火电</span>
+            
+            <span class="sector-tag">制冷剂</span>
+            
+            <span class="sector-tag">啤酒/饮料</span>
+            
+        </div>
+        <p class="theme-desc">预计今夏用电负荷同比+9000万千瓦，高温驱动空调/制冷需求爆发。火电价值重估+家电旺季双重逻辑。</p>
+    </div>
+    
+    <div class="theme-card theme-ongoing">
+        <div class="theme-header">
+            <span class="theme-name">⭐⭐⭐⭐ 电力超级周期</span>
+            <span class="theme-status status-ongoing">进行中</span>
+        </div>
+        <div class="theme-sectors">
+            
+            <span class="sector-tag">火电</span>
+            
+            <span class="sector-tag">新能源运营</span>
+            
+            <span class="sector-tag">电力设备</span>
+            
+            <span class="sector-tag">特高压</span>
+            
+        </div>
+        <p class="theme-desc">AI算力中心耗电激增+夏季用电高峰+电力市场化改革。火电从&#39;弃儿&#39;变&#39;宠儿&#39;，新能源运营商价值重估。</p>
+    </div>
+    
+    <div class="theme-card theme-ongoing">
+        <div class="theme-header">
+            <span class="theme-name">⭐⭐⭐⭐ 中美关系缓和窗口</span>
+            <span class="theme-status status-ongoing">进行中</span>
+        </div>
+        <div class="theme-sectors">
+            
+            <span class="sector-tag">出口链</span>
+            
+            <span class="sector-tag">科技</span>
+            
+            <span class="sector-tag">新能源</span>
+            
+            <span class="sector-tag">CXO</span>
+            
+        </div>
+        <p class="theme-desc">关税减免预期+科技合作重启。利好出口链、CXO、新能源等受关税影响大的方向。</p>
+    </div>
+    
+    <div class="theme-card theme-ongoing">
+        <div class="theme-header">
+            <span class="theme-name">⭐⭐⭐⭐ AI智能体产业链爆发</span>
+            <span class="theme-status status-ongoing">进行中</span>
+        </div>
+        <div class="theme-sectors">
+            
+            <span class="sector-tag">AI Agent</span>
+            
+            <span class="sector-tag">企业软件</span>
+            
+            <span class="sector-tag">RPA</span>
+            
+            <span class="sector-tag">AI终端</span>
+            
+        </div>
+        <p class="theme-desc">DeepSeek V4 + 各大厂Agent平台竞相发布。AI应用从&#39;聊天&#39;走向&#39;执行&#39;，企业服务/AI终端迎来商业化拐点。</p>
+    </div>
+    
+</div>
+
+
+<!-- 近期热门事件汇总 -->
+
+<h2>📅 近期热门事件汇总</h2>
+<p class="section-note">近两周已发生或正在进行中的重大市场事件，其影响仍在发酵</p>
+<div class="event-list">
+    
+    <div class="event-card event-active">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐ 特斯拉FSD V14入华测试</span>
+            <span class="event-status status-active">进行中（剩余11天）</span>
+        </div>
+        <div class="event-date">2026-06-15 → 2026-06-30</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">智能驾驶</span>
+            
+            <span class="sector-tag">特斯拉产业链</span>
+            
+            <span class="sector-tag">激光雷达</span>
+            
+            <span class="sector-tag">车载摄像头</span>
+            
+            <span class="event-category">科技</span>
+        </div>
+        
+        <p class="event-desc">FSD V14端到端模型入华路测，&#39;马年炒马&#39;。关注特斯拉供应链+智驾方案商。</p>
+        
+    </div>
+    
+    <div class="event-card event-past">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐⭐ SpaceX星舰上市</span>
+            <span class="event-status status-past">5天前结束</span>
+        </div>
+        <div class="event-date">2026-06-12 → 2026-06-14</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">商业航天</span>
+            
+            <span class="sector-tag">卫星互联网</span>
+            
+            <span class="sector-tag">火箭发动机</span>
+            
+            <span class="sector-tag">航天材料</span>
+            
+            <span class="event-category">科技</span>
+        </div>
+        
+        <p class="event-desc">史上最大商业航天IPO，全球航天板块估值锚。关注A股卫星/火箭产业链映射标的。</p>
+        
+    </div>
+    
+    <div class="event-card event-past">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐⭐ 华为HDC 2026开发者大会</span>
+            <span class="event-status status-past">5天前结束</span>
+        </div>
+        <div class="event-date">2026-06-12 → 2026-06-14</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">国产算力</span>
+            
+            <span class="sector-tag">鸿蒙生态</span>
+            
+            <span class="sector-tag">昇腾AI</span>
+            
+            <span class="sector-tag">信创</span>
+            
+            <span class="event-category">科技</span>
+        </div>
+        
+        <p class="event-desc">鸿蒙NEXT + 昇腾超节点 + 国产GPU生态。DeepSeek V4国产算力适配是核心看点。关注鲲鹏/昇腾产业链。</p>
+        
+    </div>
+    
+    <div class="event-card event-past">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐⭐ 苹果WWDC 2026</span>
+            <span class="event-status status-past">7天前结束</span>
+        </div>
+        <div class="event-date">2026-06-08 → 2026-06-12</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">苹果产业链</span>
+            
+            <span class="sector-tag">折叠屏</span>
+            
+            <span class="sector-tag">消费电子</span>
+            
+            <span class="sector-tag">AI终端</span>
+            
+            <span class="sector-tag">MR/XR</span>
+            
+            <span class="event-category">科技</span>
+        </div>
+        
+        <p class="event-desc">iOS 20 + AI全面整合。折叠屏软件生态铺垫，为秋季折叠屏硬件发布做准备。关注立讯/歌尔/蓝思等果链核心标的。</p>
+        
+    </div>
+    
+</div>
+
+
+<!-- 后续热门事件梳理 -->
+
+<h2>🔮 后续热门事件梳理</h2>
+<p class="section-note">未来30天即将发生的重大事件，可提前布局相关板块</p>
+<div class="event-list">
+    
+    <div class="event-card event-upcoming">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐ 链博会（中国国际供应链促进博览会）</span>
+            <span class="event-status status-upcoming">3天后开始</span>
+        </div>
+        <div class="event-date">2026-06-22 → 2026-06-26</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">新质生产力</span>
+            
+            <span class="sector-tag">供应链安全</span>
+            
+            <span class="sector-tag">先进制造</span>
+            
+            <span class="sector-tag">绿色低碳</span>
+            
+            <span class="event-category">政策</span>
+        </div>
+        
+        <p class="event-desc">国家级供应链主题展会，&#39;十五五&#39;新质生产力方向集中展示。关注&#39;六张网&#39;新基建+供应链安全主线。</p>
+        
+    </div>
+    
+    <div class="event-card event-upcoming">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐ 夏季达沃斯论坛</span>
+            <span class="event-status status-upcoming">6天后开始</span>
+        </div>
+        <div class="event-date">2026-06-25 → 2026-06-27</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">科技创新</span>
+            
+            <span class="sector-tag">能源转型</span>
+            
+            <span class="sector-tag">数字经济</span>
+            
+            <span class="event-category">政策</span>
+        </div>
+        
+        <p class="event-desc">全球经济与科技趋势展望。夏季达沃斯期间科技创新板块通常有情绪提振。</p>
+        
+    </div>
+    
+    <div class="event-card event-upcoming">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐⭐ 二十届四中全会（预期）</span>
+            <span class="event-status status-upcoming">12天后开始</span>
+        </div>
+        <div class="event-date">2026-07-01 → 2026-07-05</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">政策主线</span>
+            
+            <span class="sector-tag">国企改革</span>
+            
+            <span class="sector-tag">新质生产力</span>
+            
+            <span class="event-category">政策</span>
+        </div>
+        
+        <p class="event-desc">重要政策窗口，关注&#39;十五五&#39;规划方向定调、科技体制改革、国企改革深化等政策信号。</p>
+        
+    </div>
+    
+    <div class="event-card event-ongoing">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐ 英伟达Rubin平台供应链备货启动</span>
+            <span class="event-status status-ongoing">进行中</span>
+        </div>
+        <div class="event-date">2026-07-01 → 2026-07-31</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">PCB/CCL</span>
+            
+            <span class="sector-tag">铜缆/AEC</span>
+            
+            <span class="sector-tag">光模块</span>
+            
+            <span class="sector-tag">液冷</span>
+            
+            <span class="event-category">科技</span>
+        </div>
+        
+        <p class="event-desc">Rubin平台Q3量产出货，上游材料（Q布/石英布）供需缺口驱动量价齐升。覆铜板/PCB/铜连接进入旺季备货。</p>
+        
+    </div>
+    
+    <div class="event-card event-upcoming">
+        <div class="event-header">
+            <span class="event-name">⭐⭐⭐⭐⭐ 长鑫存储IPO（预期）</span>
+            <span class="event-status status-upcoming">16天后开始</span>
+        </div>
+        <div class="event-date">2026-07-05 → 2026-07-15</div>
+        <div class="event-sectors">
+            
+            <span class="sector-tag">存储芯片</span>
+            
+            <span class="sector-tag">半导体设备</span>
+            
+            <span class="sector-tag">半导体材料</span>
+            
+            <span class="event-category">科技</span>
+        </div>
+        
+        <p class="event-desc">国产DRAM龙头IPO，带动存储产业链估值重估。关注设备/材料/封测等国产替代标的。</p>
+        
+    </div>
+    
+</div>
+
+<div class="event-strategy-note">
+    <p>💡 <strong>事件驱动策略要点：</strong></p>
+    <ul>
+        <li>事件发生前1-2周是布局窗口，事件落地当日谨防"见光死"</li>
+        <li>持续性主题（如半导体涨价、高温夏季）可中线持有，事件驱动型主题短线操作为主</li>
+        <li>关注事件叠加：多事件共振的方向（如AI算力+英伟达GTC+华为HDC）强度更高</li>
+        <li>重要事件（5⭐）需提前梳理相关标的，建立观察池</li>
+    </ul>
+</div>
+
+
+
+
+</main>
+</body>
+</html>

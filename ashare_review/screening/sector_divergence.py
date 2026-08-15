@@ -30,11 +30,23 @@ class SectorDivergenceScreener(BaseScreener):
     TOP_RESULTS = 25             # 返回结果数
     SCORE_PER_DIMENSION = 20     # 每维度满分
 
-    def screen(self) -> List[ScreeningResult]:
+    def screen(self, trade_date: str = None) -> List[ScreeningResult]:
         # ---- 1. 获取昨日交易日 ----
         calendar = TradingCalendar()
-        yesterday = calendar.prev_trading_day()
-        yesterday_str = yesterday.strftime('%Y%m%d')
+        if trade_date:
+            # 回测模式：trade_date 为筛选日（即"今日"），向前找昨日
+            from datetime import datetime, timedelta
+            today_dt = datetime.strptime(trade_date, '%Y%m%d').date()
+            # 往回找最近交易日作为"昨日"
+            d = today_dt - timedelta(days=1)
+            while d.weekday() >= 5 or not calendar.is_trading_day(d):
+                d -= timedelta(days=1)
+            yesterday_str = d.strftime('%Y%m%d')
+            is_backtest = True
+        else:
+            yesterday = calendar.prev_trading_day()
+            yesterday_str = yesterday.strftime('%Y%m%d')
+            is_backtest = False
 
         # ---- 2. 获取昨日涨停池 ----
         yesterday_ups = self.ak.get_limit_up_pool(trade_date=yesterday_str)
@@ -60,24 +72,25 @@ class SectorDivergenceScreener(BaseScreener):
             for lu in stocks:
                 yesterday_map[lu.code] = lu
 
-        # ---- 4. 获取今日实时行情（盘中补充） ----
+        # ---- 4. 获取今日实时行情（回测模式跳过，用TDX历史数据替代） ----
         today_spot: Dict[str, dict] = {}
-        try:
-            spot_df = self.ak.get_spot_df()
-            if spot_df is not None and not spot_df.empty:
-                for _, row in spot_df.iterrows():
-                    c = str(row.get('代码', '')).zfill(6)
-                    try:
-                        pct = float(row.get('涨跌幅', 0))
-                    except (ValueError, TypeError):
-                        pct = 0
-                    try:
-                        price = float(row.get('最新价', 0))
-                    except (ValueError, TypeError):
-                        price = 0
-                    today_spot[c] = {'price': price, 'change_pct': pct}
-        except Exception:
-            pass
+        if not is_backtest:
+            try:
+                spot_df = self.ak.get_spot_df()
+                if spot_df is not None and not spot_df.empty:
+                    for _, row in spot_df.iterrows():
+                        c = str(row.get('代码', '')).zfill(6)
+                        try:
+                            pct = float(row.get('涨跌幅', 0))
+                        except (ValueError, TypeError):
+                            pct = 0
+                        try:
+                            price = float(row.get('最新价', 0))
+                        except (ValueError, TypeError):
+                            price = 0
+                        today_spot[c] = {'price': price, 'change_pct': pct}
+            except Exception:
+                pass
 
         # ---- 5. 对每个热点板块的股票做抗跌分析 ----
         all_results = []
@@ -93,7 +106,24 @@ class SectorDivergenceScreener(BaseScreener):
                     if len(df) < 20:
                         continue
                     df = enrich_all(df)
-                    latest = df.iloc[-1]
+                    if is_backtest and trade_date:
+                        # 回测模式：只用 <= trade_date 的数据
+                        from datetime import datetime, date as dt_date
+                        try:
+                            target_d = datetime.strptime(trade_date, '%Y%m%d').date()
+                        except ValueError:
+                            target_d = dt_date.today()
+                        # 过滤数据到目标日
+                        df_filtered = df[df['trade_date'].apply(
+                            lambda x: (x.date() if hasattr(x, 'date') else x) <= target_d
+                        )]
+                        if len(df_filtered) < 20:
+                            continue
+                        latest = df_filtered.iloc[-1]
+                        # 用完整的df做计算（均线等），但latest来自过滤后
+                        df = df_filtered
+                    else:
+                        latest = df.iloc[-1]
                     if latest.get('close', 0) <= 0:
                         continue
                     sector_data.append((lu.code, df, latest))

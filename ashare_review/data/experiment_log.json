@@ -1,0 +1,92 @@
+[
+  {
+    "timestamp": "2026-07-18T19:55:35.207792",
+    "dataset": "feature_store.csv",
+    "version": "Gold V1",
+    "clean_features": 31,
+    "removed_leaks": [
+      "is_zt (label leak)",
+      "持有天数 (post-trade)"
+    ],
+    "n_total": 721,
+    "train_split": "504 / 217 (70/30 time-split)",
+    "targets": [
+      "label_3d_return",
+      "label_return_gt_5pct"
+    ],
+    "results": {
+      "regression_top10_ret": 2.24,
+      "regression_top20_ret": 3.97,
+      "classification_top10_ret": 1.05,
+      "classification_top20_ret": 5.17,
+      "baseline_ret": 2.16,
+      "cross_sectional_spread": 3.03,
+      "significant_factors": 14,
+      "total_factors": 31
+    },
+    "top_factors_by_ic": [
+      [
+        "mkt_sh_above_ma60",
+        -0.0941
+      ],
+      [
+        "lu_60d",
+        -0.0791
+      ],
+      [
+        "days_since_last_zt",
+        0.0676
+      ],
+      [
+        "mkt_zt_count",
+        -0.0669
+      ],
+      [
+        "mkt_7pct_count",
+        -0.0597
+      ]
+    ],
+    "top_factors_by_spread": [
+      [
+        "lu_250d",
+        3.97
+      ],
+      [
+        "pre_price_compression",
+        3.81
+      ],
+      [
+        "mkt_avg_7pct_gain",
+        -3.0
+      ],
+      [
+        "sec_pos_days_3d",
+        -2.78
+      ],
+      [
+        "量比MAVOL180",
+        2.77
+      ]
+    ]
+  },
+  {
+    "timestamp": "2026-07-18T19:59:41.763708",
+    "name": "Rank + Sequence + Interaction features",
+    "data": "feature_store.csv",
+    "old_features": 31,
+    "new_features_added": 43,
+    "new_categories": [
+      "rank_within_day",
+      "sequence_patterns",
+      "interactions"
+    ],
+    "n_total": 721,
+    "split": "train 504 / test 217",
+    "results": {
+      "old_top10_ret": 2.24,
+      "new_top10_ret": -1.05,
+      "delta_top10": -3.29,
+      "baseline_ret": 2.16
+    }
+  }
+]

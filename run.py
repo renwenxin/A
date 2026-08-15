@@ -5,7 +5,7 @@ from ashare_review.web.app import run
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("  A股复盘选股系统")
-    print("  浏览器打开 http://127.0.0.1:5000")
+    print("  A股复盘选股系统 — 启动突破 V3")
+    print("  浏览器打开 http://127.0.0.1:5000/breakout_v3")
     print("=" * 50)
     run(debug=True)

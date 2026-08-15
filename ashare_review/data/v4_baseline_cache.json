@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "generated_at": "2026-07-31 19:25:29",
+    "backtest_period": "2022-01-01 ~ 2026-07-31",
+    "total_trading_days": 1195,
+    "note": "Corrected cache - drawdown from trade-level equity curve."
+  },
+  "full_cycle": {
+    "trades": 713,
+    "wins": 337,
+    "losses": 376,
+    "win_rate": 47.3,
+    "avg_net_return": 1.3,
+    "avg_win": 10.6,
+    "avg_loss": -7.04,
+    "profit_factor": 1.35,
+    "cumulative_return": 92.6,
+    "max_drawdown": 25.22,
+    "sharpe_ratio": 1.64,
+    "avg_hold_days": 4.8,
+    "annualized_return": 15.4,
+    "sh_above_ma20_pct": 51.3,
+    "avg_positions": 3.0
+  },
+  "bear_2022_2024": {
+    "trades": 186,
+    "wins": 80,
+    "losses": 106,
+    "win_rate": 43.0,
+    "avg_net_return": 0.54,
+    "avg_win": 12.06,
+    "avg_loss": -8.15,
+    "profit_factor": 1.12,
+    "cumulative_return": 10.1,
+    "max_drawdown": 13.31,
+    "sharpe_ratio": 0.67,
+    "avg_hold_days": 4.6,
+    "annualized_return": 3.3,
+    "avg_positions": 1.6
+  },
+  "bull_2025_2026": {
+    "trades": 527,
+    "wins": 257,
+    "losses": 270,
+    "win_rate": 48.8,
+    "avg_net_return": 1.57,
+    "avg_win": 10.15,
+    "avg_loss": -6.6,
+    "profit_factor": 1.46,
+    "cumulative_return": 82.6,
+    "max_drawdown": 18.87,
+    "sharpe_ratio": 1.98,
+    "avg_hold_days": 4.9,
+    "annualized_return": 46.4,
+    "avg_positions": 4.4
+  }
+}

@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- ==================================================================
+     基金挑选板块 — 按板块筛出符合养基体系五条件的主动基金（每板块 Top5）
+     ================================================================== -->
+<div class="content-area">
+
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>基金挑选</span><span class="sep">›</span><span class="current">按板块 Top5</span>
+    </div>
+    <div class="page-date">
+        📅 <strong id="fund-date">—</strong>
+        <a href="javascript:void(0)" onclick="loadFunds(true)" id="fund-refresh"
+           class="btn-ai-summary" style="text-decoration:none;font-size:0.82em;margin-left:12px;padding:4px 12px;">🔄 刷新</a>
+    </div>
+</div>
+
+<!-- ═══════════════ ① 择时清单（择时 > 择基） ═══════════════ -->
+<div class="card" style="margin-bottom:16px;border-left:6px solid #7c3aed;">
+    <div class="card-body" style="padding:14px 20px;">
+        <div style="font-size:0.95em;font-weight:700;color:#5b21b6;margin-bottom:8px;">⏳ 先择时，再挑基（择时 &gt; 择基）</div>
+        <div style="font-size:0.82em;color:#555;line-height:1.9;">
+            <span class="fund-chip">🟢 黄金建仓点：<strong>4月中旬前后</strong>（年报风险释放后）</span>
+            <span class="fund-chip">🟢 跌上热搜就入场</span>
+            <span class="fund-chip">🟢 发行冰点期优先申购新基（机构低位建仓窗口）</span>
+            <span class="fund-chip">🔴 人声鼎沸处分批止盈（日光基 / 全民热议基金）</span>
+            <span class="fund-chip">📌 卖出验证：中证1000 vs 沪深300 风格持续性、10年期国债收益率</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ ② 五条件说明 ═══════════════ -->
+<div class="card" style="margin-bottom:16px;background:#f8f9fa;border:1px dashed #cbd5e1;">
+    <div class="card-body" style="padding:10px 20px;">
+        <div style="font-size:0.82em;color:#666;line-height:1.9;">
+            筛选依据 · 养基体系五条件：① 混合型（灵活调仓，+8分）② 小规模（剔除 &lt;0.5亿 清盘风险 / &gt;60亿 巨无霸，越小分越高）③ 单压赛道（按简称关键词归板块）④ 看策略不看排名（板块内近1年/近3月/今年来分位 + 回撤稳定性扣分）⑤ 风格匹配（板块由你判断当前主线后自选）。
+            评分 = 业绩45% + 规模25% + 稳定性30%。
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ ③ 关键词搜索 ═══════════════ -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-body" style="padding:12px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:0.9em;font-weight:700;color:#1a1a2e;">🔍 搜赛道/关键词</label>
+        <input id="fund-search-input" type="text" placeholder="如：资源 / 白酒 / AI / 军工 / 半导体 / 医药…"
+               style="flex:1;min-width:240px;padding:7px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.9em;"
+               onkeydown="if(event.key==='Enter')searchFunds()">
+        <button onclick="searchFunds()" class="btn-ai-summary"
+                style="padding:7px 18px;border:none;cursor:pointer;">搜索 Top5</button>
+        <button id="fund-back-btn" onclick="backToSectors()" style="display:none;
+                padding:7px 14px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:0.85em;color:#475569;">← 板块浏览</button>
+    </div>
+</div>
+
+<!-- ═══════════════ ④ 板块 Tabs ═══════════════ -->
+<div id="fund-loading" style="text-align:center;padding:60px 0;color:#888;">
+    <div style="font-size:1.1em;">⏳ 正在拉取基金数据…</div>
+    <div style="font-size:0.82em;margin-top:8px;">首次约需 15~25 秒（天天基金排行 + 雪球规模），之后当日缓存秒开</div>
+</div>
+
+<div id="fund-error" style="display:none;">
+    <div class="card" style="border:2px solid #ef4444;border-left:6px solid #ef4444;background:#fef2f2;">
+        <div class="card-body" style="padding:16px 20px;">
+            <div style="font-size:1.02em;font-weight:700;color:#b91c1c;">❌ 基金筛选失败</div>
+            <div style="font-size:0.85em;color:#7f1d1d;margin-top:8px;"><code id="fund-error-msg"></code></div>
+        </div>
+    </div>
+</div>
+
+<div id="fund-body" style="display:none;">
+    <div class="v2-tabs" id="fund-tabs"></div>
+    <div class="v2-tab-content active" id="fund-panel"></div>
+</div>
+
+<div id="fund-search-body" style="display:none;">
+    <div class="v2-tab-content active" id="fund-search-panel"></div>
+</div>
+
+</div><!-- /content-area -->
+{% endblock %}
+
+{% block scripts %}
+<style>
+.fund-chip {
+    display:inline-block;background:#fff;border:1px solid #e2e8f0;border-radius:5px;
+    padding:2px 10px;margin:0 6px 4px 0;color:#334155;
+}
+.fund-score {
+    display:inline-block;min-width:44px;text-align:center;font-weight:700;color:#fff;
+    background:#7c3aed;border-radius:6px;padding:2px 8px;font-size:0.9em;
+}
+.fund-reason {
+    display:inline-block;background:#f1f5f9;border-radius:4px;padding:1px 7px;margin:2px 4px 2px 0;
+    font-size:0.72em;color:#475569;
+}
+</style>
+<script>
+let FUND_STATE = null;   // API 返回（板块浏览）
+let FUND_ACTIVE = null;  // 当前激活板块 key
+let FUND_MODE = 'browse'; // 'browse' | 'search'
+
+async function loadFunds(force) {
+    const url = '/api/fund_screen' + (force ? '?refresh=1' : '');
+    document.getElementById('fund-loading').style.display = '';
+    document.getElementById('fund-body').style.display = 'none';
+    document.getElementById('fund-error').style.display = 'none';
+    try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        FUND_STATE = data;
+        document.getElementById('fund-date').textContent = data.generated_at;
+        renderTabs();
+        document.getElementById('fund-loading').style.display = 'none';
+        document.getElementById('fund-body').style.display = '';
+    } catch (e) {
+        document.getElementById('fund-loading').style.display = 'none';
+        document.getElementById('fund-error').style.display = '';
+        document.getElementById('fund-error-msg').textContent = String(e.message || e);
+    }
+}
+
+function renderTabs() {
+    const tabsEl = document.getElementById('fund-tabs');
+    tabsEl.innerHTML = FUND_STATE.sectors.map(function (s, i) {
+        const active = i === 0 ? ' active' : '';
+        return '<button class="v2-tab' + active + '" data-sec="' + s.key + '" onclick="switchSector(\'' + s.key + '\')">'
+            + s.name + ' <span class="tab-badge">' + s.picked + '</span></button>';
+    }).join('');
+    const first = FUND_STATE.sectors.find(function (s) { return s.picked > 0; }) || FUND_STATE.sectors[0];
+    switchSector(first.key);
+}
+
+function switchSector(key) {
+    FUND_ACTIVE = key;
+    document.querySelectorAll('#fund-tabs .v2-tab').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.sec === key);
+    });
+    const sec = FUND_STATE.sectors.find(function (s) { return s.key === key; });
+    renderPanel(sec);
+}
+
+function fmtSign(v) {
+    if (v === '—' || v == null) return '<span style="color:#94a3b8">—</span>';
+    const n = parseFloat(v);
+    const cls = n >= 0 ? '#e94560' : '#00a854';   // A股习惯：红涨绿跌
+    return '<span style="color:' + cls + ';font-weight:600;">' + v + '</span>';
+}
+
+function fundTableRows(funds) {
+    return funds.map(function (f, i) {
+        const scaleFlagColor =
+            f.scale_flag === '小规模✓' ? '#059669' :
+            f.scale_flag === '清盘风险' || f.scale_flag === '巨无霸✗' ? '#ef4444' : '#d97706';
+        const reasons = (f.reasons || []).map(function (r) {
+            return '<span class="fund-reason">' + r + '</span>';
+        }).join('');
+        return '<tr>'
+            + '<td>' + (i + 1) + '</td>'
+            + '<td style="font-family:monospace">' + f.code + '</td>'
+            + '<td><strong>' + f.name + '</strong><div style="font-size:0.72em;color:#64748b;margin-top:2px;">'
+            + (f.manager || '经理未知') + ' · ' + (f.established || '') + '</div></td>'
+            + '<td>' + f.kind + '</td>'
+            + '<td>' + f.scale + ' <span style="color:' + scaleFlagColor + ';font-size:0.72em;">' + f.scale_flag + '</span></td>'
+            + '<td>' + fmtSign(f.r1y) + '</td>'
+            + '<td>' + fmtSign(f.ytd) + '</td>'
+            + '<td>' + fmtSign(f.r3m) + '</td>'
+            + '<td>' + fmtSign(f.since) + '</td>'
+            + '<td><span class="fund-score">' + f.score + '</span></td>'
+            + '<td style="max-width:260px;">' + reasons + '</td>'
+            + '</tr>';
+    }).join('');
+}
+
+function renderFundTable(funds, titleHtml, emptyHtml) {
+    if (!funds || funds.length === 0) {
+        return '<p class="empty-hint">' + (emptyHtml || '无符合条件的主动基金') + '</p>';
+    }
+    return titleHtml
+        + '<div class="card"><div class="card-body no-padding"><div class="table-wrap"><table>'
+        + '<tr><th>#</th><th>代码</th><th>名称 / 经理</th><th>类型</th><th>规模</th><th>近1年</th><th>今年来</th><th>近3月</th><th>成立来</th><th>评分</th><th>入选理由</th></tr>'
+        + fundTableRows(funds)
+        + '</table></div></div></div>';
+}
+
+function renderPanel(sec) {
+    const el = document.getElementById('fund-panel');
+    if (!sec || !sec.funds || sec.funds.length === 0) {
+        el.innerHTML = renderFundTable([], '',
+            '该板块暂无符合五条件的主动基金（可能是赛道无主动混合基金，或全部被指数/ETF 占据）');
+        return;
+    }
+    el.innerHTML = renderFundTable(sec.funds,
+        '<div class="section-title">💰 ' + sec.name + ' — 符合养基体系五条件的主动基金 Top' + sec.picked
+        + ' <span style="font-size:0.75em;color:#94a3b8;font-weight:400;">匹配' + sec.matched + '只 / 合格' + sec.candidates + '只</span></div>');
+}
+
+// ── 关键词搜索 ──
+async function searchFunds() {
+    const kw = document.getElementById('fund-search-input').value.trim();
+    if (!kw) { alert('请输入关键词，如：资源 / 白酒 / AI'); return; }
+    document.getElementById('fund-loading').style.display = '';
+    document.getElementById('fund-search-body').style.display = 'none';
+    try {
+        const resp = await fetch('/api/fund_search?q=' + encodeURIComponent(kw));
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        document.getElementById('fund-loading').style.display = 'none';
+
+        FUND_MODE = 'search';
+        document.getElementById('fund-body').style.display = 'none';
+        document.getElementById('fund-back-btn').style.display = '';
+        const panel = document.getElementById('fund-search-panel');
+        if (data.matched === 0) {
+            panel.innerHTML = renderFundTable([], '', data.note || '没有匹配的基金');
+        } else {
+            panel.innerHTML = renderFundTable(data.funds,
+                '<div class="section-title">🔍 搜索「' + data.keyword + '」— 匹配 ' + data.matched + ' 只，选出符合五条件的 Top' + data.funds.length
+                + ' <span style="font-size:0.75em;color:#94a3b8;font-weight:400;">' + data.note + '</span></div>');
+        }
+        document.getElementById('fund-search-body').style.display = '';
+    } catch (e) {
+        document.getElementById('fund-loading').style.display = 'none';
+        document.getElementById('fund-error').style.display = '';
+        document.getElementById('fund-error-msg').textContent = String(e.message || e);
+    }
+}
+
+function backToSectors() {
+    FUND_MODE = 'browse';
+    document.getElementById('fund-search-body').style.display = 'none';
+    document.getElementById('fund-back-btn').style.display = 'none';
+    document.getElementById('fund-body').style.display = '';
+    document.getElementById('fund-search-input').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', function () { loadFunds(false); });
+</script>
+{% endblock %}

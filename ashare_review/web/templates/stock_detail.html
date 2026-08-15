@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="page-header">
+    <div class="page-breadcrumb">
+        <span>数据查询</span><span class="sep">›</span><span class="current">个股详情</span>
+    </div>
+    <div class="page-date">📅 <strong>{{ code }}</strong></div>
+</div>
+<div class="content-area">
 
 {% if error %}
 <div class="error-box"><span class="error-icon">!</span>{{ error }}</div>
-<a href="javascript:history.back()">← 返回</a>
+<div class="back-link"><a href="javascript:history.back()">← 返回</a></div>
 
 {% else %}
 <!-- ====== 头部：代码 + 名称 + 实时涨跌 ====== -->
@@ -14,7 +21,6 @@
         <span class="freshness-badge">● {{ data_freshness }}</span>
     </div>
 
-    <!-- 当日实时价格 + 涨跌幅 -->
     <div class="stock-price-row">
         {% if spot and spot.price %}
         <span class="stock-price-now">{{ '%.2f' % spot.price }}</span>
@@ -27,7 +33,6 @@
         </span>
     </div>
 
-    <!-- 当日行情概要 -->
     <div class="stock-subtitle">
         {% if spot and spot.open %}
         今开 <strong>{{ '%.2f' % spot.open }}</strong> |
@@ -88,7 +93,7 @@
         </div>
     </div>
 
-    <!-- 均线体系（基于TDX，以当日价判断站上/跌破） -->
+    <!-- 均线体系 -->
     <div class="stock-card">
         <h3>📏 均线体系 <span class="card-badge">TDX</span></h3>
         {% if ma_status %}
@@ -137,6 +142,51 @@
         </div>
     </div>
 
+    <!-- 入场/止损/止盈 -->
+    {% if suggestion and suggestion.entry_zone %}
+    <div class="stock-card" style="border-left: 4px solid #e94560;">
+        <h3>🎯 操作建议 <span class="card-badge">算法</span></h3>
+        <div class="metric-grid">
+            <div class="metric-item">
+                <span class="metric-label">入场区间</span>
+                <span class="metric-value" style="color:#6c5ce7;font-weight:bold;">{{ suggestion.entry_zone }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">止损价</span>
+                <span class="metric-value" style="color:#e94560;">{{ '%.2f' % suggestion.stop_loss }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">目标价</span>
+                <span class="metric-value" style="color:#00b894;">{{ '%.2f' % suggestion.target }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">盈亏比</span>
+                <span class="metric-value {% if suggestion.rr_ratio >= 2 %}up{% endif %}">
+                    1:{{ suggestion.rr_ratio }}
+                </span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">建议仓位</span>
+                <span class="metric-value">{{ suggestion.position }}</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">风险收益</span>
+                <span class="metric-value">风险 {{ '%.1f' % suggestion.risk_pct }}% / 收益 {{ '%.1f' % suggestion.reward_pct }}%</span>
+            </div>
+        </div>
+        {% if suggestion.risk_note %}
+        <div style="margin-top:10px;padding:8px 12px;background:#fff3cd;border-radius:4px;font-size:13px;">
+            ⚠ {{ suggestion.risk_note }}
+        </div>
+        {% endif %}
+        {% if suggestion.strategy_tip %}
+        <div style="margin-top:6px;padding:8px 12px;background:#e8f4fd;border-radius:4px;font-size:13px;color:#555;">
+            💡 {{ suggestion.strategy_tip }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
 </div>
 
 <!-- ====== 右列：筹码 + 历史K线 ====== -->
@@ -178,21 +228,15 @@
     </div>
     {% endif %}
 
-    <!-- 最近行情（含当日实时行） -->
+    <!-- 最近行情 -->
     {% if recent_bars %}
     <div class="stock-card">
         <h3>📅 最近行情 <span class="card-badge">{{ data_freshness }}</span></h3>
         <div class="bar-table-wrap">
         <table class="bar-table">
             <tr>
-                <th>日期</th>
-                <th>开盘</th>
-                <th>最高</th>
-                <th>最低</th>
-                <th>收盘</th>
-                <th>涨跌幅</th>
-                <th>量比</th>
-                <th>成交量</th>
+                <th>日期</th><th>开盘</th><th>最高</th><th>最低</th><th>收盘</th>
+                <th>涨跌幅</th><th>量比</th><th>成交量</th>
             </tr>
             {% for bar in recent_bars|reverse %}
             <tr class="{% if bar.change_pct is defined and bar.change_pct == tech.change_pct and spot %}bar-today{% endif %}">
@@ -222,59 +266,66 @@
 </div>
 
 <!-- AI 多空观点 -->
-<div style="margin-top:20px;background:white;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+<div class="stock-card" style="margin-top:20px">
     <h3>🤖 AI 多空观点
         <button onclick="loadAIOpinions('{{ code }}')"
-                style="float:right;padding:6px 16px;background:#6c5ce7;color:white;border:none;border-radius:4px;cursor:pointer">
+                style="float:right;padding:6px 16px;background:#6c5ce7;color:white;border:none;border-radius:4px;cursor:pointer;font-family:inherit">
             分析
         </button>
     </h3>
-    <div id="ai-opinions">点击"分析"按钮触发多Agent分析</div>
+    <div id="ai-opinions">点击"分析"按钮查看技术面快速诊断</div>
 </div>
 
 <script>
-function loadAIOpinions(code) {
-    document.getElementById('ai-opinions').innerHTML = '<p>分析中...</p>';
-    fetch('/api/agent/analyze', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({code: code, strategy: 'leader'})
-    })
-    .then(r => r.json())
-    .then(data => {
-        let es = new EventSource('/api/chat/stream/' + data.task_id);
-        let opinions = [];
-        es.onmessage = function(e) {
-            const msg = JSON.parse(e.data);
-            if (msg.type === 'agent_result') {
-                opinions.push(msg.data);
-                renderOpinions(opinions);
-            } else if (msg.type === 'trading_plan') {
-                renderOpinions(opinions, msg.data);
-            } else if (msg.type === 'done') {
-                es.close();
-            }
-        };
-    });
+function escapeHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
 }
 
-function renderOpinions(opinions, plan) {
-    const el = document.getElementById('ai-opinions');
-    let html = opinions.map(o => `
-        <div class="opinion-row">
-            <span class="op-agent">${o.agent}</span>
-            <span class="op-dir ${o.direction === 'bullish' ? 'up' : o.direction === 'bearish' ? 'down' : ''}">${o.direction}</span>
-            <span>评分: ${o.score}</span>
-            <span>信心: ${(o.confidence * 100).toFixed(0)}%</span>
-        </div>`).join('');
-    if (plan) {
-        html += `<div class="plan-summary"><strong>综合建议:</strong> ${plan.action} | 风险: ${plan.risk_level}
-                 | 仓位: ${(plan.position_pct * 100).toFixed(0)}%</div>`;
-        html += `<div class="plan-text">${plan.rationale || ''}</div>`;
+function loadAIOpinions(code) {
+    var el = document.getElementById('ai-opinions');
+    el.innerHTML = '<p style="color:#888;">AI 多 Agent 分析依赖后端 LLM 服务，暂未部署。以下为本地技术指标快速诊断。</p>';
+
+    // 从已有数据生成快速诊断
+    var ma5 = parseFloat('{{ latest.ma5 if latest.ma5 else 0 }}');
+    var ma10 = parseFloat('{{ latest.ma10 if latest.ma10 else 0 }}');
+    var ma20 = parseFloat('{{ latest.ma20 if latest.ma20 else 0 }}');
+    var ma60 = parseFloat('{{ latest.ma60 if latest.ma60 else 0 }}');
+    var close = parseFloat('{{ latest.close }}');
+    var vol = parseInt('{{ latest.volume }}') || 0;
+    var changePct = parseFloat('{{ "%.1f"|format((latest.close - prev.close) / prev.close * 100) if prev and prev.close and prev.close > 0 else 0 }}') || 0;
+
+    var trends = [];
+    if (ma5 > 0 && ma10 > 0) trends.push(ma5 > ma10 ? 'MA5>MA10 短线多头' : 'MA5<MA10 短线死叉');
+    if (ma10 > 0 && ma20 > 0) trends.push(ma10 > ma20 ? 'MA10>MA20 中期多头' : 'MA10<MA20 中期死叉');
+    if (ma20 > 0 && ma60 > 0) trends.push(ma20 > ma60 ? 'MA20>MA60 趋势向上' : 'MA20<MA60 趋势向下');
+
+    var dir = changePct > 0 ? 'bullish' : 'bearish';
+    var score = 50;
+    if (ma5 > ma10) score += 15;
+    if (ma10 > ma20) score += 10;
+    if (close > ma20) score += 10;
+    if (changePct > 3) score += 15;
+    else if (changePct < -3) score -= 15;
+
+    var html = '<div class="opinion-row">' +
+        '<span class="op-agent">技术面快诊</span>' +
+        '<span class="op-dir ' + (dir === 'bullish' ? 'up' : 'down') + '">' + (dir === 'bullish' ? '偏多' : '偏空') + '</span>' +
+        '<span>评分: ' + Math.min(100, Math.max(0, score)) + '</span>' +
+        '<span>涨跌: ' + (changePct > 0 ? '+' : '') + changePct.toFixed(1) + '%</span>' +
+        '</div>';
+    html += '<div style="font-size:0.85em;color:#666;margin-top:8px;line-height:1.8;">' + trends.join('<br>') + '</div>';
+
+    el.innerHTML = html;
+}
+</script>
     }
     el.innerHTML = html;
 }
 </script>
 
 {% endif %}
+</div>
 {% endblock %}

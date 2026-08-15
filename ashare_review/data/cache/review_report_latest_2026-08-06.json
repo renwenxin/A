@@ -1,0 +1,1289 @@
+{
+  "_cached_date": "2026-08-06",
+  "_cached_at": "20:04:04",
+  "_namespace": "review_report_latest",
+  "_payload": {
+    "date": "2026-08-06",
+    "is_trading_day": true,
+    "total_limit_ups": 79,
+    "sealed": 39,
+    "broken": 40,
+    "seal_rate": "49.4%",
+    "first_boards": 57,
+    "multi_boards": 22,
+    "max_consecutive": 10,
+    "time_distribution": {
+      "早盘(<10:30)": 49,
+      "上午(10:30-11:30)": 14,
+      "下午": 16
+    },
+    "market_overview": {
+      "total_volume": 9992.0,
+      "up_count": 952,
+      "down_count": 480,
+      "flat_count": 0,
+      "limit_up_count": 0,
+      "limit_down_count": 0,
+      "avg_change_pct": 1.98
+    },
+    "hot_concepts": [
+      {
+        "name": "通信设备",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 8
+      },
+      {
+        "name": "化学制品",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 7
+      },
+      {
+        "name": "煤炭开采",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 7
+      },
+      {
+        "name": "元件",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 6
+      },
+      {
+        "name": "计算机设",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 4
+      },
+      {
+        "name": "专用设备",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 4
+      },
+      {
+        "name": "软件开发",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 4
+      },
+      {
+        "name": "半导体",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 3
+      },
+      {
+        "name": "电子化学",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 3
+      },
+      {
+        "name": "游戏Ⅱ",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 2
+      }
+    ],
+    "hot_industries": [
+      {
+        "name": "通信设备",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 8
+      },
+      {
+        "name": "化学制品",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 7
+      },
+      {
+        "name": "煤炭开采",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 7
+      },
+      {
+        "name": "元件",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 6
+      },
+      {
+        "name": "计算机设",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 4
+      },
+      {
+        "name": "专用设备",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 4
+      },
+      {
+        "name": "软件开发",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 4
+      },
+      {
+        "name": "半导体",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 3
+      },
+      {
+        "name": "电子化学",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 3
+      },
+      {
+        "name": "游戏Ⅱ",
+        "change_pct": 0.0,
+        "lead_stock": "",
+        "zt_count": 2
+      }
+    ],
+    "hot_merged": true,
+    "multi_board_list": [
+      {
+        "code": "603221",
+        "name": "爱丽家居",
+        "consecutive": 10,
+        "board_type": "家居用品",
+        "limit_up_time": "092501",
+        "seal_amount": 6548.0,
+        "turnover_yi": 4.0
+      },
+      {
+        "code": "002963",
+        "name": "豪尔赛",
+        "consecutive": 5,
+        "board_type": "装修装饰",
+        "limit_up_time": "093003",
+        "seal_amount": 4982.0,
+        "turnover_yi": 2.6
+      },
+      {
+        "code": "601700",
+        "name": "风范股份",
+        "consecutive": 4,
+        "board_type": "电网设备",
+        "limit_up_time": "093025",
+        "seal_amount": 6487.0,
+        "turnover_yi": 12.9
+      },
+      {
+        "code": "300615",
+        "name": "欣天科技",
+        "consecutive": 4,
+        "board_type": "通信设备",
+        "limit_up_time": "093045",
+        "seal_amount": 7300.0,
+        "turnover_yi": 7.8
+      },
+      {
+        "code": "002425",
+        "name": "凯撒文化",
+        "consecutive": 3,
+        "board_type": "游戏Ⅱ",
+        "limit_up_time": "092500",
+        "seal_amount": 8187.0,
+        "turnover_yi": 4.2
+      },
+      {
+        "code": "600892",
+        "name": "大晟文化",
+        "consecutive": 3,
+        "board_type": "游戏Ⅱ",
+        "limit_up_time": "092501",
+        "seal_amount": 878.0,
+        "turnover_yi": 6.6
+      },
+      {
+        "code": "600397",
+        "name": "江钨装备",
+        "consecutive": 3,
+        "board_type": "专用设备",
+        "limit_up_time": "093003",
+        "seal_amount": 27941.0,
+        "turnover_yi": 4.1
+      },
+      {
+        "code": "600721",
+        "name": "百花医药",
+        "consecutive": 3,
+        "board_type": "医疗服务",
+        "limit_up_time": "093028",
+        "seal_amount": 6304.0,
+        "turnover_yi": 11.9
+      },
+      {
+        "code": "002428",
+        "name": "云南锗业",
+        "consecutive": 3,
+        "board_type": "小金属",
+        "limit_up_time": "093030",
+        "seal_amount": 58493.0,
+        "turnover_yi": 70.6
+      },
+      {
+        "code": "002552",
+        "name": "宝鼎科技",
+        "consecutive": 3,
+        "board_type": "元件",
+        "limit_up_time": "093054",
+        "seal_amount": 15179.0,
+        "turnover_yi": 7.5
+      },
+      {
+        "code": "603773",
+        "name": "沃格光电",
+        "consecutive": 3,
+        "board_type": "光学光电",
+        "limit_up_time": "094839",
+        "seal_amount": 17188.0,
+        "turnover_yi": 11.4
+      },
+      {
+        "code": "002975",
+        "name": "博杰股份",
+        "consecutive": 3,
+        "board_type": "自动化设",
+        "limit_up_time": "100039",
+        "seal_amount": 14285.0,
+        "turnover_yi": 14.3
+      },
+      {
+        "code": "001267",
+        "name": "汇绿生态",
+        "consecutive": 3,
+        "board_type": "通信设备",
+        "limit_up_time": "130645",
+        "seal_amount": 8272.0,
+        "turnover_yi": 27.8
+      },
+      {
+        "code": "002214",
+        "name": "大立科技",
+        "consecutive": 2,
+        "board_type": "军工电子",
+        "limit_up_time": "092500",
+        "seal_amount": 14621.0,
+        "turnover_yi": 0.2
+      },
+      {
+        "code": "002721",
+        "name": "金一文化",
+        "consecutive": 2,
+        "board_type": "饰品",
+        "limit_up_time": "092500",
+        "seal_amount": 13381.0,
+        "turnover_yi": 0.8
+      },
+      {
+        "code": "603988",
+        "name": "中电电机",
+        "consecutive": 2,
+        "board_type": "电机Ⅱ",
+        "limit_up_time": "093124",
+        "seal_amount": 3013.0,
+        "turnover_yi": 4.5
+      },
+      {
+        "code": "002649",
+        "name": "博彦科技",
+        "consecutive": 2,
+        "board_type": "IT服务Ⅱ",
+        "limit_up_time": "093139",
+        "seal_amount": 11351.0,
+        "turnover_yi": 6.2
+      },
+      {
+        "code": "603823",
+        "name": "百合花",
+        "consecutive": 2,
+        "board_type": "化学制品",
+        "limit_up_time": "093609",
+        "seal_amount": 1641.0,
+        "turnover_yi": 11.3
+      },
+      {
+        "code": "600206",
+        "name": "有研新材",
+        "consecutive": 2,
+        "board_type": "半导体",
+        "limit_up_time": "095111",
+        "seal_amount": 18558.0,
+        "turnover_yi": 44.1
+      },
+      {
+        "code": "603078",
+        "name": "江化微",
+        "consecutive": 2,
+        "board_type": "电子化学",
+        "limit_up_time": "101956",
+        "seal_amount": 10468.0,
+        "turnover_yi": 10.8
+      },
+      {
+        "code": "002971",
+        "name": "和远气体",
+        "consecutive": 2,
+        "board_type": "化学制品",
+        "limit_up_time": "104300",
+        "seal_amount": 13029.0,
+        "turnover_yi": 8.9
+      },
+      {
+        "code": "688549",
+        "name": "中巨芯-U",
+        "consecutive": 2,
+        "board_type": "电子化学",
+        "limit_up_time": "105448",
+        "seal_amount": 4307.0,
+        "turnover_yi": 49.4
+      }
+    ],
+    "top_lhb": [
+      {
+        "code": "002428",
+        "name": "云南锗业",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "net_amount": 115385.38278900001,
+        "buy_amount": 237009.993067,
+        "sell_amount": 121624.610278
+      },
+      {
+        "code": "600549",
+        "name": "厦门钨业",
+        "reason": "非S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券",
+        "net_amount": -113910.941,
+        "buy_amount": 195942.188672,
+        "sell_amount": 309853.12967199995
+      },
+      {
+        "code": "603629",
+        "name": "利通电子",
+        "reason": "非S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券",
+        "net_amount": 110831.175978,
+        "buy_amount": 227265.508973,
+        "sell_amount": 116434.332995
+      },
+      {
+        "code": "300489",
+        "name": "光智科技",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到30%的证券",
+        "net_amount": -96016.475138,
+        "buy_amount": 209226.618497,
+        "sell_amount": 305243.093635
+      },
+      {
+        "code": "000657",
+        "name": "中钨高新",
+        "reason": "连续三个交易日内，涨幅偏离值累计达到20%的证券",
+        "net_amount": -76168.807107,
+        "buy_amount": 268511.56940599997,
+        "sell_amount": 344680.376513
+      },
+      {
+        "code": "600206",
+        "name": "有研新材",
+        "reason": "非S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券",
+        "net_amount": 75323.321153,
+        "buy_amount": 173809.957084,
+        "sell_amount": 98486.635931
+      },
+      {
+        "code": "600601",
+        "name": "方正科技",
+        "reason": "非S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券",
+        "net_amount": 61995.300411000004,
+        "buy_amount": 157817.095999,
+        "sell_amount": 95821.795588
+      },
+      {
+        "code": "002428",
+        "name": "云南锗业",
+        "reason": "日涨幅偏离值达到7%的前5只证券",
+        "net_amount": 47914.632525,
+        "buy_amount": 138272.510256,
+        "sell_amount": 90357.877731
+      },
+      {
+        "code": "603256",
+        "name": "宏和科技",
+        "reason": "非S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券",
+        "net_amount": -47894.591447000006,
+        "buy_amount": 187859.835448,
+        "sell_amount": 235754.42689499998
+      },
+      {
+        "code": "605376",
+        "name": "博迁新材",
+        "reason": "非S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券",
+        "net_amount": -47747.162489999995,
+        "buy_amount": 139968.675972,
+        "sell_amount": 187715.83846199999
+      }
+    ],
+    "sentiment": {
+      "mood": "偏弱",
+      "mood_desc": "赚钱效应减弱，炸板率上升至51%。龙头出现分歧，跟风股开始补跌。该强不强的标的必须第一时间离场。核按钮出现时确认退潮。",
+      "seal_rate": "49.4%",
+      "broken_rate": "50.6%",
+      "total_zt": 79,
+      "max_consecutive": 10,
+      "picks": [
+        {
+          "code": "002973",
+          "name": "侨银股份",
+          "consecutive": 1,
+          "score": 65,
+          "reasons": [
+            "低价11.0元·散户参与度高",
+            "小盘35亿·拉升难度小",
+            "封成比0.76·封单充足",
+            "封单强度0.029·主力坚决",
+            "上午封板≤10:30·次日预期高开3-6%",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:环境治理"
+          ],
+          "seal_ratio": 0.76,
+          "seal_strength": 0.0287,
+          "price": 10.99,
+          "market_cap": 35.0,
+          "limit_up_time": "100236"
+        },
+        {
+          "code": "000692",
+          "name": "惠天热电",
+          "consecutive": 1,
+          "score": 60,
+          "reasons": [
+            "低价4.2元·散户参与度高",
+            "小盘23亿·拉升难度小",
+            "封成比0.62·封单充足",
+            "早盘秒板≤10:00·次日预期高开5-9%",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:电力"
+          ],
+          "seal_ratio": 0.62,
+          "seal_strength": 0.0134,
+          "price": 4.24,
+          "market_cap": 23.0,
+          "limit_up_time": "093045"
+        },
+        {
+          "code": "002104",
+          "name": "恒宝股份",
+          "consecutive": 1,
+          "score": 57,
+          "reasons": [
+            "低价11.8元·散户参与度高",
+            "适中71亿",
+            "封成比0.36",
+            "封单强度达标(0.017)",
+            "早盘秒板≤10:00·次日预期高开5-9%",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:通信设备"
+          ],
+          "seal_ratio": 0.36,
+          "seal_strength": 0.0168,
+          "price": 11.76,
+          "market_cap": 71.0,
+          "limit_up_time": "093615"
+        },
+        {
+          "code": "001378",
+          "name": "德冠新材",
+          "consecutive": 1,
+          "score": 56,
+          "reasons": [
+            "中价19.6元",
+            "小盘17亿·拉升难度小",
+            "封成比0.52·封单充足",
+            "封单强度0.049·主力坚决",
+            "午前封板",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:塑料"
+          ],
+          "seal_ratio": 0.52,
+          "seal_strength": 0.0492,
+          "price": 19.59,
+          "market_cap": 17.0,
+          "limit_up_time": "105103"
+        },
+        {
+          "code": "603285",
+          "name": "键邦股份",
+          "consecutive": 1,
+          "score": 53,
+          "reasons": [
+            "小盘22亿·拉升难度小",
+            "封成比0.39",
+            "封单强度0.027·主力坚决",
+            "早盘秒板≤10:00·次日预期高开5-9%",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:化学制品"
+          ],
+          "seal_ratio": 0.39,
+          "seal_strength": 0.0273,
+          "price": 35.86,
+          "market_cap": 22.0,
+          "limit_up_time": "094334"
+        },
+        {
+          "code": "003040",
+          "name": "楚天龙",
+          "consecutive": 1,
+          "score": 49,
+          "reasons": [
+            "低价12.5元·散户参与度高",
+            "小盘57亿·拉升难度小",
+            "封成比0.34",
+            "早盘秒板≤10:00·次日预期高开5-9%",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:通信设备"
+          ],
+          "seal_ratio": 0.34,
+          "seal_strength": 0.0089,
+          "price": 12.46,
+          "market_cap": 57.0,
+          "limit_up_time": "093751"
+        },
+        {
+          "code": "002369",
+          "name": "卓翼科技",
+          "consecutive": 1,
+          "score": 48,
+          "reasons": [
+            "低价6.3元·散户参与度高",
+            "小盘36亿·拉升难度小",
+            "封成比0.41",
+            "封单强度达标(0.019)",
+            "早盘秒板≤10:00·次日预期高开5-9%",
+            "炸板未封·谨慎",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:消费电子"
+          ],
+          "seal_ratio": 0.41,
+          "seal_strength": 0.0194,
+          "price": 6.27,
+          "market_cap": 36.0,
+          "limit_up_time": "093309"
+        },
+        {
+          "code": "002792",
+          "name": "通宇通讯",
+          "consecutive": 1,
+          "score": 46,
+          "reasons": [
+            "偏大114亿",
+            "封成比0.47",
+            "封单强度0.032·主力坚决",
+            "早盘秒板≤10:00·次日预期高开5-9%",
+            "封死未炸板",
+            "首板·1进2候选（核心模式）",
+            "股性冷门·首次涨停",
+            "板型:通信设备"
+          ],
+          "seal_ratio": 0.47,
+          "seal_strength": 0.0317,
+          "price": 33.81,
+          "market_cap": 114.0,
+          "limit_up_time": "093212"
+        }
+      ],
+      "summary": "涨停79只，封板率49.4%，炸板40只（50.6%），最高连板10板。周期阶段：退潮期。减仓防守，卖出中位股和跟风股，不开新仓"
+    },
+    "cycle": {
+      "stage": "退潮期",
+      "stage_class": "tuichao",
+      "stage_emoji": "🌊",
+      "stage_desc": "赚钱效应减弱，炸板率上升至51%。龙头出现分歧，跟风股开始补跌。该强不强的标的必须第一时间离场。核按钮出现时确认退潮。",
+      "action": "减仓防守，卖出中位股和跟风股，不开新仓",
+      "risk_level": "高",
+      "metrics": {
+        "total_zt": 79,
+        "seal_rate": 49.4,
+        "max_consecutive": 10,
+        "yizi_ratio": 8.9,
+        "first_boards": 57,
+        "height_trend": "高度空间打开，连板梯队完整，短线可操作性高"
+      }
+    },
+    "sector_analysis": {
+      "all_sectors": [
+        {
+          "name": "通信设备",
+          "zt_count": 8,
+          "strength": "涨停潮🔥",
+          "first_count": 6,
+          "multi_count": 2,
+          "max_consecutive": 4,
+          "leader_code": "300615",
+          "leader_name": "欣天科技",
+          "leader_cons": 4,
+          "board_types": {
+            "通信设备": 8
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "化学制品",
+          "zt_count": 7,
+          "strength": "强势",
+          "first_count": 5,
+          "multi_count": 2,
+          "max_consecutive": 2,
+          "leader_code": "603823",
+          "leader_name": "百合花",
+          "leader_cons": 2,
+          "board_types": {
+            "化学制品": 7
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "煤炭开采",
+          "zt_count": 7,
+          "strength": "强势",
+          "first_count": 7,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "601101",
+          "leader_name": "昊华能源",
+          "leader_cons": 1,
+          "board_types": {
+            "煤炭开采": 7
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "元件",
+          "zt_count": 6,
+          "strength": "强势",
+          "first_count": 5,
+          "multi_count": 1,
+          "max_consecutive": 3,
+          "leader_code": "002552",
+          "leader_name": "宝鼎科技",
+          "leader_cons": 3,
+          "board_types": {
+            "元件": 6
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "计算机设",
+          "zt_count": 4,
+          "strength": "活跃",
+          "first_count": 4,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "002180",
+          "leader_name": "奔图科技",
+          "leader_cons": 1,
+          "board_types": {
+            "计算机设": 4
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "专用设备",
+          "zt_count": 4,
+          "strength": "活跃",
+          "first_count": 3,
+          "multi_count": 1,
+          "max_consecutive": 3,
+          "leader_code": "600397",
+          "leader_name": "江钨装备",
+          "leader_cons": 3,
+          "board_types": {
+            "专用设备": 4
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "软件开发",
+          "zt_count": 4,
+          "strength": "活跃",
+          "first_count": 4,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "603039",
+          "leader_name": "泛微网络",
+          "leader_cons": 1,
+          "board_types": {
+            "软件开发": 4
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "半导体",
+          "zt_count": 3,
+          "strength": "活跃",
+          "first_count": 2,
+          "multi_count": 1,
+          "max_consecutive": 2,
+          "leader_code": "600206",
+          "leader_name": "有研新材",
+          "leader_cons": 2,
+          "board_types": {
+            "半导体": 3
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "电子化学",
+          "zt_count": 3,
+          "strength": "活跃",
+          "first_count": 1,
+          "multi_count": 2,
+          "max_consecutive": 2,
+          "leader_code": "603078",
+          "leader_name": "江化微",
+          "leader_cons": 2,
+          "board_types": {
+            "电子化学": 3
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "游戏Ⅱ",
+          "zt_count": 2,
+          "strength": "普通",
+          "first_count": 0,
+          "multi_count": 2,
+          "max_consecutive": 3,
+          "leader_code": "002425",
+          "leader_name": "凯撒文化",
+          "leader_cons": 3,
+          "board_types": {
+            "游戏Ⅱ": 2
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "电网设备",
+          "zt_count": 2,
+          "strength": "普通",
+          "first_count": 1,
+          "multi_count": 1,
+          "max_consecutive": 4,
+          "leader_code": "601700",
+          "leader_name": "风范股份",
+          "leader_cons": 4,
+          "board_types": {
+            "电网设备": 2
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "医疗服务",
+          "zt_count": 2,
+          "strength": "普通",
+          "first_count": 1,
+          "multi_count": 1,
+          "max_consecutive": 3,
+          "leader_code": "600721",
+          "leader_name": "百花医药",
+          "leader_cons": 3,
+          "board_types": {
+            "医疗服务": 2
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "水泥",
+          "zt_count": 2,
+          "strength": "普通",
+          "first_count": 2,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "600326",
+          "leader_name": "西藏天路",
+          "leader_cons": 1,
+          "board_types": {
+            "水泥": 2
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "化学制药",
+          "zt_count": 2,
+          "strength": "普通",
+          "first_count": 2,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "002826",
+          "leader_name": "易明医药",
+          "leader_cons": 1,
+          "board_types": {
+            "化学制药": 2
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "医药商业",
+          "zt_count": 2,
+          "strength": "普通",
+          "first_count": 2,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "600829",
+          "leader_name": "人民同泰",
+          "leader_cons": 1,
+          "board_types": {
+            "医药商业": 2
+          },
+          "is_new_theme": false
+        }
+      ],
+      "hot_sectors": [
+        {
+          "name": "通信设备",
+          "zt_count": 8,
+          "strength": "涨停潮🔥",
+          "first_count": 6,
+          "multi_count": 2,
+          "max_consecutive": 4,
+          "leader_code": "300615",
+          "leader_name": "欣天科技",
+          "leader_cons": 4,
+          "board_types": {
+            "通信设备": 8
+          },
+          "is_new_theme": false
+        },
+        {
+          "name": "化学制品",
+          "zt_count": 7,
+          "strength": "强势",
+          "first_count": 5,
+          "multi_count": 2,
+          "max_consecutive": 2,
+          "leader_code": "603823",
+          "leader_name": "百合花",
+          "leader_cons": 2,
+          "board_types": {
+            "化学制品": 7
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "煤炭开采",
+          "zt_count": 7,
+          "strength": "强势",
+          "first_count": 7,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "601101",
+          "leader_name": "昊华能源",
+          "leader_cons": 1,
+          "board_types": {
+            "煤炭开采": 7
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "元件",
+          "zt_count": 6,
+          "strength": "强势",
+          "first_count": 5,
+          "multi_count": 1,
+          "max_consecutive": 3,
+          "leader_code": "002552",
+          "leader_name": "宝鼎科技",
+          "leader_cons": 3,
+          "board_types": {
+            "元件": 6
+          },
+          "is_new_theme": false
+        }
+      ],
+      "new_themes": [
+        {
+          "name": "化学制品",
+          "zt_count": 7,
+          "strength": "强势",
+          "first_count": 5,
+          "multi_count": 2,
+          "max_consecutive": 2,
+          "leader_code": "603823",
+          "leader_name": "百合花",
+          "leader_cons": 2,
+          "board_types": {
+            "化学制品": 7
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "煤炭开采",
+          "zt_count": 7,
+          "strength": "强势",
+          "first_count": 7,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "601101",
+          "leader_name": "昊华能源",
+          "leader_cons": 1,
+          "board_types": {
+            "煤炭开采": 7
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "计算机设",
+          "zt_count": 4,
+          "strength": "活跃",
+          "first_count": 4,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "002180",
+          "leader_name": "奔图科技",
+          "leader_cons": 1,
+          "board_types": {
+            "计算机设": 4
+          },
+          "is_new_theme": true
+        },
+        {
+          "name": "软件开发",
+          "zt_count": 4,
+          "strength": "活跃",
+          "first_count": 4,
+          "multi_count": 0,
+          "max_consecutive": 1,
+          "leader_code": "603039",
+          "leader_name": "泛微网络",
+          "leader_cons": 1,
+          "board_types": {
+            "软件开发": 4
+          },
+          "is_new_theme": true
+        }
+      ],
+      "sector_count": 15
+    },
+    "weak_to_strong": [
+      {
+        "code": "002971",
+        "name": "和远气体",
+        "consecutive": 2,
+        "board_type": "化学制品",
+        "seal_amount": 13029.0,
+        "weak_signal": "分歧板(封成比0.15)；市值适中；2连板·高辨识度",
+        "wts_score": 5,
+        "confirm_condition": "次日竞价高开≥3% + 竞价量>昨日爆量5% + 竞价额>1000万 = 弱转强确认买点"
+      },
+      {
+        "code": "300386",
+        "name": "飞天诚信",
+        "consecutive": 1,
+        "board_type": "计算机设",
+        "seal_amount": 6256.0,
+        "weak_signal": "分歧板(封成比0.24)；市值适中；计算机设板块有支撑",
+        "wts_score": 3,
+        "confirm_condition": "次日竞价高开≥3% + 竞价量>昨日爆量5% + 竞价额>1000万 = 弱转强确认买点"
+      },
+      {
+        "code": "002212",
+        "name": "天融信",
+        "consecutive": 1,
+        "board_type": "软件开发",
+        "seal_amount": 6726.0,
+        "weak_signal": "分歧板(封成比0.11)；市值适中；软件开发板块有支撑",
+        "wts_score": 3,
+        "confirm_condition": "次日竞价高开≥3% + 竞价量>昨日爆量5% + 竞价额>1000万 = 弱转强确认买点"
+      },
+      {
+        "code": "301251",
+        "name": "威尔高",
+        "consecutive": 1,
+        "board_type": "元件",
+        "seal_amount": 3495.0,
+        "weak_signal": "分歧板(封成比0.07)；市值适中；元件板块有支撑",
+        "wts_score": 3,
+        "confirm_condition": "次日竞价高开≥3% + 竞价量>昨日爆量5% + 竞价额>1000万 = 弱转强确认买点"
+      },
+      {
+        "code": "300540",
+        "name": "蜀道装备",
+        "consecutive": 1,
+        "board_type": "专用设备",
+        "seal_amount": 7611.0,
+        "weak_signal": "分歧板(封成比0.10)；市值适中；专用设备板块有支撑",
+        "wts_score": 3,
+        "confirm_condition": "次日竞价高开≥3% + 竞价量>昨日爆量5% + 竞价额>1000万 = 弱转强确认买点"
+      },
+      {
+        "code": "003029",
+        "name": "吉大正元",
+        "consecutive": 1,
+        "board_type": "软件开发",
+        "seal_amount": 1960.0,
+        "weak_signal": "分歧板(封成比0.12)；市值适中；软件开发板块有支撑",
+        "wts_score": 3,
+        "confirm_condition": "次日竞价高开≥3% + 竞价量>昨日爆量5% + 竞价额>1000万 = 弱转强确认买点"
+      }
+    ],
+    "auction_forecast": {
+      "forecast": "偏强",
+      "forecast_desc": "早盘封板占比较高，次日竞价整体偏强，多数涨停股预期高开。重点关注板块龙头的竞价表现来判断板块持续性。",
+      "early_sealed": 42,
+      "morning_sealed": 21,
+      "afternoon_sealed": 16,
+      "yizi_count": 7,
+      "strong_multi": [
+        {
+          "code": "002214",
+          "name": "大立科技",
+          "consecutive": 2,
+          "seal_ratio": 6.1
+        },
+        {
+          "code": "002721",
+          "name": "金一文化",
+          "consecutive": 2,
+          "seal_ratio": 1.7
+        }
+      ]
+    },
+    "chip_signals": [
+      {
+        "code": "603221",
+        "name": "爱丽家居",
+        "consecutive": 10,
+        "pattern": "获利盘>90%",
+        "signal": "警示",
+        "confidence": "中",
+        "description": "获利盘占比93%，警惕主力拉高出货。",
+        "action": "适当减仓锁利，设宽幅止损"
+      },
+      {
+        "code": "601700",
+        "name": "风范股份",
+        "consecutive": 4,
+        "pattern": "获利盘>90%",
+        "signal": "警示",
+        "confidence": "中",
+        "description": "获利盘占比92%，警惕主力拉高出货。",
+        "action": "适当减仓锁利，设宽幅止损"
+      }
+    ],
+    "recent_events": [],
+    "upcoming_events": [],
+    "ongoing_themes": [
+      {
+        "name": "半导体涨价周期",
+        "start_date": "2026-05-15",
+        "end_date": "2026-08-31",
+        "sectors": [
+          "模拟芯片",
+          "功率半导体",
+          "存储芯片",
+          "晶圆代工"
+        ],
+        "importance": 5,
+        "importance_stars": "⭐⭐⭐⭐⭐",
+        "description": "德州仪器/英飞凌涨价传导，AI驱动供需错配。模拟芯片/功率半导体/MCU全线上涨，板块β行情。",
+        "category": "周期",
+        "status": "进行中",
+        "status_class": "ongoing",
+        "sentiment_stocks": [
+          {
+            "code": "300623",
+            "name": "捷捷微电",
+            "reason": "功率半导体，涨价弹性最大"
+          },
+          {
+            "code": "600460",
+            "name": "士兰微",
+            "reason": "IDM功率龙头，产能利用率提升"
+          },
+          {
+            "code": "603501",
+            "name": "韦尔股份",
+            "reason": "CIS芯片龙头，涨价+量增双击"
+          }
+        ],
+        "institutional_stocks": [
+          {
+            "code": "688396",
+            "name": "华润微",
+            "reason": "功率半导体IDM，国企背景稳定性好"
+          },
+          {
+            "code": "002049",
+            "name": "紫光国微",
+            "reason": "特种芯片，FPGA国产替代龙头"
+          }
+        ]
+      },
+      {
+        "name": "厄尔尼诺夏季高温主题",
+        "start_date": "2026-06-01",
+        "end_date": "2026-08-31",
+        "sectors": [
+          "空调/白电",
+          "电力/火电",
+          "制冷剂",
+          "啤酒/饮料"
+        ],
+        "importance": 4,
+        "importance_stars": "⭐⭐⭐⭐",
+        "description": "预计今夏用电负荷同比+9000万千瓦，高温驱动空调/制冷需求爆发。火电价值重估+家电旺季双重逻辑。",
+        "category": "消费",
+        "status": "进行中",
+        "status_class": "ongoing",
+        "sentiment_stocks": [
+          {
+            "code": "000651",
+            "name": "格力电器",
+            "reason": "空调龙头，高温催化出货量增长"
+          },
+          {
+            "code": "600690",
+            "name": "海尔智家",
+            "reason": "白电龙头，海外+国内双驱动"
+          }
+        ],
+        "institutional_stocks": [
+          {
+            "code": "000333",
+            "name": "美的集团",
+            "reason": "家电综合龙头，机构底仓标的"
+          },
+          {
+            "code": "600900",
+            "name": "长江电力",
+            "reason": "水电龙头，夏季用电高峰受益"
+          }
+        ]
+      },
+      {
+        "name": "电力超级周期",
+        "start_date": "2026-05-01",
+        "end_date": "2026-09-30",
+        "sectors": [
+          "火电",
+          "新能源运营",
+          "电力设备",
+          "特高压"
+        ],
+        "importance": 4,
+        "importance_stars": "⭐⭐⭐⭐",
+        "description": "AI算力中心耗电激增+夏季用电高峰+电力市场化改革。火电从'弃儿'变'宠儿'，新能源运营商价值重估。",
+        "category": "周期",
+        "status": "进行中",
+        "status_class": "ongoing",
+        "sentiment_stocks": [
+          {
+            "code": "600011",
+            "name": "华能国际",
+            "reason": "火电龙头，AI算力用电催化"
+          },
+          {
+            "code": "600023",
+            "name": "浙能电力",
+            "reason": "区域火电龙头，弹性大"
+          }
+        ],
+        "institutional_stocks": [
+          {
+            "code": "601985",
+            "name": "中国核电",
+            "reason": "核电双寡头之一，稳定成长"
+          },
+          {
+            "code": "600900",
+            "name": "长江电力",
+            "reason": "水电龙头，股息率高适合机构配置"
+          }
+        ]
+      },
+      {
+        "name": "AI智能体产业链爆发",
+        "start_date": "2026-05-25",
+        "end_date": "2026-08-31",
+        "sectors": [
+          "AI Agent",
+          "企业软件",
+          "RPA",
+          "AI终端"
+        ],
+        "importance": 4,
+        "importance_stars": "⭐⭐⭐⭐",
+        "description": "DeepSeek V4 + 各大厂Agent平台竞相发布。AI应用从'聊天'走向'执行'，企业服务/AI终端迎来商业化拐点。",
+        "category": "科技",
+        "status": "进行中",
+        "status_class": "ongoing",
+        "sentiment_stocks": [
+          {
+            "code": "688111",
+            "name": "金山办公",
+            "reason": "WPS AI，Agent功能落地直接受益"
+          },
+          {
+            "code": "300033",
+            "name": "同花顺",
+            "reason": "金融AI Agent，弹性标的"
+          }
+        ],
+        "institutional_stocks": [
+          {
+            "code": "002230",
+            "name": "科大讯飞",
+            "reason": "AI平台龙头，星火大模型Agent"
+          },
+          {
+            "code": "688088",
+            "name": "虹软科技",
+            "reason": "视觉AI，AI终端核心标的"
+          }
+        ]
+      }
+    ],
+    "has_event_data": true,
+    "zt_replica_picks": [
+      {
+        "code": "600397",
+        "name": "江钨装备",
+        "sig_type": "🔥涨停双响炮",
+        "score": 99,
+        "close": 16.89,
+        "vol_ratio": 0.4,
+        "zt_days_ago": 1,
+        "pb_days": 1,
+        "is_shrinking": true,
+        "break_pct": 0.0,
+        "today_chg": 10.0,
+        "ma_support": "站稳MA20",
+        "zt_timing": "换手板",
+        "sector": "专用设备",
+        "limit_count": 17
+      }
+    ]
+  }
+}

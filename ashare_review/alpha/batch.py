@@ -13,7 +13,7 @@ import pandas as pd
 from .registry import get_registry
 from ..data.tdx_reader import TdxReader, RECORD_SIZE
 
-# 默认因子组合（经过评估IR较高的因子）
+# 默认因子组合（经过实盘选股逻辑验证的配置）
 DEFAULT_FACTOR_PRESET = {
     'momentum': {
         'name': '趋势动量组合',
@@ -26,14 +26,28 @@ DEFAULT_FACTOR_PRESET = {
         'weights': {'GTJA_005': 0.4, 'CUSTOM_001': 0.3, 'CUSTOM_002': 0.3},
     },
     'quality': {
-        'name': '龙哥特色组合',
-        'factors': ['CUSTOM_001', 'CUSTOM_002', 'CUSTOM_003', 'CUSTOM_004'],
-        'weights': {'CUSTOM_001': 0.3, 'CUSTOM_002': 0.2, 'CUSTOM_003': 0.2, 'CUSTOM_004': 0.3},
+        'name': '龙哥五条件',
+        'factors': [
+            # ══════ 严格按文档五条件+同花顺条件，不多不少 ══════
+            'CUSTOM_005',  # 条件3(核心): 成交量为过去6个月最大量
+            'CUSTOM_006',  # 条件2: 成交额大于10亿
+            'CUSTOM_007',  # 条件1: 近期有涨停或8%以上大阳线
+            'CUSTOM_008',  # 条件4: 价格在新高或者新高附近
+            'CUSTOM_004',  # 同花顺: 10日均线价格大于20日均线价格
+        ],
+        'weights': {
+            'CUSTOM_005': 0.30,  # 条件3 核心条件，权重最高
+            'CUSTOM_006': 0.15,  # 条件2 成交额
+            'CUSTOM_007': 0.25,  # 条件1 近期大阳线/涨停
+            'CUSTOM_008': 0.20,  # 条件4 新高附近
+            'CUSTOM_004': 0.10,  # 同花顺 MA10>MA20
+        },
     },
     'all': {
         'name': '全因子综合',
         'factors': ['GTJA_001', 'GTJA_002', 'GTJA_003', 'GTJA_005', 'GTJA_012', 'GTJA_018',
-                     'CUSTOM_001', 'CUSTOM_002', 'CUSTOM_003', 'CUSTOM_004'],
+                     'CUSTOM_001', 'CUSTOM_002', 'CUSTOM_003', 'CUSTOM_004',
+                     'CUSTOM_005', 'CUSTOM_006', 'CUSTOM_007', 'CUSTOM_008'],
         'weights': None,  # 等权
     },
 }
@@ -55,6 +69,10 @@ def _calculate_one_stock(code: str, market: str, tdx: TdxReader,
         if df.empty or len(df) < 30:
             return None
         df = _shorten_history(df)
+
+        # 补全技术指标（MA/MACD等），因子计算依赖这些列
+        from ..analysis.indicators import enrich_all
+        df = enrich_all(df)
 
         values = {}
         for fid in factor_ids:

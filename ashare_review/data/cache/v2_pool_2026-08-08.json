@@ -1,0 +1,150 @@
+{
+  "_cached_date": "2026-08-08",
+  "_cached_at": "15:06:24",
+  "_namespace": "v2_pool",
+  "_payload": {
+    "status": {
+      "date": "2026-08-08",
+      "signals": 0,
+      "watch": 8,
+      "ready": 2,
+      "holding": 0,
+      "last_update": "2026-07-14"
+    },
+    "watch_list": [
+      {
+        "code": "603137",
+        "name": "恒尚节能",
+        "signal_date": "2026-07-10",
+        "score": 100,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "002208",
+        "name": "合肥城建",
+        "signal_date": "2026-07-10",
+        "score": 95,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "600353",
+        "name": "旭光电子",
+        "signal_date": "2026-07-10",
+        "score": 95,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "603986",
+        "name": "兆易创新",
+        "signal_date": "2026-07-10",
+        "score": 95,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "002185",
+        "name": "华天科技",
+        "signal_date": "2026-07-10",
+        "score": 90,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "603726",
+        "name": "朗迪集团",
+        "signal_date": "2026-07-10",
+        "score": 90,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "603991",
+        "name": "领先股份",
+        "signal_date": "2026-07-10",
+        "score": 85,
+        "days_watched": 29,
+        "remaining_days": 0
+      },
+      {
+        "code": "600113",
+        "name": "浙江东日",
+        "signal_date": "2026-07-13",
+        "score": 65,
+        "days_watched": 26,
+        "remaining_days": 0
+      }
+    ],
+    "buy_list": [],
+    "holding_list": [],
+    "finished_list": [
+      {
+        "code": "301072",
+        "name": "中捷精工",
+        "signal_date": "2026-07-06",
+        "buy_date": "",
+        "sell_date": "",
+        "score": 69.0,
+        "status": "expired"
+      },
+      {
+        "code": "200037",
+        "name": "深南电B",
+        "signal_date": "2026-07-06",
+        "buy_date": "",
+        "sell_date": "",
+        "score": 67.0,
+        "status": "expired"
+      },
+      {
+        "code": "000921",
+        "name": "海信家电",
+        "signal_date": "2026-07-08",
+        "buy_date": "",
+        "sell_date": "",
+        "score": 66.0,
+        "status": "expired"
+      },
+      {
+        "code": "603155",
+        "name": "新亚强",
+        "signal_date": "2026-07-08",
+        "buy_date": "",
+        "sell_date": "",
+        "score": 61.0,
+        "status": "expired"
+      },
+      {
+        "code": "000608",
+        "name": "阳光股份",
+        "signal_date": "2026-07-07",
+        "buy_date": "2026-07-13",
+        "sell_date": "",
+        "score": 76.0,
+        "status": "bought"
+      },
+      {
+        "code": "688809",
+        "name": "强一股份",
+        "signal_date": "2026-07-08",
+        "buy_date": "2026-07-13",
+        "sell_date": "",
+        "score": 81.0,
+        "status": "bought"
+      }
+    ],
+    "signals_today": [],
+    "daily_ops": {
+      "buy_today": [],
+      "sell_today": [],
+      "buy_count": 0,
+      "sell_count": 0
+    },
+    "performance": {
+      "total_trades": 0,
+      "closed_trades": 0
+    }
+  }
+}

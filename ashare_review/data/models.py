@@ -40,6 +40,7 @@ class LimitUpInfo:
     is_seal: bool            # 是否封死
     is_broken: bool = False  # 是否炸板
     board_type: str = ''     # '一字板'|'T字板'|'换手板'
+    close_price: float = 0.0 # 最新价/收盘价
 
 @dataclass
 class AuctionInfo:

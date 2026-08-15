@@ -1,0 +1,114 @@
+<h2>看盘界面布局方案</h2>
+<p class="subtitle">TradingView 的精髓在于"一眼看全"。下面是三种布局风格，对应不同的使用场景。</p>
+
+<div class="options">
+  <div class="option" data-choice="tv-classic" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>TradingView 经典布局（推荐）</h3>
+      <div class="mockup">
+        <div class="mockup-header">布局结构</div>
+        <div class="mockup-body">
+          <div style="display:flex;height:240px;gap:1px;background:#2a2e39;">
+            <div style="width:180px;background:#1e222d;padding:12px;color:#d1d4dc;font-size:11px;">
+              <div style="color:#787b86;margin-bottom:8px;">📋 自选列表</div>
+              <div style="padding:3px 6px;background:#2a2e39;border-radius:3px;margin:2px 0;">贵州茅台 <span style="color:#ef5350;float:right;">-1.2%</span></div>
+              <div style="padding:3px 6px;border-radius:3px;margin:2px 0;">宁德时代 <span style="color:#26a69a;float:right;">+2.3%</span></div>
+              <div style="padding:3px 6px;border-radius:3px;margin:2px 0;">比亚迪 <span style="color:#ef5350;float:right;">-0.8%</span></div>
+              <div style="padding:3px 6px;border-radius:3px;margin:2px 0;">中芯国际 <span style="color:#26a69a;float:right;">+5.1%</span></div>
+            </div>
+            <div style="flex:1;background:#1e222d;padding:12px;display:flex;flex-direction:column;">
+              <div style="color:#d1d4dc;font-size:13px;margin-bottom:6px;">
+                <strong>600519 贵州茅台</strong> <span style="color:#ef5350;">1,852.00 -1.2%</span>
+                <span style="float:right;font-size:11px;color:#787b86;">日线 | 60分 | 30分 | 5分</span>
+              </div>
+              <div style="flex:1;background:#131722;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#787b86;">
+                📈 K线主图区域 (MA5/MA10/MA20/MA60)
+              </div>
+              <div style="height:60px;background:#131722;border-radius:4px;margin-top:1px;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:11px;">
+                📊 成交量副图
+              </div>
+              <div style="height:60px;background:#131722;border-radius:4px;margin-top:1px;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:11px;">
+                🔵 MACD副图 (DIF/DEA/柱)
+              </div>
+            </div>
+            <div style="width:220px;background:#1e222d;padding:12px;color:#d1d4dc;font-size:11px;">
+              <div style="color:#787b86;margin-bottom:8px;">🔧 工具栏</div>
+              <div style="padding:3px 0;">✏️ 趋势线 | 水平线 | 矩形</div>
+              <div style="padding:3px 0;">📐 斐波那契 | 通道</div>
+              <div style="color:#787b86;margin:12px 0 8px;">📊 盘口</div>
+              <div style="font-size:10px;">
+                <div>卖5 1,860.00 <span style="color:#ef5350;float:right;">234</span></div>
+                <div>卖1 1,855.00 <span style="color:#ef5350;float:right;">1,200</span></div>
+                <div style="color:#787b86;">———</div>
+                <div>买1 1,852.00 <span style="color:#26a69a;float:right;">856</span></div>
+                <div>买5 1,845.00 <span style="color:#26a69a;float:right;">421</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p><strong>左列：</strong>自选列表 180px | <strong>中间：</strong>K线图(主)+成交量(副)+MACD(副) | <strong>右列：</strong>画线工具+盘口 220px</p>
+    </div>
+  </div>
+  <div class="option" data-choice="multi-panel" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>多面板分屏布局</h3>
+      <div class="mockup">
+        <div class="mockup-header">布局结构 — 2×2 四分屏</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;background:#2a2e39;height:240px;">
+            <div style="background:#131722;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;">
+              600519 贵州茅台 日线
+            </div>
+            <div style="background:#131722;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;">
+              300750 宁德时代 日线
+            </div>
+            <div style="background:#131722;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;">
+              000858 五粮液 60分钟
+            </div>
+            <div style="background:#131722;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;">
+              上证指数 日线
+            </div>
+          </div>
+        </div>
+      </div>
+      <p>每格独立K线图，适合同时盯多只股票或多周期。顶部栏统一切换布局(1/2/4/6格)。自选列表可折叠到侧边。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="dashboard" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>混合仪表盘布局</h3>
+      <div class="mockup">
+        <div class="mockup-header">布局结构 — 大盘概览+个股深潜</div>
+        <div class="mockup-body">
+          <div style="display:flex;flex-direction:column;gap:2px;background:#2a2e39;height:240px;">
+            <div style="height:50px;background:#1e222d;display:flex;align-items:center;padding:0 12px;color:#d1d4dc;font-size:12px;gap:20px;">
+              <span>上证 <span style="color:#ef5350;">3,245 -0.8%</span></span>
+              <span>深证 <span style="color:#26a69a;">10,892 +0.3%</span></span>
+              <span>创业 <span style="color:#26a69a;">2,156 +0.7%</span></span>
+              <span>📈 涨停 47家</span> <span>📉 跌停 3家</span>
+              <span style="margin-left:auto;color:#787b86;">2026-07-06 14:35:21</span>
+            </div>
+            <div style="flex:1;display:flex;gap:2px;">
+              <div style="flex:1;background:#131722;display:flex;align-items:center;justify-content:center;color:#787b86;font-size:12px;">
+                📈 K线主图 (80%面积)
+              </div>
+              <div style="width:200px;background:#1e222d;padding:8px;font-size:10px;color:#d1d4dc;">
+                <div style="color:#787b86;">🔥 异动</div>
+                <div>⚡ 科大讯飞 涨速+3%</div>
+                <div>📊 中科曙光 量比3.2</div>
+                <div style="color:#787b86;margin-top:8px;">🎯 我的策略</div>
+                <div>🎯 1进2: 四川长虹</div>
+                <div>🎯 龙头: 赛力斯</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p>顶部大盘指数条 + K线主区 + 右侧异动/策略面板。更偏向"综览"而非深度分析，适合快速扫描。</p>
+    </div>
+  </div>
+</div>

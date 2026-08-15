@@ -14,8 +14,10 @@
 在此基础上，对连板股做接力评分：N字结构、换手板、早盘封板等加分项。
 """
 import os, struct
-from typing import List
+from typing import List, Optional
+from datetime import datetime, date as dt_date
 import numpy as np
+import pandas as pd
 from .base import BaseScreener
 from ..data.models import ScreeningResult
 from ..analysis.pattern import detect_n_pattern
@@ -34,8 +36,8 @@ class LeaderScreener(BaseScreener):
     LOOKBACK_MONTHS = 126      # 6个月 ≈ 126个交易日
     MIN_RECENT_LIMIT_UP = 1    # 近期至少1次涨停
 
-    def screen(self) -> List[ScreeningResult]:
-        limit_ups = self.ak.get_limit_up_pool()
+    def screen(self, trade_date: str = None) -> List[ScreeningResult]:
+        limit_ups = self.ak.get_limit_up_pool(trade_date=trade_date)
 
         # 分成两路：连板龙（consecutive >= 2）和 低位启动龙（首板但满足5条件）
         multi_board = [lu for lu in limit_ups if lu.consecutive >= 2]
@@ -45,7 +47,7 @@ class LeaderScreener(BaseScreener):
 
         # ---- 连板龙：接力评分 ----
         for lu in multi_board:
-            score, reasons, detail = self._evaluate_multi_board(lu)
+            score, reasons, detail = self._evaluate_multi_board(lu, trade_date=trade_date)
             if score >= 30:
                 results.append(ScreeningResult(
                     code=lu.code, name=lu.name, strategy=self.name,
@@ -58,7 +60,7 @@ class LeaderScreener(BaseScreener):
             # 过滤一字板（散户买不到）
             if lu.board_type == '一字板':
                 continue
-            score, reasons, detail = self._evaluate_first_board_leader(lu)
+            score, reasons, detail = self._evaluate_first_board_leader(lu, trade_date=trade_date)
             if score >= 35:
                 results.append(ScreeningResult(
                     code=lu.code, name=lu.name, strategy=self.name,
@@ -70,9 +72,42 @@ class LeaderScreener(BaseScreener):
         return results[:25]
 
     # ------------------------------------------------------------------
+    # 历史数据辅助：读取TDX数据并可指定截止日期
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _filter_df_to_date(df: pd.DataFrame, trade_date: Optional[str]):
+        """将DataFrame过滤到指定日期之前（含当日）"""
+        if not trade_date:
+            return df
+        try:
+            target_d = datetime.strptime(trade_date, '%Y%m%d').date()
+        except ValueError:
+            return df
+        filtered = df[df['trade_date'].apply(
+            lambda x: (x.date() if hasattr(x, 'date') else x) <= target_d
+        )]
+        return filtered if len(filtered) >= 20 else df
+
+    def _read_historical(self, code: str, trade_date: str = None) -> Optional[pd.DataFrame]:
+        """读取TDX日线数据，支持历史截止日期"""
+        market = 'sh' if code.startswith('6') else 'sz'
+        if code.startswith('8') or code.startswith('4'):
+            market = 'bj'
+        try:
+            df = self.tdx.read_daily(code, market)
+            if df.empty or len(df) < 20:
+                return None
+            df = enrich_all(df)
+            if trade_date:
+                df = self._filter_df_to_date(df, trade_date)
+            return df
+        except Exception:
+            return None
+
+    # ------------------------------------------------------------------
     # 连板龙评分
     # ------------------------------------------------------------------
-    def _evaluate_multi_board(self, lu) -> tuple:
+    def _evaluate_multi_board(self, lu, trade_date: str = None) -> tuple:
         score = 25
         reasons = [f'{lu.consecutive}连板']
         detail = {
@@ -83,12 +118,8 @@ class LeaderScreener(BaseScreener):
         }
 
         try:
-            market = 'sh' if lu.code.startswith('6') else 'sz'
-            if lu.code.startswith('8') or lu.code.startswith('4'):
-                market = 'bj'
-            df = self.tdx.read_daily(lu.code, market)
-            if not df.empty:
-                df = enrich_all(df)
+            df = self._read_historical(lu.code, trade_date=trade_date)
+            if df is not None and not df.empty:
                 latest = df.iloc[-1]
 
                 # N字结构加分
@@ -142,15 +173,16 @@ class LeaderScreener(BaseScreener):
                     reasons.append('新高附近')
                     detail['near_high'] = True
 
-                # 涨停次数加成
-                limit_up_count = self._count_limit_ups(lu.code)
-                if limit_up_count >= 10:
-                    score += 8
-                    reasons.append(f'年涨停{limit_up_count}次·股性活跃')
-                    detail['limit_up_count'] = limit_up_count
-                elif limit_up_count >= 5:
-                    score += 3
-                    detail['limit_up_count'] = limit_up_count
+                # 涨停次数加成（回测模式下不计算，缩短运行时间）
+                if not trade_date:
+                    limit_up_count = self._count_limit_ups(lu.code)
+                    if limit_up_count >= 10:
+                        score += 8
+                        reasons.append(f'年涨停{limit_up_count}次·股性活跃')
+                        detail['limit_up_count'] = limit_up_count
+                    elif limit_up_count >= 5:
+                        score += 3
+                        detail['limit_up_count'] = limit_up_count
 
                 # 筹码分析
                 try:
@@ -180,7 +212,7 @@ class LeaderScreener(BaseScreener):
     # ------------------------------------------------------------------
     # 低位启动龙：5条件体系
     # ------------------------------------------------------------------
-    def _evaluate_first_board_leader(self, lu) -> tuple:
+    def _evaluate_first_board_leader(self, lu, trade_date: str = None) -> tuple:
         """对首板标的执行龙哥5条件打分"""
         score = 0
         reasons = []
@@ -199,13 +231,10 @@ class LeaderScreener(BaseScreener):
         score += 15
         reasons.append('首板涨停·大资金进场')
 
-        # 检查是否是放量首板（更强势）
+        # 检查是否是放量首板（更强势）— 用历史数据
         try:
-            market = 'sh' if lu.code.startswith('6') else 'sz'
-            if lu.code.startswith('8') or lu.code.startswith('4'):
-                market = 'bj'
-            df = self.tdx.read_daily(lu.code, market)
-            if len(df) >= 2:
+            df = self._read_historical(lu.code, trade_date=trade_date)
+            if df is not None and len(df) >= 2:
                 prev_vol = df['volume'].iloc[-2]
                 today_vol = df['volume'].iloc[-1]
                 if prev_vol > 0 and today_vol / prev_vol >= 1.5:
@@ -229,12 +258,8 @@ class LeaderScreener(BaseScreener):
         # ---- 条件3：成交量为过去6个月最大量（核心条件） ----
         vol_6m_max = False
         try:
-            market = 'sh' if lu.code.startswith('6') else 'sz'
-            if lu.code.startswith('8') or lu.code.startswith('4'):
-                market = 'bj'
-            df = self.tdx.read_daily(lu.code, market)
-            if not df.empty:
-                df = enrich_all(df)
+            df = self._read_historical(lu.code, trade_date=trade_date)
+            if df is not None and not df.empty:
                 vol_6m_max = self._check_volume_6m_max(df)
                 if vol_6m_max:
                     conditions_met += 1
@@ -247,11 +272,8 @@ class LeaderScreener(BaseScreener):
         # ---- 条件4：价格在新高或新高附近 ----
         near_high = False
         try:
-            market = 'sh' if lu.code.startswith('6') else 'sz'
-            if lu.code.startswith('8') or lu.code.startswith('4'):
-                market = 'bj'
-            df = self.tdx.read_daily(lu.code, market)
-            if not df.empty:
+            df = self._read_historical(lu.code, trade_date=trade_date)
+            if df is not None and not df.empty:
                 near_high = self._check_near_high(df)
                 if near_high:
                     conditions_met += 1
@@ -272,15 +294,16 @@ class LeaderScreener(BaseScreener):
         score += 5
 
         # ---- 额外加分项 ----
-        # 涨停次数
-        limit_up_count = self._count_limit_ups(lu.code)
-        if limit_up_count >= 10:
-            score += 5
-            reasons.append(f'年涨停{limit_up_count}次·股性活跃')
-            detail['limit_up_count'] = limit_up_count
-        elif limit_up_count >= 5:
-            score += 2
-            detail['limit_up_count'] = limit_up_count
+        # 涨停次数（回测模式下不计算，缩短运行时间）
+        if not trade_date:
+            limit_up_count = self._count_limit_ups(lu.code)
+            if limit_up_count >= 10:
+                score += 5
+                reasons.append(f'年涨停{limit_up_count}次·股性活跃')
+                detail['limit_up_count'] = limit_up_count
+            elif limit_up_count >= 5:
+                score += 2
+                detail['limit_up_count'] = limit_up_count
 
         # 早盘封板
         time_str = str(lu.limit_up_time).replace(':', '')[:4]
