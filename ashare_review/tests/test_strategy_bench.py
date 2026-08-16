@@ -135,3 +135,48 @@ def test_store_compare(tmp_path):
     assert by_key['max_drawdown']['better'] == 'b'
     # total_trades 无 better
     assert by_key['total_trades']['better'] is None
+
+# ---------- Task 3: 基类 + 注册表 + 归一化 ----------
+
+def test_normalize_v3_style_trades():
+    """v3/zt/ice 共用归一化：buy_date/sell_date('%Y-%m-%d') + net_ret(%)"""
+    from ashare_review.strategy_bench.adapters.base import normalize_v3_style_trades
+    raw = [
+        {'buy_date': '2026-08-10', 'sell_date': '2026-08-14', 'net_ret': 8.5, 'code': '600001'},
+        {'buy_date': '2026-08-11', 'sell_date': '2026-08-12', 'net_ret': -3.2},
+    ]
+    trades = normalize_v3_style_trades(raw)
+    assert trades == [
+        {'entry_date': '20260810', 'exit_date': '20260814', 'return_pct': 8.5},
+        {'entry_date': '20260811', 'exit_date': '20260812', 'return_pct': -3.2},
+    ]
+
+
+def test_normalize_one_two_trades():
+    """one_two：entry_date/exit_date(可能带'-') + return_pct"""
+    from ashare_review.strategy_bench.adapters.base import normalize_one_two_trades
+    raw = [
+        {'entry_date': '2026-08-10', 'exit_date': '2026-08-11', 'return_pct': 6.0, 'result': 'win'},
+        {'entry_date': '20260812', 'exit_date': '20260812', 'return_pct': -4.0, 'result': 'loss'},
+    ]
+    trades = normalize_one_two_trades(raw)
+    assert trades[0] == {'entry_date': '20260810', 'exit_date': '20260811', 'return_pct': 6.0}
+    assert trades[1]['return_pct'] == -4.0
+
+
+def test_normalize_tail_signals():
+    """尾盘：信号行 → trade_date 入场，open_ret(%) 为收益，exit=次日"""
+    from ashare_review.strategy_bench.adapters.base import normalize_tail_signals
+    import pandas as pd
+    from ashare_review.utils.calendar import TradingCalendar
+    cal = TradingCalendar()
+    sig = pd.DataFrame([
+        {'trade_date': '2026-08-10', 'open_ret': 2.5, 'signal': '超跌'},
+        {'trade_date': '2026-08-11', 'open_ret': -1.0, 'signal': '平台突破'},
+    ])
+    trades = normalize_tail_signals(sig, 'open_ret', cal)
+    assert len(trades) == 2
+    assert trades[0]['entry_date'] == '20260810'
+    assert trades[0]['return_pct'] == 2.5
+    assert trades[0]['exit_date'] == '20260811'   # 2026-08-10 的下一个交易日
+
