@@ -62,6 +62,8 @@ class Vol180SimPortfolio:
 
     def __init__(self):
         self.tdx = TdxReader()
+        from ..risk.store import RiskStore
+        self._risk = RiskStore()
         os.makedirs(DATA_DIR, exist_ok=True)
         self._state = self._load()
         self._name_cache: Dict[str, str] = {}
@@ -200,6 +202,34 @@ class Vol180SimPortfolio:
                     lambda x: (x.date() if hasattr(x, 'date') else x) <= target
                 )]
             return df if len(df) >= 60 else None
+        except Exception:
+            return None
+
+    def _read_sell_df(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
+        """卖出检查用日线：读原始日线并按 up_to_date 过滤，不强制 MAVOL/最少 60 根。
+
+        卖出规则只用 close/prev_close，不依赖均线；放宽长度约束后，
+        既能省去历史均线计算，也支持测试注入的少量可控日线。
+        """
+        market = 'sh' if str(code).startswith('6') else 'sz'
+        if str(code).startswith(('8', '4')):
+            market = 'bj'
+        try:
+            df = self.tdx.read_daily(code, market)
+            if df is None or df.empty:
+                return None
+            if up_to_date:
+                try:
+                    target = datetime.strptime(up_to_date, '%Y%m%d').date()
+                except ValueError:
+                    try:
+                        target = datetime.strptime(up_to_date, '%Y-%m-%d').date()
+                    except ValueError:
+                        return df
+                df = df[df['trade_date'].apply(
+                    lambda x: (x.date() if hasattr(x, 'date') else x) <= target
+                )]
+            return df if not df.empty else None
         except Exception:
             return None
 
@@ -482,7 +512,7 @@ class Vol180SimPortfolio:
         had_zt = position.get('had_zt', False)
         mode = position.get('mode', 'v1')
 
-        df = self._read_stock(code, up_to_date=td_fmt)
+        df = self._read_sell_df(code, up_to_date=td_fmt)
         if df is None or df.empty:
             return None
 
@@ -499,13 +529,15 @@ class Vol180SimPortfolio:
         except Exception:
             trading_days = 3
 
-        # ── V2: 硬止损 -6% ──
+        # ── V2: 硬止损（读风控配置，默认 -6%） ──
+        from ..risk.evaluate import stop_loss_pct
+        stop = stop_loss_pct(self._risk.get('vol180')) / 100.0
         if buy_price > 0:
             loss_pct = (close - buy_price) / buy_price
-            if loss_pct <= -0.06:
+            if loss_pct <= stop:
                 return {
                     'sell_price': round(close, 2),
-                    'sell_reason': '止损-6%',
+                    'sell_reason': f'止损{abs(stop*100):.0f}%',
                     'is_zt': False,
                     'days_held': trading_days,
                 }
@@ -581,13 +613,15 @@ class Vol180SimPortfolio:
 
         HOLD_MAX = 5  # V3: 最大持有 5 天（比 V2 宽松，给趋势空间）
 
-        # ── V3 硬止损 -6%（与 V2 相同） ──
+        # ── V3 硬止损（读风控配置，默认 -6%，与 V2 相同） ──
+        from ..risk.evaluate import stop_loss_pct
+        stop = stop_loss_pct(self._risk.get('vol180')) / 100.0
         if buy_price > 0:
             loss_pct = (close - buy_price) / buy_price
-            if loss_pct <= -0.06:
+            if loss_pct <= stop:
                 return {
                     'sell_price': round(close, 2),
-                    'sell_reason': '止损-6%',
+                    'sell_reason': f'止损{abs(stop*100):.0f}%',
                     'is_zt': False,
                     'days_held': trading_days,
                 }
@@ -795,13 +829,40 @@ class Vol180SimPortfolio:
                 'update_date': td,
             }
 
-        # ── Step 2: 检测买入信号（按评分 + 仓位限制） ──
+        # ── Step 2: 检测买入信号（按评分 + 仓位限制 + 风控） ──
         buy_signals = self._scan_buy_signals(already_broken + watch_list, mode=mode)
         new_buys = 0
-        available_slots = max(0, MAX_POSITIONS - len(self._state['holding']) - len(self._state['ready']))
-        max_new = min(MAX_NEW_PER_DAY, available_slots)
+        cfg = self._risk.get('vol180')
+        # ── 风控判定 ──
+        holdings_val = sum(
+            h.get('shares', 0) * (h.get('current_price', h.get('buy_price', 0)) or 0)
+            for h in self._state['holding'].values()
+        )
+        hist_peak = INITIAL_CAPITAL
+        for snap in self._state.get('portfolio_history', []):
+            hist_peak = max(hist_peak, snap.get('total', 0) or 0)
+        from ..risk.evaluate import evaluate
+        from ..analysis.strategy_regime import live_diagnosis as _ld
+        try:
+            regime = _ld.get_regime_diagnosis().get('regime', '震荡观望') or '震荡观望'
+        except Exception:
+            regime = '震荡观望'
+        risk = evaluate(cfg, {
+            'positions': len(self._state['holding']) + len(self._state['ready']),
+            'opened_today': new_buys,
+            'total_value': self._state.get('cash', INITIAL_CAPITAL) + holdings_val,
+            'history_peak': hist_peak,
+            'breaker_tripped': (self._state.get('last_risk') or {}).get('breaker_tripped', False),
+        }, regime)
+        if risk['blocked_reasons']:
+            print(f"[SimPortfolio] 风控拦截开仓: {'；'.join(risk['blocked_reasons'])}")
+        self._state['last_risk'] = risk   # 供 status API 读取
+        available_slots = max(0, cfg['max_positions'] - len(self._state['holding']) - len(self._state['ready']))
+        max_new = min(cfg['max_new_per_day'], available_slots)
 
         for sig in buy_signals[:max_new]:
+            if not risk['can_open']:
+                break
             code = sig['code']
             if code in self._state['holding'] or code in self._state['ready']:
                 continue
@@ -816,8 +877,8 @@ class Vol180SimPortfolio:
             except Exception:
                 buy_date = (td_dt + timedelta(days=1)).strftime('%Y-%m-%d')
 
-            # 计算买入份额
-            position_capital = INITIAL_CAPITAL * PER_POSITION_PCT
+            # 计算买入份额（读配置 + regime 缩放）
+            position_capital = INITIAL_CAPITAL * (risk['suggested_size_pct'] / 100.0)
             buy_price_est = sig['close']
             shares = int(position_capital / buy_price_est / 100) * 100
             if shares < 100:

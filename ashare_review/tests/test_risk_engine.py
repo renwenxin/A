@@ -247,3 +247,65 @@ def test_evaluate_limits_and_multi():
 def test_stop_loss_pct():
     from ashare_review.risk.evaluate import stop_loss_pct
     assert stop_loss_pct({'stop_loss_pct': -6.0}) == -6.0
+
+
+
+# ---------- Task 4: Vol180 接入 ----------
+
+class FakeTdx2:
+    """可控日线：code -> DataFrame(trade_date/open/high/low/close/volume)"""
+    def __init__(self, data):
+        self.data = data  # {code: [(date, open, close), ...]}
+
+    def read_daily(self, code, market):
+        import pandas as pd
+        from datetime import datetime
+        bars = self.data.get(str(code))
+        if not bars:
+            return pd.DataFrame()
+        rows = [{'trade_date': datetime.strptime(d, '%Y-%m-%d').date(),
+                 'open': o, 'high': o, 'low': c, 'close': c, 'volume': 100}
+                for d, o, c in bars]
+        return pd.DataFrame(rows).sort_values('trade_date').reset_index(drop=True)
+
+
+def _vol180_portfolio(tmp_path, monkeypatch, config_path=None):
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    import tempfile
+    path = config_path or str(tmp_path / 'risk.json')
+    monkeypatch.setenv('RISK_CONFIG', path)
+    p = Vol180SimPortfolio()
+    p._state['holding'] = {}          # 清空真实状态，避免污染
+    return p
+
+
+def test_vol180_stop_loss_default_unchanged(tmp_path, monkeypatch):
+    """默认配置 -6%：跌 5% 不止损，跌 7% 止损（与现状一致）"""
+    from ashare_review.risk.store import RiskStore
+    path = str(tmp_path / 'risk.json')
+    RiskStore(path).set('vol180', {})   # 写默认
+    p = _vol180_portfolio(tmp_path, monkeypatch, path)
+    p.tdx = FakeTdx2({'600001': [('2026-08-10', 10.0, 10.0), ('2026-08-11', 10.0, 9.5),
+                                 ('2026-08-12', 10.0, 9.3)]})   # 最新 9.3 → -7%
+    p._state['holding'] = {'600001': {'buy_date': '2026-08-10', 'buy_price': 10.0, 'had_zt': False}}
+    sell = p._check_sell_vol180('600001', p._state['holding']['600001'], '2026-08-12')
+    assert sell is not None and '止损' in sell['sell_reason']
+    # 跌 5%：最新 9.5 → 不止损
+    p.tdx = FakeTdx2({'600001': [('2026-08-10', 10.0, 10.0), ('2026-08-11', 10.0, 10.0),
+                                 ('2026-08-12', 10.0, 9.5)]})
+    sell2 = p._check_sell_vol180('600001', p._state['holding']['600001'], '2026-08-12')
+    assert sell2 is None
+
+
+def test_vol180_stop_loss_config_changes_behavior(tmp_path, monkeypatch):
+    """改配置止损 -3%：跌 5% 即触发（验证配置真正生效）"""
+    from ashare_review.risk.store import RiskStore
+    path = str(tmp_path / 'risk.json')
+    RiskStore(path).set('vol180', {'stop_loss_pct': -3.0})
+    p = _vol180_portfolio(tmp_path, monkeypatch, path)
+    p.tdx = FakeTdx2({'600001': [('2026-08-10', 10.0, 10.0), ('2026-08-11', 10.0, 10.0),
+                                 ('2026-08-12', 10.0, 9.5)]})   # -5% ≥ 3% 线
+    p._state['holding'] = {'600001': {'buy_date': '2026-08-10', 'buy_price': 10.0, 'had_zt': False}}
+    sell = p._check_sell_vol180('600001', p._state['holding']['600001'], '2026-08-12')
+    assert sell is not None and '止损' in sell['sell_reason']
+

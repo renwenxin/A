@@ -37,7 +37,8 @@ def _merge_default(portfolio_id: str, saved: dict) -> dict:
 
 class RiskStore:
     def __init__(self, path: Optional[str] = None):
-        self.path = path or CONFIG_PATH
+        # 运行时读 env，使 RISK_CONFIG 在实例化时生效（供测试/部署注入配置路径）
+        self.path = path or os.environ.get('RISK_CONFIG', CONFIG_PATH)
 
     def _load_raw(self) -> dict:
         try:
