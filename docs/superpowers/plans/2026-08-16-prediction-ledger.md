@@ -66,7 +66,7 @@ def test_grade_pick_boundaries():
     assert grade_pick(2.99) == 'up'                   # <3% → up
     assert grade_pick(0.0) == 'up'                    # 平盘 → up
     assert grade_pick(-2.99) == 'flat'                # -3% 以内 → flat
-    assert grade_pick(-3.0) == 'down'                 # 正好 -3% → down
+    assert grade_pick(-3.0) == 'flat'                 # 正好 -3% → flat（-3%~0 区间含边界）
     assert grade_pick(-5.0) == 'down'
 
 
@@ -176,7 +176,7 @@ def hit_for(pred_type: str, direction: Optional[str], actual: Optional[str]) -> 
 - [ ] **Step 4: 运行确认通过**
 
 Run: `python -m pytest ashare_review/tests/test_prediction_ledger.py -v`
-Expected: 6 passed（本任务 6 个测试）
+Expected: 5 passed（本任务 5 个测试）
 
 - [ ] **Step 5: 提交**
 
@@ -1505,7 +1505,8 @@ Expected: 有 picks 记录（含迁移的历史日期与今日新记录）
 - [ ] **Step 4: 提交**
 
 ```bash
-git add -A
+git status   # 确认只包含本功能文件（runtime 状态文件如 v4_pool_state_*/sim_vol180_state.json 不要提交）
+git add ashare_review/prediction_ledger ashare_review/web/app.py ashare_review/web/templates/prediction_ledger.html ashare_review/web/templates/base.html ashare_review/report/daily.py ashare_review/tests/test_prediction_ledger.py
 git commit -m "feat(ledger): 预测台账完整交付（历史迁移数据）"
 git push origin main
 ```

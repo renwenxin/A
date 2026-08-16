@@ -62,7 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_pred_type ON predictions(pred_type);
 
 ### 5.1 精选标的 picks（次日 TDX 日线 + 次日涨停池）
 
-`actual` 分级：涨停→`zt`；涨幅≥3%→`up3`；收涨→`up`；-3%~0→`flat`；<-3%→`down`
+`actual` 分级：涨停→`zt`；涨幅≥3%→`up3`；收涨→`up`；-3.0 ≤ 涨幅 < 0→`flat`（含 -3.0 边界）；涨幅 < -3.0→`down`
 **命中 = `zt` 或 `up3`**（明细保留完整分级）
 涨停池网络失败降级：按 TDX 涨幅判定（主板≥9.8% / 创业板科创≥19.6% / 北交所≥29.4%）。边界明确：is_zt 优先；涨幅 ≥3% → up3；-3% ≤ 涨幅 < 0 → flat；涨幅 < -3% → down
 
