@@ -145,3 +145,75 @@ def test_store_get_unknown_portfolio(tmp_path):
         assert False, '应抛 ValueError'
     except ValueError:
         pass
+
+
+# ---------- Task 3: 开仓判定 ----------
+
+def _cfg(**kw):
+    from ashare_review.risk.rules import DEFAULT_CONFIG
+    c = dict(DEFAULT_CONFIG['vol180'])
+    c.update(kw)
+    return c
+
+
+def test_evaluate_normal_open():
+    from ashare_review.risk.evaluate import evaluate
+    cfg = _cfg()
+    r = evaluate(cfg, {'positions': 3, 'opened_today': 1,
+                       'total_value': 1_050_000, 'history_peak': 1_100_000}, '强势趋势')
+    assert r['can_open'] is True
+    assert r['blocked_reasons'] == []
+    assert r['suggested_size_pct'] == 10.0
+    assert r['regime_scale'] == 1.0
+    # 回撤 (110-105)/110 = 4.5% < 8% → 放行
+
+
+def test_evaluate_drawdown_breaker():
+    from ashare_review.risk.evaluate import evaluate
+    cfg = _cfg()
+    # 回撤 = (110-101)/110 = 8.18% ≥ 8% → 拦
+    r = evaluate(cfg, {'positions': 1, 'opened_today': 0,
+                       'total_value': 1_010_000, 'history_peak': 1_100_000}, '强势趋势')
+    assert r['can_open'] is False
+    assert any('回撤' in s for s in r['blocked_reasons'])
+    # 恰好 = 8% → 触发（(110-101.2)/110=8%）
+    r2 = evaluate(cfg, {'positions': 1, 'opened_today': 0,
+                        'total_value': 1_012_000, 'history_peak': 1_100_000}, '强势趋势')
+    assert r2['can_open'] is False
+    # 熔断后回撤 < 4% → 解除
+    r3 = evaluate(cfg, {'positions': 1, 'opened_today': 0,
+                        'total_value': 1_065_000, 'history_peak': 1_100_000}, '强势趋势')
+    assert r3['can_open'] is True
+
+
+def test_evaluate_regime_scale():
+    from ashare_review.risk.evaluate import evaluate
+    cfg = _cfg()
+    # 题材轮动 → 0.7 → 建议 7%
+    r = evaluate(cfg, {'positions': 0, 'opened_today': 0,
+                       'total_value': 1_000_000, 'history_peak': 1_000_000}, '题材轮动')
+    assert r['can_open'] is True and r['suggested_size_pct'] == 7.0
+    # 退潮下跌 scale=0 → 禁开仓
+    r2 = evaluate(cfg, {'positions': 0, 'opened_today': 0,
+                        'total_value': 1_000_000, 'history_peak': 1_000_000}, '退潮下跌')
+    assert r2['can_open'] is False
+    assert any('退潮' in s for s in r2['blocked_reasons'])
+    # 未知 regime → 1.0 不误拦
+    r3 = evaluate(cfg, {'positions': 0, 'opened_today': 0,
+                        'total_value': 1_000_000, 'history_peak': 1_000_000}, '未知行情')
+    assert r3['can_open'] is True and r3['regime_scale'] == 1.0
+
+
+def test_evaluate_limits_and_multi():
+    from ashare_review.risk.evaluate import evaluate
+    cfg = _cfg()
+    r = evaluate(cfg, {'positions': 10, 'opened_today': 3,
+                       'total_value': 900_000, 'history_peak': 1_100_000}, '退潮下跌')
+    assert r['can_open'] is False
+    reasons = '；'.join(r['blocked_reasons'])
+    assert '回撤' in reasons and '退潮' in reasons and '持仓数' in reasons and '新开' in reasons
+
+
+def test_stop_loss_pct():
+    from ashare_review.risk.evaluate import stop_loss_pct
+    assert stop_loss_pct({'stop_loss_pct': -6.0}) == -6.0
