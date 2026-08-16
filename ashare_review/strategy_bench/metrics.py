@@ -38,19 +38,19 @@ def compute_metrics(trades: List[Dict], calendar: Optional[TradingCalendar] = No
                 'max_drawdown': None, 'sharpe': None}
 
     n = len(trades)
-    wins = [t for t in trades if t['return_pct'] > 0]
-    losses = [t for t in trades if t['return_pct'] <= 0]
+    wins = [t for t in trades if t.get('return_pct', 0.0) > 0]
+    losses = [t for t in trades if t.get('return_pct', 0.0) <= 0]
     win_rate = len(wins) / n * 100
-    avg_win = sum(t['return_pct'] for t in wins) / len(wins) if wins else 0.0
-    avg_loss = sum(abs(t['return_pct']) for t in losses) / len(losses) if losses else 0.0
+    avg_win = sum(t.get('return_pct', 0.0) for t in wins) / len(wins) if wins else 0.0
+    avg_loss = sum(abs(t.get('return_pct', 0.0)) for t in losses) / len(losses) if losses else 0.0
     pl_ratio = round(avg_win / avg_loss, 4) if avg_loss > 0 else None
-    total_profit = sum(t['return_pct'] for t in wins)
-    total_loss = sum(abs(t['return_pct']) for t in losses)
+    total_profit = sum(t.get('return_pct', 0.0) for t in wins)
+    total_loss = sum(abs(t.get('return_pct', 0.0)) for t in losses)
     profit_factor = round(total_profit / total_loss, 4) if total_loss > 0 else None
 
     total_return = 1.0
     for t in trades:
-        total_return *= 1 + t['return_pct'] / 100.0
+        total_return *= 1 + t.get('return_pct', 0.0) / 100.0
     total_return_pct = round((total_return - 1) * 100, 4)
 
     curve = build_equity_curve(trades)
@@ -72,7 +72,7 @@ def compute_metrics(trades: List[Dict], calendar: Optional[TradingCalendar] = No
             if span and span > 0:
                 annual_return = round((total_return ** (252.0 / span) - 1) * 100, 4)
                 trades_per_year = n * 252.0 / span
-                rets = [t['return_pct'] for t in trades]
+                rets = [t.get('return_pct', 0.0) for t in trades]
                 mean_r = sum(rets) / n
                 std_r = math.sqrt(sum((r - mean_r) ** 2 for r in rets) / n)
                 if std_r > 0:
