@@ -332,3 +332,44 @@ def test_zt_replica_stop_loss_config(tmp_path, monkeypatch):
                                   ('2026-08-12', 10.0, 9.6)]})
     sell2 = p2._check_sell('600001', pos, '2026-08-12')
     assert sell2 is not None and '止损' in sell2['sell_reason']
+
+# ---------- Task 6: Web API ----------
+
+def test_risk_config_api(tmp_path, monkeypatch):
+    from ashare_review.risk import store as risk_store
+    from ashare_review.web.app import app
+    monkeypatch.setattr(risk_store, 'CONFIG_PATH', str(tmp_path / 'risk.json'))
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.get('/api/risk/config')
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert data['vol180']['stop_loss_pct'] == -6.0
+    assert data['zt_replica']['stop_loss_pct'] == -5.0
+    # 保存
+    rv2 = c.post('/api/risk/config', json={'portfolio_id': 'vol180',
+                                           'config': {'stop_loss_pct': -4.0}})
+    assert rv2.status_code == 200
+    rv3 = c.get('/api/risk/config')
+    assert rv3.get_json()['vol180']['stop_loss_pct'] == -4.0
+    # 非法 → 400
+    rv4 = c.post('/api/risk/config', json={'portfolio_id': 'vol180',
+                                           'config': {'stop_loss_pct': -50.0}})
+    assert rv4.status_code == 400
+    # 未知持仓 → 400
+    rv5 = c.post('/api/risk/config', json={'portfolio_id': 'nope', 'config': {}})
+    assert rv5.status_code == 400
+
+
+def test_risk_status_api(tmp_path, monkeypatch):
+    from ashare_review.risk import store as risk_store
+    from ashare_review.web.app import app
+    monkeypatch.setattr(risk_store, 'CONFIG_PATH', str(tmp_path / 'risk.json'))
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.get('/api/risk/status?portfolio=vol180')
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert 'regime' in data and 'suggested_size_pct' in data
+    assert 'drawdown_pct' in data and 'can_open' in data
+

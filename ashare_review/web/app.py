@@ -1987,4 +1987,80 @@ def api_strategy_bench_compare():
     if cmp is None:
         return jsonify({'error': 'snapshot not found'}), 404
     return jsonify(cmp)
+# ======================================================================
+# 风控规则层（Risk Engine）
+# ======================================================================
+
+@app.route('/api/risk/config')
+def api_risk_config():
+    from ..risk.store import RiskStore
+    store = RiskStore()
+    return jsonify(store.get_all())
+
+
+@app.route('/api/risk/config', methods=['POST'])
+def api_risk_config_save():
+    from ..risk.store import RiskStore
+    data = request.get_json(silent=True) or {}
+    portfolio_id = data.get('portfolio_id', '')
+    config = data.get('config', {}) or {}
+    try:
+        RiskStore().set(portfolio_id, config)
+        return jsonify({'ok': True})
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+
+
+def _portfolio_risk_state(portfolio_id: str) -> dict:
+    """读取对应 portfolio 的 state 文件，计算风控判定所需的组合状态。"""
+    import json as _json
+    if portfolio_id == 'vol180':
+        from ..tools.sim_portfolio import STATE_FILE, INITIAL_CAPITAL as _ic
+    else:
+        from ..tools.zt_replica_portfolio import STATE_FILE, INITIAL_CAPITAL as _ic
+    state_data = {}
+    try:
+        with open(STATE_FILE, 'r', encoding='utf-8') as f:
+            state_data = _json.load(f)
+    except Exception:
+        pass
+    holdings = state_data.get('holding', {}) or {}
+    ready = state_data.get('ready', {}) or {}
+    positions = len(holdings) + len(ready)
+    pos_val = sum(
+        h.get('shares', 0) * (h.get('current_price', h.get('buy_price', 0)) or 0)
+        for h in holdings.values()
+    )
+    init_cap = state_data.get('initial_capital', _ic)
+    total_value = state_data.get('cash', init_cap) + pos_val
+    hist_peak = init_cap
+    for snap in state_data.get('portfolio_history', []) or []:
+        hist_peak = max(hist_peak, snap.get('total', 0) or 0)
+    return {'positions': positions, 'opened_today': 0,
+            'total_value': total_value, 'history_peak': hist_peak,
+            'breaker_tripped': bool((state_data.get('last_risk') or {}).get('breaker_tripped', False))}
+
+
+@app.route('/api/risk/status')
+def api_risk_status():
+    from ..risk.evaluate import evaluate
+    from ..risk.store import RiskStore
+    from ..analysis.strategy_regime import live_diagnosis as _ld
+    portfolio_id = request.args.get('portfolio', 'vol180')
+    if portfolio_id not in ('vol180', 'zt_replica'):
+        return jsonify({'error': 'invalid portfolio'}), 400
+    cfg = RiskStore().get(portfolio_id)
+    try:
+        regime = _ld.get_regime_diagnosis().get('regime', '震荡观望') or '震荡观望'
+    except Exception:
+        regime = '震荡观望'
+    # ── 实时组合状态（读对应 portfolio 的 state 文件） ──
+    state = _portfolio_risk_state(portfolio_id)
+    risk = evaluate(cfg, state, regime)
+    risk['regime'] = regime
+    risk['portfolio'] = portfolio_id
+    risk['positions'] = state['positions']
+    risk['config'] = {k: v for k, v in cfg.items() if k != 'regime_scale'}
+    return jsonify(risk)
+
 
