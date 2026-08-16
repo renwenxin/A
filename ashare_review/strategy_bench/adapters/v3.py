@@ -20,7 +20,7 @@ class V3Adapter(StrategyAdapter):
 
     def run(self, params: Dict, tdx=None, ak=None) -> List[Dict]:
         from ...analysis.v3_backtest import V3Backtest
-        lookback = int(params.get('lookback_days', 250))
+        lookback = int(params.get('lookback_days', 365))   # 与 param_schema 默认一致
         end = date.today() - timedelta(days=1)
         start = end - timedelta(days=lookback)
         bt = V3Backtest()
