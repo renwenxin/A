@@ -1768,6 +1768,25 @@ def prediction_ledger():
     window = min(max(window, 1), 365)  # 钳制到 1..365
     rows = store.rows(window)
     summary = store.summary(window)
+    for r in rows:
+        r['type_label'] = TYPE_LABELS.get(r['pred_type'], r['pred_type'])
+        if r['pred_type'] == 'picks':
+            r['dir_label'] = f"{r['score']}分" if r['score'] is not None else '—'
+            r['actual_label'] = ACTUAL_LABELS.get(r['actual'], r['actual'] or '—')
+        else:
+            r['dir_label'] = DIR_LABELS.get(r['direction'], r['direction'] or '—')
+            r['actual_label'] = ACTUAL_LABELS.get(r['actual'], r['actual'] or '—')
+        # 明细可读化
+        try:
+            d = json.loads(r.get('detail') or '{}')
+        except Exception:
+            d = {}
+        if r['pred_type'] == 'picks':
+            r['detail_text'] = '、'.join(d.get('reasons', []) or []) or '—'
+        elif r['pred_type'] == 'cycle':
+            r['detail_text'] = d.get('stage_desc', '') or '—'
+        else:
+            r['detail_text'] = d.get('forecast_desc', '') or '—'
     return render_template('prediction_ledger.html',
                            rows=rows, summary=summary,
                            type_labels=TYPE_LABELS, dir_labels=DIR_LABELS,
