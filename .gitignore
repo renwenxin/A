@@ -20,4 +20,6 @@ build/
 # 事件雷达运行时数据（themes.json 保留）
 ashare_review/data/event_radar/*
 !ashare_review/data/event_radar/themes.json
+ashare_review/data/prediction_ledger.db
+ashare_review/data/prediction_ledger.db-*
 
