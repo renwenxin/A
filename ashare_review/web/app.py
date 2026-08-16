@@ -1473,7 +1473,9 @@ def review():
                 payload['llm_summary'] = DailyReport(tdx, ak_fetcher).generate_llm_summary(
                     trade_date=trade_date, data=payload)
                 cache_set_persistent(cache_key, payload)
-            _ledger_sync(payload, trade_date)   # 缓存命中路径（payload 为 report dict）
+            # 缓存命中路径：仅渲染缓存页，不触发网络验证（缓存命中即免爬取）。
+            # 新报告生成时（下方新生成路径）会自动记录当日预测并验证昨日；
+            # 台账页的"验证未验证项"按钮（POST /api/ledger/validate）提供手动触发。
             return render_template('review_v2.html', report=payload, data_cached_at=data_cached_at)
 
     try:
@@ -1763,6 +1765,7 @@ def prediction_ledger():
     from ..prediction_ledger.store import LedgerStore
     store = LedgerStore(DB_PATH)
     window = request.args.get('days', 60, type=int)
+    window = min(max(window, 1), 365)  # 钳制到 1..365
     rows = store.rows(window)
     summary = store.summary(window)
     return render_template('prediction_ledger.html',
@@ -1774,8 +1777,11 @@ def prediction_ledger():
 @app.route('/api/ledger/validate', methods=['POST'])
 def api_ledger_validate():
     from ..prediction_ledger.service import validate_pending
-    n = validate_pending(tdx, ak_fetcher)
-    return jsonify({'ok': True, 'validated': n})
+    try:
+        n = validate_pending(tdx, ak_fetcher)
+        return jsonify({'ok': True, 'validated': n})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 
 # ── 消息雷达（事件驱动分析） ──
