@@ -204,3 +204,79 @@ def test_normalize_none_and_nan_guards():
     trades2 = normalize_one_two_trades(raw2)
     assert len(trades2) == 1 and trades2[0]['return_pct'] == -4.0
 
+
+# ---------- Task 4: 5 个适配器 ----------
+
+def _make_adapter(id_):
+    from ashare_review.strategy_bench.adapters.registry import get_adapter
+    return get_adapter(id_)
+
+
+def test_v3_adapter_normalize():
+    from ashare_review.strategy_bench.adapters.v3 import V3Adapter
+    a = V3Adapter()
+    trades = a.normalize({'trades': [
+        {'buy_date': '2026-08-10', 'sell_date': '2026-08-14', 'net_ret': 8.5},
+        {'buy_date': '2026-08-11', 'sell_date': '2026-08-12', 'net_ret': -3.2},
+    ]})
+    assert trades[0]['entry_date'] == '20260810' and trades[0]['return_pct'] == 8.5
+    assert a.strategy_id == 'v3' and a.name == '启动突破V3'
+    assert a.param_schema[0]['name'] == 'lookback_days'
+
+
+def test_one_two_adapter_normalize():
+    from ashare_review.strategy_bench.adapters.one_two import OneTwoAdapter
+    a = OneTwoAdapter()
+    trades = a.normalize({'valid_trades': [
+        {'entry_date': '2026-08-10', 'exit_date': '2026-08-11', 'return_pct': 6.0},
+        {'entry_date': '20260812', 'exit_date': '20260812', 'return_pct': -4.0},
+    ]})
+    assert trades[0]['entry_date'] == '20260810' and trades[0]['return_pct'] == 6.0
+    assert trades[1]['return_pct'] == -4.0
+
+
+def test_ice_adapter_normalize():
+    from ashare_review.strategy_bench.adapters.ice import IceAdapter
+    a = IceAdapter()
+    trades = a.normalize([
+        {'buy_date': '2026-08-10', 'sell_date': '2026-08-14', 'net_ret': 5.0},
+    ])
+    assert trades[0]['entry_date'] == '20260810' and trades[0]['return_pct'] == 5.0
+
+
+def test_zt_replica_adapter_normalize():
+    from ashare_review.strategy_bench.adapters.zt_replica import ZTReplicaAdapter
+    a = ZTReplicaAdapter()
+    trades = a.normalize({'trades': [
+        {'buy_date': '2026-08-10', 'sell_date': '2026-08-14', 'net_ret': 3.3},
+    ]})
+    assert trades[0]['return_pct'] == 3.3
+
+
+def test_registry_completeness():
+    from ashare_review.strategy_bench.adapters.registry import list_adapters, get_adapter
+    ids = [a.strategy_id for a in list_adapters()]
+    assert set(ids) == {'v3', 'one_two', 'ice', 'tail', 'zt_replica'}
+    a = get_adapter('v3')
+    assert a.name == '启动突破V3'
+    assert get_adapter('nope') is None
+    for adapter in list_adapters():
+        for p in adapter.param_schema:
+            assert {'name', 'label', 'type', 'default'} <= set(p), adapter.strategy_id
+
+
+def test_adapters_params_schema_values():
+    for sid, expect in [
+        ('v3', ['lookback_days', 'max_positions']),
+        ('one_two', ['lookback_days', 'top_n', 'min_score']),
+        ('ice', ['lookback_days']),
+        ('tail', ['days', 'limit']),
+        ('zt_replica', ['lookback_days', 'only_double_cannon']),
+    ]:
+        a = _make_adapter(sid)
+        names = [p['name'] for p in a.param_schema]
+        assert set(expect) <= set(names), sid
+        for p in a.param_schema:
+            assert p['type'] in ('int', 'float', 'bool'), (sid, p['name'])
+            assert 'default' in p
+
