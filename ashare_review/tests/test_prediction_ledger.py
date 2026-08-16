@@ -512,3 +512,69 @@ def test_migrate_network_down_fallback(tmp_path):
     row = [r for r in store.rows(365) if r['item_key'] == '600001'][0]
     assert row['actual'] == 'zt' and row['hit'] == 1   # 涨幅 +10% ≥9.8% → zt
 
+
+# ---------- Task 6: Web 接线 ----------
+
+def test_review_route_records_ledger(tmp_path, monkeypatch):
+    import unittest.mock as mock
+    import pandas as pd
+    from ashare_review.prediction_ledger import service as ledger_service
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.report.daily import DailyReport
+    from ashare_review.web.app import app, tdx, ak_fetcher
+
+    monkeypatch.setattr(ledger_service, 'DB_PATH', str(tmp_path / 'web.db'))
+    monkeypatch.setattr(ak_fetcher, 'get_limit_up_pool', lambda d: [])   # 无网络
+    monkeypatch.setattr(tdx, 'read_daily', lambda *a, **k: pd.DataFrame())  # 无 TDX 数据
+    canned = {
+        'date': '2026-08-14',
+        'limit_up_codes': ['600001'],
+        'sentiment': {'picks': [{'code': '600001', 'name': '测试A', 'score': 62, 'reasons': []}]},
+        'cycle': {'stage': '发酵期', 'next_bias': 'up', 'stage_desc': 'x',
+                  'metrics': {'total_zt': 60}},
+        'auction_forecast': {'forecast': '偏强', 'direction': 'high', 'forecast_desc': 'y'},
+    }
+    app.config['TESTING'] = True
+    with mock.patch.object(DailyReport, 'generate', return_value=canned):
+        c = app.test_client()
+        rv = c.get('/review?date=20260814&refresh=1')
+        assert rv.status_code == 200
+    store = LedgerStore(str(tmp_path / 'web.db'))
+    rows = store.rows(365)
+    assert len(rows) == 3
+    assert {r['pred_type'] for r in rows} == {'picks', 'cycle', 'auction'}
+
+
+def test_prediction_ledger_page(tmp_path, monkeypatch):
+    from ashare_review.prediction_ledger import service as ledger_service
+    from ashare_review.prediction_ledger.service import record_day
+    from ashare_review.web.app import app
+
+    monkeypatch.setattr(ledger_service, 'DB_PATH', str(tmp_path / 'page.db'))
+    record_day({
+        'limit_up_codes': ['600001'],
+        'sentiment': {'picks': [{'code': '600001', 'name': '测试A', 'score': 62, 'reasons': []}]},
+        'cycle': {'stage': '发酵期', 'next_bias': 'up', 'metrics': {'total_zt': 60}},
+        'auction_forecast': {'forecast': '偏强', 'direction': 'high'},
+    }, '20260814', str(tmp_path / 'page.db'))
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.get('/prediction_ledger')
+    assert rv.status_code == 200
+    body = rv.data.decode('utf-8')
+    assert '测试A' in body
+    assert '发酵期' in body
+
+
+def test_ledger_validate_api(tmp_path, monkeypatch):
+    from ashare_review.prediction_ledger import service as ledger_service
+    from ashare_review.web.app import app
+
+    monkeypatch.setattr(ledger_service, 'DB_PATH', str(tmp_path / 'api.db'))
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.post('/api/ledger/validate')
+    assert rv.status_code == 200
+    assert rv.get_json()['ok'] is True
+
+

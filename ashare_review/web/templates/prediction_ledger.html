@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div class="page-breadcrumb">
+            <span>持仓与复盘</span><span class="sep">›</span><span class="current">预测台账</span>
+        </div>
+        <div class="page-date">
+            📒 <strong>复盘预测台账</strong>
+            <span class="freshness-badge" style="margin-left:8px;">近 {{ window }} 天</span>
+            <button class="btn btn-primary btn-sm" style="margin-left:12px;" onclick="runLedgerValidate()">🔄 验证昨日预测</button>
+            <span id="validate-status" style="font-size:.8em;color:#7c3aed;"></span>
+        </div>
+    </div>
+
+    <!-- 准确率概览 -->
+    <div class="stat-row">
+        <div class="stat-card">
+            <span class="stat-value">{{ summary.picks.verified }}/{{ summary.picks.total }}</span>
+            <span class="stat-label">精选命中率 {{ '%.1f' % (summary.picks.rate*100) if summary.picks.rate is not none else '-' }}%</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ summary.cycle.verified }}/{{ summary.cycle.total }}</span>
+            <span class="stat-label">周期命中率 {{ '%.1f' % (summary.cycle.rate*100) if summary.cycle.rate is not none else '-' }}%</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ summary.auction.verified }}/{{ summary.auction.total }}</span>
+            <span class="stat-label">竞价命中率 {{ '%.1f' % (summary.auction.rate*100) if summary.auction.rate is not none else '-' }}%</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ summary.coverage.verified_days }}</span>
+            <span class="stat-label">已验证天数 · 待验证 {{ summary.coverage.pending }}</span>
+        </div>
+    </div>
+
+    <!-- 精选得分区间命中率 -->
+    <div class="section-title">🎯 精选得分区间命中率</div>
+    <div class="card">
+        <div class="card-body no-padding">
+            <div class="table-wrap">
+                <table class="sector-table">
+                    <tr><th>得分区间</th><th>命中/已验证</th><th>命中率</th></tr>
+                    {% for b in summary.buckets %}
+                    <tr>
+                        <td><strong>{{ b.label }}</strong>（{{ b.total }} 只）</td>
+                        <td>{{ b.hit }}/{{ b.verified }}</td>
+                        <td>{{ '%.1f' % (b.rate*100) if b.rate is not none else '-' }}%</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 明细 -->
+    <div class="section-title">📋 预测明细</div>
+    <div class="card">
+        <div class="card-body no-padding">
+            <div class="table-wrap">
+                <table class="sector-table">
+                    <tr><th>预测日</th><th>类型</th><th>标的/方向</th><th>明细</th><th>实际</th><th>结果</th></tr>
+                    {% for r in rows %}
+                    <tr>
+                        <td>{{ r.pred_date }}</td>
+                        <td>{{ type_labels.get(r.pred_type, r.pred_type) }}</td>
+                        <td>
+                            {% if r.item_key != 'daily' %}
+                                <a href="/stock/{{ r.item_key }}"><strong>{{ r.item_name }}</strong>({{ r.item_key }})</a>
+                            {% else %}
+                                <strong>{{ r.item_name }}</strong>
+                            {% endif %}
+                            {% if r.direction %}
+                                <span class="tag tag-action" style="margin-left:6px;">{{ dir_labels.get(r.direction, r.direction) }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:.85em;color:#666;max-width:340px;">{{ r.detail }}</td>
+                        <td>{{ actual_labels.get(r.actual) if r.actual else '—' }}</td>
+                        <td>
+                            {% if r.hit is none %}
+                                <span style="color:#888;">⏳ 待验证</span>
+                            {% elif r.hit == 1 %}
+                                <span style="color:#059669;font-weight:700;">✅ 命中</span>
+                            {% else %}
+                                <span style="color:#dc2626;font-weight:700;">❌ 未中</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not rows %}
+                    <tr><td colspan="6" style="color:#888;text-align:center;">暂无预测记录</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function runLedgerValidate() {
+    var btnStatus = document.getElementById('validate-status');
+    btnStatus.style.color = '#7c3aed';
+    btnStatus.textContent = '⏳ 验证中…';
+    fetch('/api/ledger/validate', {method: 'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            btnStatus.style.color = d.ok ? '#059669' : '#ef4444';
+            btnStatus.textContent = d.ok ? ('✅ 已验证 ' + (d.validated || 0) + ' 条') : ('❌ ' + (d.error || '验证失败'));
+            if (d.ok) { setTimeout(function(){ location.reload(); }, 800); }
+        })
+        .catch(function(e){
+            btnStatus.style.color = '#ef4444';
+            btnStatus.textContent = '❌ ' + e;
+        });
+}
+</script>
+{% endblock %}

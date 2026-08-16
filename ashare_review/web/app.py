@@ -1401,6 +1401,19 @@ def api_v2_premarket():
     return jsonify(result)
 
 
+def _ledger_sync(report, trade_date):
+    """把复盘报告预测写入台账并验证昨日预测（幂等，失败不影响复盘）"""
+    if not report or report.get('error'):
+        return
+    try:
+        from ..prediction_ledger.service import record_day, validate_pending
+        record_day(report, trade_date)
+        validate_pending(tdx, ak_fetcher)
+    except Exception:
+        import traceback
+        traceback.print_exc()
+
+
 def _review_migrate_old_cache(cache_key: str, trade_date_ymd: str):
     """一次性迁移：把旧的按天复盘缓存（review_report_*.json）迁到持久缓存。
 
@@ -1460,6 +1473,7 @@ def review():
                 payload['llm_summary'] = DailyReport(tdx, ak_fetcher).generate_llm_summary(
                     trade_date=trade_date, data=payload)
                 cache_set_persistent(cache_key, payload)
+            _ledger_sync(payload, trade_date)   # 缓存命中路径（payload 为 report dict）
             return render_template('review_v2.html', report=payload, data_cached_at=data_cached_at)
 
     try:
@@ -1481,6 +1495,7 @@ def review():
     else:
         cache_clear_persistent(cache_key)
         data_cached_at = ''
+    _ledger_sync(report, trade_date)    # 新生成路径
     return render_template('review_v2.html', report=report, data_cached_at=data_cached_at)
 
 
@@ -1730,6 +1745,37 @@ def api_review_article():
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({'success': False, 'error': f'生成失败: {e}'}), 500
+
+
+# ======================================================================
+# 预测台账（复盘预测的次日验证 + 准确率统计）
+# ======================================================================
+
+TYPE_LABELS = {'picks': '精选标的', 'cycle': '情绪周期', 'auction': '竞价预期'}
+DIR_LABELS = {'up': '走强', 'down': '退潮', 'high': '高开', 'low': '低开', 'flat': '震荡/平淡'}
+ACTUAL_LABELS = {'zt': '涨停', 'up3': '涨≥3%', 'up': '收涨', 'flat': '震荡', 'down': '大跌',
+                 'high': '高开', 'low': '低开'}
+
+
+@app.route('/prediction_ledger')
+def prediction_ledger():
+    from ..prediction_ledger.service import DB_PATH
+    from ..prediction_ledger.store import LedgerStore
+    store = LedgerStore(DB_PATH)
+    window = request.args.get('days', 60, type=int)
+    rows = store.rows(window)
+    summary = store.summary(window)
+    return render_template('prediction_ledger.html',
+                           rows=rows, summary=summary,
+                           type_labels=TYPE_LABELS, dir_labels=DIR_LABELS,
+                           actual_labels=ACTUAL_LABELS, window=window)
+
+
+@app.route('/api/ledger/validate', methods=['POST'])
+def api_ledger_validate():
+    from ..prediction_ledger.service import validate_pending
+    n = validate_pending(tdx, ak_fetcher)
+    return jsonify({'ok': True, 'validated': n})
 
 
 # ── 消息雷达（事件驱动分析） ──

@@ -69,6 +69,7 @@
      ================================================================== -->
 <div class="v2-tab-content active" id="tab-overview">
 
+{% if report.market_overview %}
 <!-- ---- 涨跌家数仪表盘 ---- -->
 {% set mkt = report.market_overview %}
 <div class="section-title">📊 涨跌家数仪表盘</div>
@@ -132,6 +133,7 @@
         <span class="ic-sub {{ 'up' if mkt.avg_change_pct > 0 else 'down' if mkt.avg_change_pct < 0 else '' }}">{{ '偏多' if mkt.avg_change_pct > 0 else '偏空' if mkt.avg_change_pct < 0 else '震荡' }}</span>
     </div>
 </div>
+{% endif %}
 
 <!-- ---- 情绪周期节点 ---- -->
 {% if report.cycle %}
@@ -175,7 +177,7 @@
 <div class="card">
     <div class="card-body">
         <div style="display:flex; gap:24px; flex-wrap:wrap; justify-content:center">
-            {% for label, count in report.time_distribution.items() %}
+            {% for label, count in (report.time_distribution or {}).items() %}
             <div style="text-align:center">
                 <span class="stat-value" style="display:block">{{ count }}</span>
                 <span class="ic-label">{{ label }}</span>
@@ -394,7 +396,7 @@
                             {{ '%.2f' % sr }}
                         </span>
                     </td>
-                    <td>{{ pick.reasons[-1] if '板型:' in pick.reasons[-1] else (pick.reasons|last if pick.reasons else '-') }}</td>
+                    <td>{% if pick.reasons %}{{ pick.reasons[-1] if '板型:' in pick.reasons[-1] else (pick.reasons|last if pick.reasons else '-') }}{% else %}-{% endif %}</td>
                     <td><strong style="color:#e94560;">{{ pick.score }}分</strong></td>
                     <!-- 竞价量能（手动填入，localStorage存储） -->
                     <td class="auction-col"><input type="text" class="auction-input auction-auto" data-field="max_vol" data-code="{{ pick.code }}" value="{{ pick.max_volume if pick.max_volume else '' }}" placeholder="需下分钟线" style="width:90px;{% if pick.max_volume %}background:#f0fdf4;{% else %}background:#fff8f0;{% endif %}" readonly></td>

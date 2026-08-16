@@ -72,6 +72,10 @@
                 <span class="nav-icon">📡</span>
                 <span class="nav-label">消息雷达</span>
             </a>
+            <a href="/prediction_ledger" class="nav-item {% if request.endpoint == 'prediction_ledger' %}active{% endif %}">
+                <span class="nav-icon">📒</span>
+                <span class="nav-label">预测台账</span>
+            </a>
             <a href="/stock/000001" class="nav-item {% if request.endpoint == 'stock_detail' %}active{% endif %}">
                 <span class="nav-icon">📈</span>
                 <span class="nav-label">个股分析</span>
