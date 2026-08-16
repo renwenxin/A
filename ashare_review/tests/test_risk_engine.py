@@ -309,3 +309,26 @@ def test_vol180_stop_loss_config_changes_behavior(tmp_path, monkeypatch):
     sell = p._check_sell_vol180('600001', p._state['holding']['600001'], '2026-08-12')
     assert sell is not None and '止损' in sell['sell_reason']
 
+
+# ---------- Task 5: ZTReplica 接入 ----------
+
+def test_zt_replica_stop_loss_config(tmp_path, monkeypatch):
+    """默认 -5%：跌 4% 不止损；改配置 -3% 后跌 4% 触发"""
+    from ashare_review.risk.store import RiskStore
+    from ashare_review.tools.zt_replica_portfolio import ZTReplicaSimPortfolio
+    path = str(tmp_path / 'risk.json')
+    RiskStore(path).set('zt_replica', {})   # 默认 -5%
+    monkeypatch.setenv('RISK_CONFIG', path)
+    p = ZTReplicaSimPortfolio()
+    p.tdx = FakeTdx2({'600001': [('2026-08-10', 10.0, 10.0), ('2026-08-11', 10.0, 10.0),
+                                 ('2026-08-12', 10.0, 9.6)]})   # -4%
+    pos = {'buy_date': '2026-08-10', 'buy_price': 10.0, 'had_zt': False, 'highest_close': 10.0}
+    sell = p._check_sell('600001', pos, '2026-08-12')
+    assert sell is None                       # -4% > -5% → 不止损
+    # 改 -3%
+    RiskStore(path).set('zt_replica', {'stop_loss_pct': -3.0})
+    p2 = ZTReplicaSimPortfolio()
+    p2.tdx = FakeTdx2({'600001': [('2026-08-10', 10.0, 10.0), ('2026-08-11', 10.0, 10.0),
+                                  ('2026-08-12', 10.0, 9.6)]})
+    sell2 = p2._check_sell('600001', pos, '2026-08-12')
+    assert sell2 is not None and '止损' in sell2['sell_reason']

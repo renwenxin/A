@@ -48,6 +48,8 @@ class ZTReplicaSimPortfolio:
 
     def __init__(self):
         self.tdx = TdxReader()
+        from ..risk.store import RiskStore
+        self._risk = RiskStore()
         self.cal = TradingCalendar()
         os.makedirs(DATA_DIR, exist_ok=True)
         self._state = self._load()
@@ -178,6 +180,27 @@ class ZTReplicaSimPortfolio:
                     except ValueError: return df
                 df = df[df['trade_date'].apply(lambda x: (x.date() if hasattr(x, 'date') else x) <= target)]
             return df if len(df) >= 60 else None
+        except Exception: return None
+
+    def _read_sell_df(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
+        """卖出检查用日线：读原始日线并按 up_to_date 过滤，不强制 MAVOL/最少 60 根。
+
+        卖出规则只用 close/open/volume，不依赖均线；放宽长度约束后，
+        既能省去历史均线计算，也支持测试注入的少量可控日线。
+        """
+        market = 'sh' if str(code).startswith('6') else 'sz'
+        if str(code).startswith(('8', '4')): market = 'bj'
+        try:
+            df = self.tdx.read_daily(code, market)
+            if df is None or df.empty: return None
+            if up_to_date:
+                try:
+                    target = datetime.strptime(up_to_date, '%Y%m%d').date()
+                except ValueError:
+                    try: target = datetime.strptime(up_to_date, '%Y-%m-%d').date()
+                    except ValueError: return df
+                df = df[df['trade_date'].apply(lambda x: (x.date() if hasattr(x, 'date') else x) <= target)]
+            return df if not df.empty else None
         except Exception: return None
 
     def _read_latest(self, code: str) -> Optional[dict]:
@@ -500,7 +523,7 @@ class ZTReplicaSimPortfolio:
           5. 持有≥5天到期 → 兜底卖出
         """
         td_fmt = today.replace('-', '')
-        df = self._read_stock(code, up_to_date=td_fmt)
+        df = self._read_sell_df(code, up_to_date=td_fmt)
         if df is None or df.empty: return None
 
         idx = len(df) - 1; close = float(df['close'].iloc[idx])
@@ -514,9 +537,11 @@ class ZTReplicaSimPortfolio:
             trading_days = self.cal.trading_days_between(bd, td)
         except Exception: trading_days = 3
 
-        # ── 0. -5% 硬止损（龙哥铁律） ──
-        if buy_price > 0 and (close - buy_price) / buy_price <= -0.05:
-            return {'sell_price': round(close, 2), 'sell_reason': '🛑止损-5%',
+        # ── 0. 硬止损（读风控配置，默认 -5%） ──
+        from ..risk.evaluate import stop_loss_pct
+        stop = stop_loss_pct(self._risk.get('zt_replica')) / 100.0
+        if buy_price > 0 and (close - buy_price) / buy_price <= stop:
+            return {'sell_price': round(close, 2), 'sell_reason': f'🛑止损{abs(stop*100):.0f}%',
                     'days_held': trading_days}
 
         # ── 1. 移动止盈 ──
@@ -640,8 +665,32 @@ class ZTReplicaSimPortfolio:
                 'update_date': td}
 
         # 买入信号
-        available_slots = max(0, MAX_POSITIONS - len(self._state['holding']) - len(self._state['ready']))
-        max_new = min(MAX_NEW_PER_DAY, available_slots)
+        cfg = self._risk.get('zt_replica')
+        holdings_val = sum(
+            h.get('shares', 0) * (h.get('current_price', h.get('buy_price', 0)) or 0)
+            for h in self._state['holding'].values()
+        )
+        hist_peak = INITIAL_CAPITAL
+        for snap in self._state.get('portfolio_history', []):
+            hist_peak = max(hist_peak, snap.get('total', 0) or 0)
+        from ..risk.evaluate import evaluate
+        from ..analysis.strategy_regime import live_diagnosis as _ld
+        try:
+            regime = _ld.get_regime_diagnosis().get('regime', '震荡观望') or '震荡观望'
+        except Exception:
+            regime = '震荡观望'
+        risk = evaluate(cfg, {
+            'positions': len(self._state['holding']) + len(self._state['ready']),
+            'opened_today': 0,
+            'total_value': self._state.get('cash', INITIAL_CAPITAL) + holdings_val,
+            'history_peak': hist_peak,
+            'breaker_tripped': (self._state.get('last_risk') or {}).get('breaker_tripped', False),
+        }, regime)
+        if risk['blocked_reasons']:
+            print(f"[ZTReplica] 风控拦截开仓: {'；'.join(risk['blocked_reasons'])}")
+        self._state['last_risk'] = risk
+        available_slots = max(0, cfg['max_positions'] - len(self._state['holding']) - len(self._state['ready']))
+        max_new = min(cfg['max_new_per_day'], available_slots)
         buy_sigs.sort(key=lambda x: -x['score'])
         new_buys = 0
 
@@ -654,7 +703,7 @@ class ZTReplicaSimPortfolio:
                 next_day = self.cal.next_trading_day(td_dt, offset=1)
                 buy_date = next_day.strftime('%Y-%m-%d') if next_day else (td_dt + timedelta(days=1)).strftime('%Y-%m-%d')
             except Exception: buy_date = (td_dt + timedelta(days=1)).strftime('%Y-%m-%d')
-            shares = int(INITIAL_CAPITAL * PER_POSITION_PCT / max(sig['close'], 0.01) / 100) * 100
+            shares = int(INITIAL_CAPITAL * (risk['suggested_size_pct'] / 100.0) / max(sig['close'], 0.01) / 100) * 100
             if shares < 100: shares = 100
             self._state['ready'][code] = {'code': code, 'name': name,
                 'signal_date': td, 'buy_date': buy_date, 'buy_price': sig['close'],
@@ -703,7 +752,7 @@ class ZTReplicaSimPortfolio:
                     df_b = self._read_stock(code, up_to_date=td.replace('-',''))
                     if df_b is not None and not df_b.empty: bp_actual = float(df_b['open'].iloc[-1])
                 except Exception: pass
-                actual_shares = int(INITIAL_CAPITAL * PER_POSITION_PCT / max(bp_actual, 0.01) / 100) * 100
+                actual_shares = int(INITIAL_CAPITAL * (risk['suggested_size_pct'] / 100.0) / max(bp_actual, 0.01) / 100) * 100
                 if actual_shares < 100: actual_shares = 100
                 buy_cost = actual_shares * bp_actual * (1 + BUY_COMMISSION)
                 if buy_cost > self._state.get('cash', INITIAL_CAPITAL):
@@ -932,124 +981,3 @@ class ZTReplicaSimPortfolio:
         peak = init_cap; max_dd = 0.0
         for snap in ph:
             peak = max(peak, snap.get('total', 0))
-            max_dd = max(max_dd, (peak - snap.get('total', 0)) / peak * 100 if peak > 0 else 0)
-        total_return = round(sum(f.get('net_ret', 0) for f in finished), 2)
-        avg_return = round(total_return / max(total_trades, 1), 2)
-        market = self._get_market_state(today)
-
-        return {'date': today, 'last_update': self._state.get('last_update', ''),
-            'watch_list': watch, 'sim_buy_today': buy_today,
-            'sim_sell_today': sell_today,
-            'pending_sells': [{**ps, 'code': c} for c, ps in self._state.get('pending_sell', {}).items()],
-            'holdings': holdings, 'finished_list': finished[:20],
-            'summary': {
-                'total_trades': total_trades, 'wins': total_wins,
-                'losses': total_trades - total_wins,
-                'win_rate': round(total_wins / max(total_trades, 1) * 100, 1),
-                'total_return': total_return, 'avg_return': avg_return,
-                'watch_count': len(watch), 'buy_count': len(buy_today),
-                'sell_count': len(sell_today), 'holding_count': len(holdings),
-                'ready_count': len(self._state['ready']),
-                'pending_sell_count': len(self._state.get('pending_sell', {})),
-                'cash': round(self._state.get('cash', init_cap), 2),
-                'positions_value': round(pos_val, 2),
-                'portfolio_value': round(total_val, 2),
-                'initial_capital': init_cap,
-                'cumulative_return': round(cum_ret, 2),
-                'max_drawdown': round(max_dd, 2),
-                'market_bull': market.get('is_bull', True),
-            }}
-
-    def record_buy(self, code: str, actual_price: float = None, buy_date: str = None) -> bool:
-        if code not in self._state['ready']: return False
-        info = self._state['ready'].pop(code)
-        bp = actual_price or info.get('buy_price', 0)
-        shares = int(INITIAL_CAPITAL * PER_POSITION_PCT / max(bp, 0.01) / 100) * 100
-        if shares < 100: shares = 100
-        cost = shares * bp * (1 + BUY_COMMISSION)
-        if cost > self._state.get('cash', INITIAL_CAPITAL): return False
-        self._state['cash'] = self._state.get('cash', INITIAL_CAPITAL) - cost
-        info.update(status='holding', buy_date=buy_date or _today_str(),
-                    buy_price=round(bp, 2), shares=shares,
-                    had_zt=False, highest_close=bp, awaiting_reversal=False)
-        self._state['holding'][code] = info; self._save()
-        return True
-
-    def record_sell(self, code: str, sell_price: float, sell_date: str = None) -> bool:
-        pos = None
-        if code in self._state['holding']: pos = self._state['holding'].pop(code)
-        elif code in self._state.get('pending_sell', {}):
-            pos = self._state['pending_sell'].pop(code).get('hold_info', {})
-            if code in self._state['holding']: del self._state['holding'][code]
-        else: return False
-        bp = pos.get('buy_price', 0); shares = pos.get('shares', 0)
-        gr = (sell_price - bp) / bp if bp > 0 else 0; nr = gr - TOTAL_COST
-        if shares > 0: self._state['cash'] = self._state.get('cash', INITIAL_CAPITAL) + shares * sell_price * (1 - SELL_COST)
-        pos.update(status='finished', sell_date=sell_date or _today_str(),
-                   sell_price=sell_price, gross_ret=round(gr * 100, 2),
-                   net_ret=round(nr * 100, 2), is_win=nr > 0)
-        self._state['finished'][code] = pos
-        self._state['total_trades'] = self._state.get('total_trades', 0) + 1
-        if nr > 0: self._state['total_wins'] = self._state.get('total_wins', 0) + 1
-        self._save(); return True
-
-    def update_finished(self, code: str, updates: dict) -> bool:
-        """更新已完成交易记录中的字段（含重算统计）。"""
-        if code not in self._state['finished']: return False
-        fin = self._state['finished'][code]
-        old_is_win = fin.get('is_win', False)
-
-        for key in ('buy_price', 'sell_price', 'net_ret', 'gross_ret',
-                    'is_win', 'exit_reason', 'days_held', 'sell_date',
-                    'buy_date', 'shares', 'name', 'score', 'sig_type'):
-            if key in updates:
-                if key in ('buy_price', 'sell_price', 'net_ret', 'gross_ret'):
-                    fin[key] = float(updates[key]) if updates[key] is not None else 0
-                elif key == 'is_win':
-                    fin[key] = bool(updates[key])
-                elif key in ('days_held', 'shares', 'score'):
-                    fin[key] = int(updates[key]) if updates[key] is not None else 0
-                else:
-                    fin[key] = str(updates[key]) if updates[key] is not None else ''
-
-        if 'buy_price' in updates or 'sell_price' in updates:
-            bp = fin.get('buy_price', 0); sp = fin.get('sell_price', 0)
-            if bp > 0:
-                gr = (sp - bp) / bp; nr = gr - TOTAL_COST
-                fin['gross_ret'] = round(gr * 100, 2)
-                fin['net_ret'] = round(nr * 100, 2)
-                fin['is_win'] = nr > 0
-
-        new_is_win = fin.get('is_win', False)
-        if old_is_win != new_is_win:
-            if old_is_win: self._state['total_wins'] = max(0, self._state.get('total_wins', 0) - 1)
-            if new_is_win: self._state['total_wins'] = self._state.get('total_wins', 0) + 1
-        self._save(); return True
-
-    def delete_finished(self, code: str) -> bool:
-        """删除已完成交易记录并更新统计。"""
-        if code not in self._state['finished']: return False
-        info = self._state['finished'].pop(code)
-        self._state['total_trades'] = max(0, self._state.get('total_trades', 0) - 1)
-        if info.get('is_win'): self._state['total_wins'] = max(0, self._state.get('total_wins', 0) - 1)
-        self._save(); return True
-
-    def get_all_finished(self) -> list:
-        """获取所有已完成交易（按卖出日期倒序）。"""
-        items = list(self._state['finished'].values())
-        for item in items:
-            item['code'] = item.get('code', '')
-            if not item.get('name') or item['name'] == item.get('code', ''):
-                item['name'] = self._get_name(item['code'])
-        items.sort(key=lambda x: x.get('sell_date', ''), reverse=True)
-        return items
-
-    def delete_holding(self, code: str) -> bool:
-        if code in self._state['holding']: del self._state['holding'][code]; self._save(); return True
-        if code in self._state['ready']: del self._state['ready'][code]; self._save(); return True
-        if code in self._state['finished']:
-            info = self._state['finished'].pop(code)
-            self._state['total_trades'] = max(0, self._state.get('total_trades', 0) - 1)
-            if info.get('is_win'): self._state['total_wins'] = max(0, self._state.get('total_wins', 0) - 1)
-            self._save(); return True
-        return False
