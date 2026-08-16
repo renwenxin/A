@@ -112,6 +112,8 @@ class LedgerStore:
             conn.close()
 
     def summary(self, window_days: int = 30) -> Dict:
+        """聚合统计：picks/buckets/cycle/auction 按近 window_days 天窗口过滤；
+        coverage（verified_days/pending）为全局口径，不受窗口影响。"""
         cutoff = (date.today() - timedelta(days=window_days)).strftime('%Y%m%d')
         conn = self._connect()
         try:

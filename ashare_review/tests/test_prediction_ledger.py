@@ -220,3 +220,24 @@ def test_store_set_actual(tmp_path):
     rows = store.rows(365)
     row = [r for r in rows if r['item_key'] == '600001'][0]
     assert row['actual'] == 'up3' and row['hit'] == 1
+
+def test_store_summary_unverified_excluded(tmp_path):
+    """未验证记录不计入 rate 分母（设计文档 §8）"""
+    from ashare_review.prediction_ledger.store import LedgerStore
+    store = LedgerStore(str(tmp_path / 't.db'))
+    store.upsert_predictions([
+        {'pred_date': '20260814', 'pred_type': 'picks', 'item_key': '600001',
+         'item_name': 'A', 'direction': None, 'score': 61, 'detail': '{}'},
+        {'pred_date': '20260814', 'pred_type': 'picks', 'item_key': '600002',
+         'item_name': 'B', 'direction': None, 'score': 55, 'detail': '{}'},
+    ])
+    # 只验证 600001（命中），600002 保持未验证
+    rows = store.rows(365)
+    target = [r for r in rows if r['item_key'] == '600001'][0]
+    store.mark_verified(target['id'], 'zt', 1)
+    s = store.summary(365)
+    assert s['picks']['total'] == 2          # total 含未验证
+    assert s['picks']['verified'] == 1       # 分母只算已验证
+    assert s['picks']['rate'] == 1.0
+    assert s['coverage']['pending'] == 1
+
