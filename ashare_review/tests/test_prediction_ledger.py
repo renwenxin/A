@@ -439,3 +439,41 @@ def test_validate_pending_empty_pool_skips_cycle(tmp_path):
     picks = {r['item_key']: r for r in store.rows(365) if r['pred_type'] == 'picks'}
     assert picks['600001']['actual'] == 'zt' and picks['600001']['hit'] == 1
     assert picks['600002']['actual'] == 'down' and picks['600002']['hit'] == 0
+
+
+# ---------- Task 5: 历史追溯 ----------
+
+def test_migrate_picks_history(tmp_path):
+    import json
+    from ashare_review.prediction_ledger.service import migrate_picks_history
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.utils.calendar import TradingCalendar
+    from datetime import datetime
+    hist = str(tmp_path / 'picks_history.json')
+    json.dump({
+        '20260813': [{'code': '600001', 'name': 'A', 'score': 61, 'reasons': []},
+                     {'code': '600002', 'name': 'B', 'score': 50, 'reasons': []}],
+        '20260810': [{'code': '600003', 'name': 'C', 'score': 55, 'reasons': []}],
+    }, open(hist, 'w', encoding='utf-8'))
+    cal = TradingCalendar()
+    # 600001 次日涨停；600002 次日 -2%；600003 无 TDX 数据（跳过）
+    tdx = FakeTdx({'600001': {'20260813': {'open': 10.0, 'close': 10.0},
+                              '20260814': {'open': 11.0, 'close': 11.0}},
+                   '600002': {'20260813': {'open': 10.0, 'close': 10.0},
+                              '20260814': {'open': 9.8, 'close': 9.8}}})
+    ak = FakeAk({})   # 无涨停池 → 降级按涨幅
+    db = str(tmp_path / 't.db')
+    inserted = migrate_picks_history(tdx, ak, calendar=cal, db_path=db, history_file=hist)
+    assert inserted == 2
+    # 幂等：再跑一遍不新增
+    assert migrate_picks_history(tdx, ak, calendar=cal, db_path=db, history_file=hist) == 0
+    store = LedgerStore(db)
+    rows = {r['item_key']: r for r in store.rows(365)}
+    assert rows['600001']['actual'] == 'zt' and rows['600001']['hit'] == 1
+    assert rows['600002']['actual'] == 'flat' and rows['600002']['hit'] == 0
+
+
+def test_migrate_missing_file(tmp_path):
+    from ashare_review.prediction_ledger.service import migrate_picks_history
+    assert migrate_picks_history(None, None, history_file=str(tmp_path / 'nope.json'),
+                                 db_path=str(tmp_path / 't.db')) == 0

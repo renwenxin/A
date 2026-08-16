@@ -187,3 +187,45 @@ def validate_pending(tdx, ak, calendar: Optional[TradingCalendar] = None,
             except Exception:
                 continue
     return validated
+
+
+def migrate_picks_history(tdx, ak, calendar: Optional[TradingCalendar] = None,
+                          db_path: Optional[str] = None,
+                          history_file: Optional[str] = None) -> int:
+    """追溯导入 picks_history.json 的历史精选（含验证结果）。幂等，返回插入行数。"""
+    db_path = db_path or DB_PATH
+    history_file = history_file or PICKS_HISTORY_FILE
+    if not os.path.exists(history_file):
+        return 0
+    try:
+        with open(history_file, 'r', encoding='utf-8') as f:
+            history = json.load(f)
+    except Exception:
+        return 0
+    calendar = calendar or TradingCalendar()
+    store = LedgerStore(db_path)
+    inserted = 0
+    for pred_date, picks in history.items():
+        next_date = _next_trade_ymd(calendar, pred_date)
+        if not next_date:
+            continue
+        try:
+            next_pool = ak.get_limit_up_pool(next_date) or []
+        except Exception:
+            next_pool = []
+        zt_codes = {str(lu.code) for lu in next_pool}
+        for p in picks or []:
+            code = str(p.get('code', ''))
+            if not code:
+                continue
+            actual, hit = _pick_actual(tdx, code, zt_codes, next_date)
+            if actual is None:
+                continue
+            inserted += store.upsert_predictions([{
+                'pred_date': pred_date, 'pred_type': 'picks',
+                'item_key': code, 'item_name': p.get('name', ''),
+                'direction': None, 'score': p.get('score'),
+                'detail': json.dumps({'reasons': p.get('reasons', [])}, ensure_ascii=False),
+            }])
+            store.set_actual(pred_date, 'picks', code, actual, hit)
+    return inserted
