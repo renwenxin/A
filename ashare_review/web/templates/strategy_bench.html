@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}策略验证台 · 竞价交易系统{% endblock %}
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <div class="page-title">🧪 策略验证台</div>
+            <div class="page-date">统一回测 · 绩效对比 · FastAPI 后台任务</div>
+        </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+        <!-- 左：策略列表 -->
+        <div class="card">
+            <div class="card-header">🗂 选择策略</div>
+            <div class="card-body" id="strategy-list">
+                {% for a in adapters %}
+                <div class="strategy-item" data-id="{{ a.strategy_id }}"
+                     style="border:1px solid var(--border,#333);border-radius:8px;padding:10px;margin-bottom:10px;cursor:pointer;">
+                    <div style="font-weight:600;">{{ a.name }}</div>
+                    <div style="opacity:.7;font-size:12px;margin-top:4px;">{{ a.description }}</div>
+                </div>
+                {% else %}
+                <div class="empty-result">暂无策略</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 右：快照 / 对比 -->
+        <div class="card">
+            <div class="card-header">📊 历史回测快照</div>
+            <div class="card-body">
+                <table class="table">
+                    <thead><tr><th>ID</th><th>策略</th><th>年化</th><th>交易数</th></tr></thead>
+                    <tbody>
+                    {% for s in snapshots %}
+                    <tr>
+                        <td>{{ s.id }}</td>
+                        <td>{{ s.strategy_id }}</td>
+                        <td>{{ s.metrics.get('annual_return') if s.metrics else '-' }}</td>
+                        <td>{{ s.metrics.get('total_trades') if s.metrics else '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="opacity:.6;">暂无快照，点击左侧策略运行回测</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

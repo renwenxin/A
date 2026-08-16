@@ -1924,3 +1924,67 @@ def run(host='127.0.0.1', port=5000, debug=None):
     if debug is None:
         debug = os.environ.get('ASHARE_DEBUG', '') == '1'
     app.run(host=host, port=port, debug=debug)
+
+# ======================================================================
+# 策略验证台（统一回测 + 绩效对比）
+# ======================================================================
+
+@app.route('/strategy_bench')
+def strategy_bench():
+    from ..strategy_bench.adapters.registry import list_adapters
+    from ..strategy_bench.service import DB_PATH
+    from ..strategy_bench.store import BenchStore
+    adapters = sorted(list_adapters(), key=lambda a: a.strategy_id)
+    adapters_json = [{'strategy_id': a.strategy_id, 'name': a.name,
+                      'description': a.description, 'param_schema': a.param_schema}
+                     for a in adapters]
+    store = BenchStore(DB_PATH)
+    return render_template('strategy_bench.html',
+                           adapters=adapters_json, snapshots=store.list_snapshots())
+
+
+@app.route('/api/strategy_bench/run', methods=['POST'])
+def api_strategy_bench_run():
+    from ..strategy_bench.service import start_job
+    data = request.get_json(silent=True) or {}
+    strategy_id = data.get('strategy_id', '')
+    params = data.get('params', {}) or {}
+    job_id = start_job(strategy_id, params)
+    return jsonify({'ok': True, 'job_id': job_id})
+
+
+@app.route('/api/strategy_bench/job/<job_id>')
+def api_strategy_bench_job(job_id):
+    from ..strategy_bench.service import get_job
+    job = get_job(job_id)
+    if job is None:
+        return jsonify({'error': 'job not found'}), 404
+    return jsonify(job)
+
+
+@app.route('/api/strategy_bench/snapshots')
+def api_strategy_bench_snapshots():
+    from ..strategy_bench.service import DB_PATH
+    from ..strategy_bench.store import BenchStore
+    strategy_id = request.args.get('strategy_id') or None
+    store = BenchStore(DB_PATH)
+    return jsonify({'snapshots': store.list_snapshots(strategy_id=strategy_id)})
+
+
+@app.route('/api/strategy_bench/compare')
+def api_strategy_bench_compare():
+    from ..strategy_bench.service import DB_PATH
+    from ..strategy_bench.store import BenchStore
+    try:
+        id_a = int(request.args.get('a', 0))
+        id_b = int(request.args.get('b', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid id'}), 400
+    if id_a <= 0 or id_b <= 0:
+        return jsonify({'error': 'invalid id'}), 400
+    store = BenchStore(DB_PATH)
+    cmp = store.compare(id_a, id_b)
+    if cmp is None:
+        return jsonify({'error': 'snapshot not found'}), 404
+    return jsonify(cmp)
+

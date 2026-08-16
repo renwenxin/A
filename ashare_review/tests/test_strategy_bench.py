@@ -338,3 +338,47 @@ def test_job_lifecycle(tmp_path, monkeypatch):
     assert st['status'] == 'done'
     assert st['snapshot_id'] > 0
 
+
+# ---------- Task 6: Web 路由 ----------
+
+def test_strategy_bench_page(tmp_path, monkeypatch):
+    from ashare_review.strategy_bench import service as bench_service
+    from ashare_review.web.app import app
+    monkeypatch.setattr(bench_service, 'DB_PATH', str(tmp_path / 't.db'))
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.get('/strategy_bench')
+    assert rv.status_code == 200
+    body = rv.data.decode('utf-8')
+    assert '策略验证台' in body
+    assert '启动突破V3' in body and '1进2接力' in body
+
+
+def test_strategy_bench_run_api(tmp_path, monkeypatch):
+    import unittest.mock as mock
+    from ashare_review.strategy_bench import service as bench_service
+    from ashare_review.web.app import app
+    monkeypatch.setattr(bench_service, 'DB_PATH', str(tmp_path / 't.db'))
+    monkeypatch.setattr(bench_service, 'start_job', lambda sid, params: 'job123')
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.post('/api/strategy_bench/run', json={'strategy_id': 'v3', 'params': {'lookback_days': 60}})
+    assert rv.status_code == 200
+    assert rv.get_json()['job_id'] == 'job123'
+
+
+def test_strategy_bench_compare_api(tmp_path, monkeypatch):
+    from ashare_review.strategy_bench import service as bench_service
+    from ashare_review.strategy_bench.store import BenchStore
+    from ashare_review.web.app import app
+    monkeypatch.setattr(bench_service, 'DB_PATH', str(tmp_path / 't.db'))
+    store = BenchStore(str(tmp_path / 't.db'))
+    id_a = store.upsert_snapshot('v3', {}, 'a', {'annual_return': 10.0, 'total_trades': 10}, [], 10)
+    id_b = store.upsert_snapshot('v3', {}, 'b', {'annual_return': 12.0, 'total_trades': 12}, [], 12)
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.get(f'/api/strategy_bench/compare?a={id_a}&b={id_b}')
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert data['a']['id'] == id_a and data['b']['id'] == id_b
+
