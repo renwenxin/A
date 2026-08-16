@@ -284,7 +284,6 @@ def test_adapters_params_schema_values():
 # ---------- Task 5: 编排层 ----------
 
 def test_run_backtest_with_mocked_adapter(tmp_path, monkeypatch):
-    import json
     from ashare_review.strategy_bench import service as bench_service
     from ashare_review.strategy_bench.store import BenchStore
 

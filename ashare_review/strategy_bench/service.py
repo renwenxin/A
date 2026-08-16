@@ -1,16 +1,18 @@
 """策略验证台 — 编排层（跑回测 + 后台任务）"""
-import json
+import logging
 import os
 import subprocess
 import threading
 import time
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from ..utils.calendar import TradingCalendar
 from .adapters.registry import get_adapter
-from .metrics import compute_metrics
+from .metrics import compute_metrics, build_equity_curve
 from .store import BenchStore
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = os.environ.get(
     'BENCH_DB',
@@ -36,15 +38,16 @@ def run_backtest(strategy_id: str, params: dict, tdx=None, ak=None,
     db_path = db_path or DB_PATH
     adapter = get_adapter(strategy_id)
     if adapter is None:
+        logger.warning('未知策略: %s', strategy_id)
         return 0
     try:
         trades = adapter.run(params or {}, tdx=tdx, ak=ak) or []
-    except Exception:
+    except Exception as e:
+        logger.warning('策略回测失败 %s/%s: %s', strategy_id, params, e)
         return 0
     if not trades:
         return 0
     metrics = compute_metrics(trades, calendar=TradingCalendar())
-    from .metrics import build_equity_curve
     curve = build_equity_curve(trades)
     store = BenchStore(db_path)
     return store.upsert_snapshot(strategy_id, params or {}, _git_sha(),
@@ -60,12 +63,14 @@ def start_job(strategy_id: str, params: dict, tdx=None, ak=None) -> str:
 
     def _worker():
         try:
-            JOBS[job_id]['progress'] = '回测运行中…'
+            with _JOBS_LOCK:
+                JOBS[job_id]['progress'] = '回测运行中…'
             snap_id = run_backtest(strategy_id, params, tdx=tdx, ak=ak)
             with _JOBS_LOCK:
                 JOBS[job_id]['status'] = 'done' if snap_id else 'error'
                 JOBS[job_id]['snapshot_id'] = snap_id
                 JOBS[job_id]['error'] = None if snap_id else '无有效交易或回测失败'
+                JOBS[job_id]['progress'] = '完成' if snap_id else '失败'
         except Exception as e:
             with _JOBS_LOCK:
                 JOBS[job_id]['status'] = 'error'
