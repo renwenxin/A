@@ -180,3 +180,27 @@ def test_normalize_tail_signals():
     assert trades[0]['return_pct'] == 2.5
     assert trades[0]['exit_date'] == '20260811'   # 2026-08-10 的下一个交易日
 
+
+def test_normalize_none_and_nan_guards():
+    """None/NaN 字段：跳过脏数据不崩溃"""
+    from ashare_review.strategy_bench.adapters.base import (
+        normalize_v3_style_trades, normalize_one_two_trades)
+    import math
+    # v3 风格：net_ret=None / NaN / buy_date=None → 全部跳过；正常行保留
+    raw = [
+        {'buy_date': '2026-08-10', 'sell_date': '2026-08-14', 'net_ret': None},
+        {'buy_date': None, 'sell_date': '2026-08-14', 'net_ret': 5.0},
+        {'buy_date': '2026-08-11', 'sell_date': '2026-08-12', 'net_ret': float('nan')},
+        {'buy_date': '2026-08-12', 'sell_date': '2026-08-13', 'net_ret': 3.0},
+    ]
+    trades = normalize_v3_style_trades(raw)
+    assert len(trades) == 1
+    assert trades[0]['return_pct'] == 3.0
+    # one_two：return_pct=None 跳过
+    raw2 = [
+        {'entry_date': '2026-08-10', 'exit_date': '2026-08-11', 'return_pct': None},
+        {'entry_date': '20260812', 'exit_date': '20260812', 'return_pct': -4.0},
+    ]
+    trades2 = normalize_one_two_trades(raw2)
+    assert len(trades2) == 1 and trades2[0]['return_pct'] == -4.0
+
