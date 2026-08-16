@@ -78,3 +78,34 @@ def test_validate_config_edge_cases():
     assert any('regime_scale' in e for e in validate_config('vol180', bad))
 
 
+# ---------- Task 2: 配置存储 ----------
+
+def test_store_default_fallback(tmp_path):
+    from ashare_review.risk.store import RiskStore
+    s = RiskStore(str(tmp_path / 'nope.json'))
+    cfg = s.get('vol180')
+    assert cfg['stop_loss_pct'] == -6.0          # 文件不存在 → 默认
+    assert s.get('zt_replica')['stop_loss_pct'] == -5.0
+
+
+def test_store_save_and_load(tmp_path):
+    from ashare_review.risk.store import RiskStore
+    path = str(tmp_path / 'risk.json')
+    s = RiskStore(path)
+    s.set('vol180', {'stop_loss_pct': -4.0, 'per_position_pct': 8.0})
+    s2 = RiskStore(path)
+    cfg = s2.get('vol180')
+    assert cfg['stop_loss_pct'] == -4.0
+    assert cfg['per_position_pct'] == 8.0
+    # 未设置的部分回退默认（缺字段合并）
+    assert cfg['max_positions'] == 10
+
+
+def test_store_corrupt_json_falls_back(tmp_path):
+    from ashare_review.risk.store import RiskStore
+    p = tmp_path / 'risk.json'
+    p.write_text('{broken json', encoding='utf-8')
+    s = RiskStore(str(p))
+    assert s.get('vol180')['stop_loss_pct'] == -6.0
+
+
