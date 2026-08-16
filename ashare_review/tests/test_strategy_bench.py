@@ -229,7 +229,7 @@ def test_v3_adapter_normalize():
 def test_one_two_adapter_normalize():
     from ashare_review.strategy_bench.adapters.one_two import OneTwoAdapter
     a = OneTwoAdapter()
-    trades = a.normalize({'valid_trades': [
+    trades = a.normalize({'all_trades': [
         {'entry_date': '2026-08-10', 'exit_date': '2026-08-11', 'return_pct': 6.0},
         {'entry_date': '20260812', 'exit_date': '20260812', 'return_pct': -4.0},
     ]})

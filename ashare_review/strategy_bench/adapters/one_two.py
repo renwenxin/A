@@ -17,7 +17,8 @@ class OneTwoAdapter(StrategyAdapter):
     ]
 
     def normalize(self, result: dict) -> List[Dict]:
-        return normalize_one_two_trades((result or {}).get('valid_trades', []))
+        """one_two 返回 dict：all_trades 为逐笔交易列表（valid_trades 是计数）"""
+        return normalize_one_two_trades((result or {}).get('all_trades', []))
 
     def run(self, params: Dict, tdx=None, ak=None) -> List[Dict]:
         from ...analysis.one_two_backtest import OneTwoBacktest
