@@ -280,3 +280,62 @@ def test_adapters_params_schema_values():
             assert p['type'] in ('int', 'float', 'bool'), (sid, p['name'])
             assert 'default' in p
 
+
+# ---------- Task 5: 编排层 ----------
+
+def test_run_backtest_with_mocked_adapter(tmp_path, monkeypatch):
+    import json
+    from ashare_review.strategy_bench import service as bench_service
+    from ashare_review.strategy_bench.store import BenchStore
+
+    monkeypatch.setattr(bench_service, 'DB_PATH', str(tmp_path / 't.db'))
+
+    class FakeAdapter:
+        strategy_id = 'v3'
+        name = '启动突破V3'
+        param_schema = []
+        def run(self, params, tdx=None, ak=None):
+            return [{'entry_date': '20260810', 'exit_date': '20260814', 'return_pct': 8.5},
+                    {'entry_date': '20260811', 'exit_date': '20260812', 'return_pct': -3.2}]
+
+    monkeypatch.setattr(bench_service, 'get_adapter', lambda sid: FakeAdapter())
+    snap_id = bench_service.run_backtest('v3', {'lookback_days': 60})
+    assert snap_id > 0
+    store = BenchStore(str(tmp_path / 't.db'))
+    s = store.get_snapshot(snap_id)
+    assert s['strategy_id'] == 'v3'
+    assert s['metrics']['total_trades'] == 2
+    assert s['metrics']['win_rate'] == 50.0
+    assert len(s['equity_curve']) == 2
+    assert s['trades_count'] == 2
+
+
+def test_run_backtest_bad_strategy(tmp_path, monkeypatch):
+    from ashare_review.strategy_bench import service as bench_service
+    monkeypatch.setattr(bench_service, 'DB_PATH', str(tmp_path / 't.db'))
+    monkeypatch.setattr(bench_service, 'get_adapter', lambda sid: None)
+    assert bench_service.run_backtest('nope', {}) == 0
+
+
+def test_job_lifecycle(tmp_path, monkeypatch):
+    import threading
+    from ashare_review.strategy_bench import service as bench_service
+    monkeypatch.setattr(bench_service, 'DB_PATH', str(tmp_path / 't.db'))
+
+    class FakeAdapter:
+        strategy_id = 'v3'
+        def run(self, params, tdx=None, ak=None):
+            return [{'entry_date': '20260810', 'exit_date': '20260814', 'return_pct': 1.0}]
+
+    monkeypatch.setattr(bench_service, 'get_adapter', lambda sid: FakeAdapter())
+    job_id = bench_service.start_job('v3', {'lookback_days': 60})
+    # 轮询直到结束
+    import time
+    for _ in range(100):
+        st = bench_service.get_job(job_id)
+        if st['status'] in ('done', 'error'):
+            break
+        time.sleep(0.05)
+    assert st['status'] == 'done'
+    assert st['snapshot_id'] > 0
+
