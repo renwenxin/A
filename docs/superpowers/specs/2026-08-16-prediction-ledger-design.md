@@ -97,7 +97,7 @@ CREATE INDEX IF NOT EXISTS idx_pred_type ON predictions(pred_type);
 | `service.py` | 编排层 | `record_day(report_dict, trade_date)`、`validate_pending(tdx, ak)`、`migrate_picks_history()` |
 
 接线（app.py，改动最小）：
-1. `/review` 路由拿到 report 后调用 `service.record_day(...)` + `service.validate_pending(...)`——缓存命中/刷新两条路径都调用，幂等（`INSERT OR IGNORE`）
+1. `/review` 路由**新生成路径**（refresh=1 或首次生成）拿到 report 后调用 `service.record_day(...)` + `service.validate_pending(...)`（幂等）。**缓存命中路径不调用**——单纯查看缓存页不应触发网络验证（记录已在最初生成时完成），台账页"验证未验证项"按钮（POST /api/ledger/validate）提供手动触发
 2. `daily.py` 仅加两个字段
 3. `base.html` 导航加"📒 预测台账"入口
 
