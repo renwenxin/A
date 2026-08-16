@@ -46,3 +46,35 @@ def test_validate_config():
     # 缺字段 → 报缺字段（不静默）
     bad4 = {k: v for k, v in DEFAULT_CONFIG['vol180'].items() if k != 'max_positions'}
     assert any('max_positions' in e for e in validate_config('vol180', bad4))
+
+
+# ---------- Task 2: 边界与健壮性 ----------
+
+def test_validate_config_edge_cases():
+    from ashare_review.risk.rules import validate_config, DEFAULT_CONFIG
+    base = DEFAULT_CONFIG['vol180']
+    # 精确边界：stop -30 过、-30.1 拒
+    assert validate_config('vol180', dict(base, stop_loss_pct=-30.0)) == []
+    assert any('stop_loss_pct' in e for e in validate_config('vol180', dict(base, stop_loss_pct=-30.1)))
+    # per_position 1/50 过、0/50.1 拒
+    assert validate_config('vol180', dict(base, per_position_pct=1.0)) == []
+    assert validate_config('vol180', dict(base, per_position_pct=50.0)) == []
+    assert any('per_position_pct' in e for e in validate_config('vol180', dict(base, per_position_pct=50.1)))
+    # drawdown 0 拒（开区间）、50 过
+    assert any('drawdown_breaker_pct' in e for e in validate_config('vol180', dict(base, drawdown_breaker_pct=0)))
+    assert validate_config('vol180', dict(base, drawdown_breaker_pct=50.0)) == []
+    # stop_loss 0 拒（上界开）
+    assert any('stop_loss_pct' in e for e in validate_config('vol180', dict(base, stop_loss_pct=0)))
+    # bool 拒绝
+    assert any('per_position_pct' in e for e in validate_config('vol180', dict(base, per_position_pct=True)))
+    assert any('max_positions' in e for e in validate_config('vol180', dict(base, max_positions=True)))
+    # 整数语义字段拒绝小数
+    assert any('max_positions' in e for e in validate_config('vol180', dict(base, max_positions=10.5)))
+    assert any('max_new_per_day' in e for e in validate_config('vol180', dict(base, max_new_per_day=2.7)))
+    # 非 dict 输入
+    assert validate_config('vol180', 'nope') != []
+    # regime_scale 缺键
+    bad = dict(base); bad['regime_scale'] = {'强势趋势': 1.0}
+    assert any('regime_scale' in e for e in validate_config('vol180', bad))
+
+

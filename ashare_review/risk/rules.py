@@ -42,17 +42,21 @@ def validate_config(portfolio_id: str, cfg: dict) -> List[str]:
             errors.append(f'缺少字段: {key}')
             continue
         v = cfg[key]
-        if not isinstance(v, (int, float)):
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
             errors.append(f'{key} 必须为数值')
             continue
+        if key in ('max_positions', 'max_new_per_day'):
+            if isinstance(v, bool) or not isinstance(v, int):
+                errors.append(f'{key} 必须为整数')
+                continue
         if key in ('stop_loss_pct',) and not (-30.0 <= v < 0):
-            errors.append(f'stop_loss_pct 需在 -30~0 之间（当前 {v}）')
+            errors.append(f'stop_loss_pct 需在 [-30, 0) 之间（当前 {v}）')
         elif key == 'per_position_pct' and not (1.0 <= v <= 50.0):
             errors.append(f'per_position_pct 需在 1~50 之间（当前 {v}）')
         elif key in ('max_positions', 'max_new_per_day') and not (1 <= v <= 50):
             errors.append(f'{key} 需在 1~50 之间（当前 {v}）')
         elif key in ('drawdown_breaker_pct', 'drawdown_recover_pct') and not (0 < v <= 50):
-            errors.append(f'{key} 需在 0~50 之间（当前 {v}）')
+            errors.append(f'{key} 需在 (0, 50] 之间（当前 {v}）')
     rs = cfg.get('regime_scale')
     if not isinstance(rs, dict):
         errors.append('缺少字段: regime_scale')
