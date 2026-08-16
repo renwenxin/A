@@ -64,7 +64,7 @@ def _trades():
     return [
         {'entry_date': '20260810', 'exit_date': '20260811', 'return_pct': 10.0},
         {'entry_date': '20260811', 'exit_date': '20260812', 'return_pct': -5.0},
-        {'entry_date': '20260812', 'exit_date': '20260813', 'return_pct': 6.0},
+        {'entry_date': '20260812', 'exit_date': '20260814', 'return_pct': 6.0},
     ]
 
 
@@ -84,7 +84,7 @@ def test_metrics_equity_curve():
     from ashare_review.strategy_bench.metrics import build_equity_curve
     curve = build_equity_curve(_trades())
     # 按 exit_date 排序累乘：10% → 1.1*0.95=4.5% → 1.045*1.06=10.77%
-    assert curve == [['20260811', 10.0], ['20260812', 4.5], ['20260813', 10.77]]
+    assert curve == [['20260811', 10.0], ['20260812', 4.5], ['20260814', 10.77]]
 
 
 def test_metrics_max_drawdown():
