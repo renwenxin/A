@@ -127,4 +127,5 @@ class BenchStore:
                     better = 'b' if vb > va else ('a' if vb < va else None)
             metrics.append({'key': key, 'label': label, 'a': va, 'b': vb,
                             'delta': delta, 'delta_pct': delta_pct, 'better': better})
-        return {'a': a, 'b': b, 'metrics': metrics}
+        return {'a': a, 'b': b, 'metrics': metrics,
+                'curves': {'a': a.get('equity_curve') or [], 'b': b.get('equity_curve') or []}}

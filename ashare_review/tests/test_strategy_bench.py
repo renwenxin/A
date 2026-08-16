@@ -135,6 +135,7 @@ def test_store_compare(tmp_path):
     assert by_key['max_drawdown']['better'] == 'b'
     # total_trades 无 better
     assert by_key['total_trades']['better'] is None
+    assert cmp['curves']['a'] == [] and cmp['curves']['b'] == []   # 本次两条快照 equity_curve 都是 []
 
 # ---------- Task 3: 基类 + 注册表 + 归一化 ----------
 
