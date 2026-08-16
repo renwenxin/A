@@ -32,6 +32,19 @@ PICKS_HISTORY_FILE = os.path.join(DATA_DIR, 'picks_history.json')
 CONCEPT_MAP_FILE = os.path.join(DATA_DIR, 'concept_map.json')
 
 
+# ---- 预测台账：情绪周期 stage → 次日方向 映射（待验证假设，台账数据可反过来校准） ----
+_NEXT_BIAS_BY_STAGE = {
+    '启动期': 'up', '发酵期': 'up',
+    '高潮末期': 'down', '退潮期': 'down',
+    '高潮期': 'flat', '震荡期': 'flat', '冰点期': 'flat',
+}
+# ---- 预测台账：竞价 forecast → 方向 映射 ----
+_AUCTION_DIRECTION = {
+    '火爆': 'high', '偏强': 'high', '中性': 'flat',
+    '偏弱': 'low', '观望': 'low',
+}
+
+
 def _is_yizi_board(lu) -> bool:
     """判断是否一字板：封板时间为09:25（集合竞价即封死）"""
     try:
@@ -141,6 +154,7 @@ class DailyReport:
 
         return {
             'date': report_date,
+            'limit_up_codes': [lu.code for lu in limit_ups],
             'is_trading_day': self.calendar.is_trading_day(
                 datetime.strptime(trade_date, '%Y%m%d').date()),
             'total_limit_ups': total_zt,
@@ -592,6 +606,7 @@ class DailyReport:
             'stage_desc': stage_desc.strip(),
             'action': action,
             'risk_level': risk_level,
+            'next_bias': _NEXT_BIAS_BY_STAGE.get(stage, 'flat'),
             'metrics': {
                 'total_zt': total,
                 'seal_rate': round(seal_rate, 1),
@@ -776,6 +791,7 @@ class DailyReport:
         return {
             'forecast': forecast,
             'forecast_desc': forecast_desc,
+            'direction': _AUCTION_DIRECTION.get(forecast, 'flat'),
             'early_sealed': early_sealed,
             'morning_sealed': morning_sealed,
             'afternoon_sealed': afternoon_sealed,
