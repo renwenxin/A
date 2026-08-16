@@ -129,3 +129,94 @@ def test_auction_direction_all_forecasts():
         fc = rep._forecast_next_auction(limit_ups, {})
         assert fc['forecast'] == expect_fc, f"total={total} yizi={yizi} early={early} broken={broken}"
         assert fc['direction'] == expect_dir, f"forecast={fc['forecast']}"
+
+
+# ---------- Task 3: SQLite 存储层 ----------
+
+def _sample_rows():
+    return [
+        {'pred_date': '20260814', 'pred_type': 'picks', 'item_key': '600001',
+         'item_name': '测试A', 'direction': None, 'score': 62,
+         'detail': '{"reasons": []}'},
+        {'pred_date': '20260814', 'pred_type': 'picks', 'item_key': '600002',
+         'item_name': '测试B', 'direction': None, 'score': 45,
+         'detail': '{"reasons": []}'},
+        {'pred_date': '20260814', 'pred_type': 'cycle', 'item_key': 'daily',
+         'item_name': '发酵期', 'direction': 'up', 'score': None,
+         'detail': '{"total_zt": 60}'},
+        {'pred_date': '20260814', 'pred_type': 'auction', 'item_key': 'daily',
+         'item_name': '偏强', 'direction': 'high', 'score': None,
+         'detail': '{"pool_codes": ["600001", "600002"]}'},
+    ]
+
+
+def test_store_upsert_idempotent(tmp_path):
+    from ashare_review.prediction_ledger.store import LedgerStore
+    store = LedgerStore(str(tmp_path / 't.db'))
+    assert store.upsert_predictions(_sample_rows()) == 4
+    assert store.upsert_predictions(_sample_rows()) == 0   # 重复写不产生新行
+    assert len(store.rows(365)) == 4
+
+
+def test_store_get_unverified_and_mark(tmp_path):
+    from ashare_review.prediction_ledger.store import LedgerStore
+    store = LedgerStore(str(tmp_path / 't.db'))
+    store.upsert_predictions(_sample_rows())
+    pending = store.get_unverified()
+    assert len(pending) == 4
+    first = pending[0]
+    store.mark_verified(first['id'], 'zt', 1)
+    assert len(store.get_unverified()) == 3
+
+
+def test_store_summary_aggregation(tmp_path):
+    from ashare_review.prediction_ledger.store import LedgerStore
+    store = LedgerStore(str(tmp_path / 't.db'))
+    store.upsert_predictions(_sample_rows())
+    # 手工验证：600001 命中，600002 未中，cycle/auction 各命中
+    rows = store.rows(365)
+    for r in rows:
+        if r['pred_type'] == 'picks':
+            store.mark_verified(r['id'], 'zt' if r['item_key'] == '600001' else 'down',
+                                1 if r['item_key'] == '600001' else 0)
+        elif r['pred_type'] == 'cycle':
+            store.mark_verified(r['id'], 'up', 1)
+        else:
+            store.mark_verified(r['id'], 'high', 1)
+    s = store.summary(365)
+    assert s['picks']['total'] == 2 and s['picks']['verified'] == 2 and s['picks']['hit'] == 1
+    assert s['picks']['rate'] == 0.5
+    assert s['cycle']['rate'] == 1.0
+    assert s['auction']['rate'] == 1.0
+    # 分数段：≥60 → 1/1；50-59 → 0；<50 → 0/1
+    buckets = {b['label']: b for b in s['buckets']}
+    assert buckets['≥60']['hit'] == 1 and buckets['≥60']['verified'] == 1
+    assert buckets['50-59']['verified'] == 0
+    assert buckets['<50']['hit'] == 0 and buckets['<50']['verified'] == 1
+    # 覆盖统计
+    assert s['coverage']['verified_days'] == 1
+    assert s['coverage']['pending'] == 0
+
+
+def test_store_summary_window_filter(tmp_path):
+    from datetime import date
+    from ashare_review.prediction_ledger.store import LedgerStore
+    store = LedgerStore(str(tmp_path / 't.db'))
+    today = date.today().strftime('%Y%m%d')
+    store.upsert_predictions([{
+        'pred_date': today, 'pred_type': 'picks', 'item_key': '600001',
+        'item_name': '今天', 'direction': None, 'score': 60, 'detail': '{}'}])
+    s = store.summary(1)     # 1 天窗口：包含今天
+    assert s['picks']['total'] == 1
+    s2 = store.summary(0)    # 0 天窗口：cutoff=今天，pred_date >= 今天 仍含今天（边界）
+    assert s2['picks']['total'] == 1
+
+
+def test_store_set_actual(tmp_path):
+    from ashare_review.prediction_ledger.store import LedgerStore
+    store = LedgerStore(str(tmp_path / 't.db'))
+    store.upsert_predictions(_sample_rows())
+    store.set_actual('20260814', 'picks', '600001', 'up3', 1)
+    rows = store.rows(365)
+    row = [r for r in rows if r['item_key'] == '600001'][0]
+    assert row['actual'] == 'up3' and row['hit'] == 1
