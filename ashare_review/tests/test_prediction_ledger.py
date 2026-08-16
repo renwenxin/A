@@ -241,3 +241,136 @@ def test_store_summary_unverified_excluded(tmp_path):
     assert s['picks']['rate'] == 1.0
     assert s['coverage']['pending'] == 1
 
+# ---------- Task 4: 编排层 record_day / validate_pending ----------
+
+class FakeTdx:
+    """返回两日行情（前一交易日 + 次日）：code -> [(open, close), (open, close)]"""
+    def __init__(self, data):
+        self.data = data  # {code: [(prev_open, prev_close), (next_open, next_close)]}
+
+    def read_daily(self, code, market):
+        import pandas as pd
+        bars = self.data.get(str(code))
+        if not bars:
+            return pd.DataFrame()
+        return pd.DataFrame([{'open': b[0], 'close': b[1]} for b in bars])
+
+
+class FakeAk:
+    """涨停池可控：date -> LimitUpInfo 列表"""
+    def __init__(self, pools=None, raise_on=None):
+        self.pools = pools or {}        # {'20260814': [LimitUpInfo, ...]}
+        self.raise_on = raise_on or set()
+
+    def get_limit_up_pool(self, trade_date):
+        if trade_date in self.raise_on:
+            raise RuntimeError('network down')
+        return self.pools.get(trade_date, [])
+
+
+def _lu_info(code, consecutive=1):
+    from ashare_review.data.models import LimitUpInfo
+    return LimitUpInfo(code=code, name='测试', limit_up_time='10:00', seal_amount=1000,
+                       turnover=5000, float_market_cap=30, consecutive=consecutive,
+                       is_first=consecutive == 1, is_seal=True, is_broken=False,
+                       board_type='换手板', close_price=10.0)
+
+
+def _canned_report():
+    return {
+        'date': '2026-08-14',
+        'limit_up_codes': ['600001', '600002'],
+        'sentiment': {'picks': [
+            {'code': '600001', 'name': '测试A', 'score': 62, 'reasons': ['首板']},
+            {'code': '600002', 'name': '测试B', 'score': 45, 'reasons': []},
+        ]},
+        'cycle': {'stage': '发酵期', 'next_bias': 'up', 'stage_desc': '赚钱效应增强',
+                  'metrics': {'total_zt': 60}},
+        'auction_forecast': {'forecast': '偏强', 'direction': 'high',
+                             'forecast_desc': '多数涨停股预期高开'},
+    }
+
+
+def test_record_day_writes_three_types(tmp_path):
+    from ashare_review.prediction_ledger.service import record_day
+    from ashare_review.prediction_ledger.store import LedgerStore
+    db = str(tmp_path / 't.db')
+    assert record_day(_canned_report(), '20260814', db) == 4
+    assert record_day(_canned_report(), '20260814', db) == 0   # 幂等
+    store = LedgerStore(db)
+    rows = store.rows(365)
+    assert len(rows) == 4
+    types = {r['pred_type'] for r in rows}
+    assert types == {'picks', 'cycle', 'auction'}
+
+
+def test_record_day_skips_error_report(tmp_path):
+    from ashare_review.prediction_ledger.service import record_day
+    assert record_day({'error': 'boom'}, '20260814', str(tmp_path / 't.db')) == 0
+    assert record_day(None, '20260814', str(tmp_path / 't.db')) == 0
+
+
+def test_validate_pending_picks(tmp_path):
+    from ashare_review.prediction_ledger.service import record_day, validate_pending
+    from ashare_review.prediction_ledger.store import LedgerStore
+    db = str(tmp_path / 't.db')
+    record_day(_canned_report(), '20260814', db)
+    from ashare_review.utils.calendar import TradingCalendar
+    cal = TradingCalendar()
+    from datetime import datetime, timedelta
+    d = datetime.strptime('20260814', '%Y%m%d').date()
+    n = cal.next_trading_day(d, offset=1)
+    next_ymd = n.strftime('%Y%m%d')
+    tdx = FakeTdx({'600001': [(10.0, 10.0), (11.0, 11.0)],
+                   '600002': [(10.0, 10.0), (9.5, 9.5)]})
+    ak = FakeAk({next_ymd: [_lu_info('600001', consecutive=2)]})
+    n_validated = validate_pending(tdx, ak, calendar=cal, db_path=db)
+    assert n_validated == 4
+    store = LedgerStore(db)
+    rows = {r['item_key']: r for r in store.rows(365) if r['pred_type'] == 'picks'}
+    assert rows['600001']['actual'] == 'zt' and rows['600001']['hit'] == 1
+    assert rows['600002']['actual'] == 'down' and rows['600002']['hit'] == 0
+
+
+def test_validate_pending_cycle_and_auction(tmp_path):
+    from ashare_review.prediction_ledger.service import record_day, validate_pending
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.utils.calendar import TradingCalendar
+    from datetime import datetime
+    db = str(tmp_path / 't.db')
+    record_day(_canned_report(), '20260814', db)
+    cal = TradingCalendar()
+    next_ymd = cal.next_trading_day(datetime.strptime('20260814', '%Y%m%d').date(),
+                                    offset=1).strftime('%Y%m%d')
+    tdx = FakeTdx({'600001': [(10.0, 10.0), (10.2, 10.5)],
+                   '600002': [(10.0, 10.0), (10.1, 10.0)]})
+    pool = [_lu_info(f'600{i:03d}') for i in range(67)]  # 覆盖 index0/1 后恰余 66 只不同股票：r=66/60=1.1 → up
+    pool[0], pool[1] = _lu_info('600001'), _lu_info('600002')
+    ak = FakeAk({next_ymd: pool})
+    n = validate_pending(tdx, ak, calendar=cal, db_path=db)
+    assert n == 4
+    store = LedgerStore(db)
+    rows = {r['pred_type']: r for r in store.rows(365)}
+    assert rows['cycle']['actual'] == 'up' and rows['cycle']['hit'] == 1
+    assert rows['auction']['actual'] == 'high' and rows['auction']['hit'] == 1
+
+
+def test_validate_pending_network_down_skips(tmp_path):
+    from ashare_review.prediction_ledger.service import record_day, validate_pending
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.utils.calendar import TradingCalendar
+    from datetime import datetime
+    db = str(tmp_path / 't.db')
+    record_day(_canned_report(), '20260814', db)
+    cal = TradingCalendar()
+    next_ymd = cal.next_trading_day(datetime.strptime('20260814', '%Y%m%d').date(),
+                                    offset=1).strftime('%Y%m%d')
+    tdx = FakeTdx({'600001': [(10.0, 10.0), (11.0, 11.0)],
+                   '600002': [(10.0, 10.0), (9.5, 9.5)]})
+    ak = FakeAk({}, raise_on={next_ymd})
+    n = validate_pending(tdx, ak, calendar=cal, db_path=db)
+    assert n == 3
+    store = LedgerStore(db)
+    rows = {r['pred_type']: r for r in store.rows(365)}
+    assert rows['cycle']['hit'] is None
+    assert rows['auction']['hit'] == 1
