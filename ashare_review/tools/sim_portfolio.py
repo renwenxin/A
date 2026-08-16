@@ -894,6 +894,7 @@ class Vol180SimPortfolio:
                 'vol_ratio': sig['vol_ratio'],
                 'score': sig.get('score', 60),
                 'limit_count': sig.get('limit_count', 0),
+                'suggested_size_pct': risk['suggested_size_pct'],
                 'mode': mode,
                 'market_bull': is_bull,
             }
@@ -941,8 +942,9 @@ class Vol180SimPortfolio:
                 except Exception:
                     pass
 
-                # 重新计算买入份额（用实际开盘价）
-                position_capital = INITIAL_CAPITAL * PER_POSITION_PCT
+                # 重新计算买入份额（用实际开盘价 + 风控缩放仓位）
+                size_pct = rd.get('suggested_size_pct', PER_POSITION_PCT)
+                position_capital = INITIAL_CAPITAL * (size_pct / 100.0)
                 actual_shares = int(position_capital / max(buy_price_actual, 0.01) / 100) * 100
                 if actual_shares < 100:
                     actual_shares = 100
