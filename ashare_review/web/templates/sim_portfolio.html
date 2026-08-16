@@ -9,6 +9,51 @@
 </div>
 <div class="content-area">
 
+<!-- 🛡️ 风控状态（Risk Engine） -->
+<div class="card" style="margin-bottom:14px;border-left:4px solid #4f46e5;">
+    <div class="card-header">
+        🛡️ 风控
+        <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="openRiskEdit()">编辑规则</button>
+    </div>
+    <div class="card-body" style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+        <div>
+            <div style="font-size:.85em;color:#666;">当日行情</div>
+            <div id="risk-regime" style="font-weight:700;">—</div>
+        </div>
+        <div>
+            <div style="font-size:.85em;color:#666;">仓位缩放</div>
+            <div id="risk-scale" style="font-weight:700;">—</div>
+        </div>
+        <div>
+            <div style="font-size:.85em;color:#666;">建议单票仓位</div>
+            <div id="risk-size" style="font-weight:700;">—</div>
+        </div>
+        <div style="flex:1;min-width:180px;">
+            <div style="font-size:.85em;color:#666;">组合回撤</div>
+            <div class="risk-dd-bar" style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:4px;">
+                <div id="risk-dd-fill" style="height:100%;width:0%;background:#059669;transition:width .4s;"></div>
+            </div>
+            <div style="font-size:.8em;color:#666;margin-top:2px;"><span id="risk-dd-text">—</span></div>
+        </div>
+        <div id="risk-status" style="font-weight:700;">—</div>
+    </div>
+</div>
+
+<!-- 编辑规则弹窗 -->
+<div id="risk-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:99;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:20px;width:520px;max-width:92vw;max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <strong>编辑风控规则</strong>
+            <button class="btn btn-secondary btn-sm" onclick="closeRiskEdit()">✕</button>
+        </div>
+        <div id="risk-edit-form" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeRiskEdit()">取消</button>
+            <button class="btn btn-primary" onclick="saveRiskConfig()">保存</button>
+        </div>
+    </div>
+</div>
+
 <!-- ====== 搜索添加 ====== -->
 <div class="card">
     <div class="card-body">
@@ -105,6 +150,97 @@
 </div>
 
 <script>
+var RISK_PORTFOLIO = 'vol180';
+
+function loadRiskStatus() {
+    fetch('/api/risk/status?portfolio=' + RISK_PORTFOLIO)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.error) return;
+            document.getElementById('risk-regime').textContent = d.regime || '—';
+            document.getElementById('risk-scale').textContent = '×' + d.regime_scale;
+            document.getElementById('risk-size').textContent = d.suggested_size_pct + '%';
+            var dd = Math.abs(d.drawdown_pct || 0);
+            var breaker = d.config ? (d.config.drawdown_breaker_pct || 8) : 8;
+            document.getElementById('risk-dd-text').textContent = dd.toFixed(1) + '% / 熔断 ' + breaker + '%';
+            var fill = document.getElementById('risk-dd-fill');
+            fill.style.width = Math.min(100, dd / breaker * 100) + '%';
+            fill.style.background = d.can_open ? '#059669' : '#dc2626';
+            var st = document.getElementById('risk-status');
+            if (d.can_open) { st.textContent = '✅ 可开仓'; st.style.color = '#059669'; }
+            else {
+                st.textContent = '⛔ ' + ((d.blocked_reasons || [])[0] || '被拦截');
+                st.style.color = '#dc2626';
+            }
+        });
+}
+
+function openRiskEdit() {
+    fetch('/api/risk/config')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var cfg = d[RISK_PORTFOLIO] || {};
+            var box = document.getElementById('risk-edit-form');
+            box.innerHTML = '';
+            var fields = [
+                ['stop_loss_pct', '止损线(%)', cfg.stop_loss_pct],
+                ['per_position_pct', '单票仓位(%)', cfg.per_position_pct],
+                ['max_positions', '最大持仓', cfg.max_positions],
+                ['max_new_per_day', '每日最大新开', cfg.max_new_per_day],
+                ['drawdown_breaker_pct', '回撤熔断(%)', cfg.drawdown_breaker_pct],
+                ['drawdown_recover_pct', '恢复线(%)', cfg.drawdown_recover_pct]
+            ];
+            fields.forEach(function (f) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+                row.innerHTML = '<span style="font-size:.9em;">' + f[1] + '</span>' +
+                    '<input data-rc="' + f[0] + '" type="number" step="0.5" value="' + f[2] + '" style="width:120px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;">';
+                box.appendChild(row);
+            });
+            var rs = cfg.regime_scale || {};
+            var title = document.createElement('div');
+            title.style.cssText = 'margin-top:6px;font-size:.9em;color:#666;';
+            title.textContent = '行情仓位缩放系数（0=禁开仓）';
+            box.appendChild(title);
+            Object.keys(rs).forEach(function (r) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+                row.innerHTML = '<span style="font-size:.9em;">' + r + '</span>' +
+                    '<input data-rc="regime:' + r + '" type="number" step="0.1" value="' + rs[r] + '" style="width:120px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;">';
+                box.appendChild(row);
+            });
+            document.getElementById('risk-edit-modal').style.display = 'flex';
+        });
+}
+
+function saveRiskConfig() {
+    var cfg = {};
+    document.querySelectorAll('#risk-edit-form [data-rc]').forEach(function (el) {
+        var key = el.dataset.rc;
+        if (key.indexOf('regime:') === 0) {
+            if (!cfg.regime_scale) cfg.regime_scale = {};
+            cfg.regime_scale[key.slice(7)] = Number(el.value);
+        } else {
+            cfg[key] = Number(el.value);
+        }
+    });
+    fetch('/api/risk/config', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({portfolio_id: RISK_PORTFOLIO, config: cfg})
+    }).then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { alert('保存失败: ' + (d.error || '')); return; }
+        closeRiskEdit();
+        loadRiskStatus();
+        alert('规则已保存，下次买入/卖出生效');
+      });
+}
+
+function closeRiskEdit() { document.getElementById('risk-edit-modal').style.display = 'none'; }
+
+document.addEventListener('DOMContentLoaded', loadRiskStatus);
+
 // ── 搜索 ──
 let _searchTimer = null;
 
