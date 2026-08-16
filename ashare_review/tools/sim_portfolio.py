@@ -180,36 +180,11 @@ class Vol180SimPortfolio:
         except Exception:
             return 0
 
-    def _read_stock(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
-        market = 'sh' if str(code).startswith('6') else 'sz'
-        if str(code).startswith(('8', '4')):
-            market = 'bj'
-        try:
-            df = self.tdx.read_daily(code, market)
-            if df is None or df.empty or len(df) < MAVOL_PERIOD:
-                return None
-            df = calc_ma(df, [5, 10])
-            df['mavol180'] = df['volume'].rolling(MAVOL_PERIOD).mean()
-            if up_to_date:
-                try:
-                    target = datetime.strptime(up_to_date, '%Y%m%d').date()
-                except ValueError:
-                    try:
-                        target = datetime.strptime(up_to_date, '%Y-%m-%d').date()
-                    except ValueError:
-                        return df
-                df = df[df['trade_date'].apply(
-                    lambda x: (x.date() if hasattr(x, 'date') else x) <= target
-                )]
-            return df if len(df) >= 60 else None
-        except Exception:
-            return None
+    def _read_daily(self, code: str, up_to_date: str = None, min_len: int = None) -> Optional[pd.DataFrame]:
+        """统一日线读取入口：market 判定 + up_to_date 双格式解析 + trade_date 过滤 + try/except。
 
-    def _read_sell_df(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
-        """卖出检查用日线：读原始日线并按 up_to_date 过滤，不强制 MAVOL/最少 60 根。
-
-        卖出规则只用 close/prev_close，不依赖均线；放宽长度约束后，
-        既能省去历史均线计算，也支持测试注入的少量可控日线。
+        只返回原始日线（不含均线），供调用方按需计算 MA。
+        min_len: 可选最少行数（过滤后），None 表示不限制（卖出场景用）。
         """
         market = 'sh' if str(code).startswith('6') else 'sz'
         if str(code).startswith(('8', '4')):
@@ -229,9 +204,28 @@ class Vol180SimPortfolio:
                 df = df[df['trade_date'].apply(
                     lambda x: (x.date() if hasattr(x, 'date') else x) <= target
                 )]
+            if min_len is not None and len(df) < min_len:
+                return None
             return df if not df.empty else None
         except Exception:
             return None
+
+    def _read_stock(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
+        """买入检测用日线：至少 60 根，并计算 MA5/MA10/MAVOL180。"""
+        df = self._read_daily(code, up_to_date=up_to_date, min_len=60)
+        if df is None:
+            return None
+        df = calc_ma(df, [5, 10])
+        df['mavol180'] = df['volume'].rolling(MAVOL_PERIOD).mean()
+        return df
+
+    def _read_sell_df(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
+        """卖出检查用日线：读原始日线并按 up_to_date 过滤，不强制 MAVOL/最少 60 根。
+
+        卖出规则只用 close/open/volume，不依赖均线；放宽长度约束后，
+        既能省去历史均线计算，也支持测试注入的少量可控日线。
+        """
+        return self._read_daily(code, up_to_date=up_to_date)
 
     def _read_latest(self, code: str) -> Optional[dict]:
         """只读最近一根K线 + MAVOL180（日常扫描用，不读全文件）。"""
@@ -590,7 +584,8 @@ class Vol180SimPortfolio:
         buy_price = position.get('buy_price', 0)
         had_zt = position.get('had_zt', False)
 
-        df = self._read_stock(code, up_to_date=td_fmt)
+        # V3 只用 close/open/volume 列，不依赖均线 → 走 _read_sell_df（放宽长度约束）
+        df = self._read_sell_df(code, up_to_date=td_fmt)
         if df is None or df.empty:
             return None
 
@@ -847,6 +842,8 @@ class Vol180SimPortfolio:
             regime = _ld.get_regime_diagnosis().get('regime', '震荡观望') or '震荡观望'
         except Exception:
             regime = '震荡观望'
+        # 注：evaluate 的 max_new_per_day 分支在此接入点不生效（new_buys 初始为 0），
+        # 每日新开上限由下方 max_new = min(cfg['max_new_per_day'], ...) 切片兜底。
         risk = evaluate(cfg, {
             'positions': len(self._state['holding']) + len(self._state['ready']),
             'opened_today': new_buys,
@@ -894,7 +891,7 @@ class Vol180SimPortfolio:
                 'vol_ratio': sig['vol_ratio'],
                 'score': sig.get('score', 60),
                 'limit_count': sig.get('limit_count', 0),
-                'suggested_size_pct': risk['suggested_size_pct'],
+                'suggested_size_pct': risk['suggested_size_pct'],  # 信号日判定的缩放仓位（随 ready 跨日持久化，以信号日为准）
                 'mode': mode,
                 'market_bull': is_bull,
             }
@@ -943,6 +940,7 @@ class Vol180SimPortfolio:
                     pass
 
                 # 重新计算买入份额（用实际开盘价 + 风控缩放仓位）
+                # 信号日快照：执行日不重评估熔断/regime（如需执行日复查，后续增强）
                 size_pct = rd.get('suggested_size_pct', PER_POSITION_PCT)
                 position_capital = INITIAL_CAPITAL * (size_pct / 100.0)
                 actual_shares = int(position_capital / max(buy_price_actual, 0.01) / 100) * 100
