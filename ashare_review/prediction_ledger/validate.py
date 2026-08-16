@@ -17,7 +17,7 @@ def grade_pick(today_chg: float, is_zt: bool = False) -> str:
         return 'up3'
     if 0.0 <= today_chg < 3.0:
         return 'up'
-    if -3.0 < today_chg < 0.0:
+    if -3.0 <= today_chg < 0.0:
         return 'flat'
     return 'down'
 

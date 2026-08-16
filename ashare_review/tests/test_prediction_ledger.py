@@ -17,7 +17,7 @@ def test_grade_pick_boundaries():
     assert grade_pick(2.99) == 'up'                   # <3% → up
     assert grade_pick(0.0) == 'up'                    # 平盘 → up
     assert grade_pick(-2.99) == 'flat'                # -3% 以内 → flat
-    assert grade_pick(-3.0) == 'down'                 # 正好 -3% → down
+    assert grade_pick(-3.0) == 'flat'                 # 正好 -3% → flat（-3%~0 区间含边界）
     assert grade_pick(-5.0) == 'down'
 
 
