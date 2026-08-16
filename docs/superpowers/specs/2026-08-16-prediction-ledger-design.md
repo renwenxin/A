@@ -92,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_pred_type ON predictions(pred_type);
 
 | 文件 | 职责 | 关键接口 |
 |---|---|---|
-| `store.py` | SQLite 读写层 | `LedgerStore(db_path)`：建表、`upsert_predictions(rows)`、`get_unverified()`、`mark_verified(id, actual, hit)`、`summary(window_days)` |
+| `store.py` | SQLite 读写层 | `LedgerStore(db_path)`：建表、`upsert_predictions(rows)`、`get_unverified()`、`mark_verified(id, actual, hit)`、`set_actual(pred_date, pred_type, item_key, actual, hit)`、`rows(window_days)`、`summary(window_days)` |
 | `validate.py` | 判定引擎（纯函数） | `grade_pick(today_chg, is_zt)`、`grade_cycle(today_zt, next_zt)`、`grade_auction(avg_gap)`、`hit_for(type, direction, actual)` |
 | `service.py` | 编排层 | `record_day(report_dict, trade_date)`、`validate_pending(tdx, ak)`、`migrate_picks_history()` |
 
