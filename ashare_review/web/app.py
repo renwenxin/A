@@ -2036,7 +2036,7 @@ def _portfolio_risk_state(portfolio_id: str) -> dict:
     hist_peak = init_cap
     for snap in state_data.get('portfolio_history', []) or []:
         hist_peak = max(hist_peak, snap.get('total', 0) or 0)
-    return {'positions': positions, 'opened_today': 0,
+    return {'positions': positions, 'opened_today': state_data.get('today_buys', 0),
             'total_value': total_value, 'history_peak': hist_peak,
             'breaker_tripped': bool((state_data.get('last_risk') or {}).get('breaker_tripped', False))}
 

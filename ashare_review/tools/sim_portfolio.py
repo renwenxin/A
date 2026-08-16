@@ -897,6 +897,8 @@ class Vol180SimPortfolio:
             }
             new_buys += 1
 
+        self._state['today_buys'] = new_buys   # 今日新开信号数（供风控 status 展示）
+
         # ── Step 3: 自动执行买入 ──
         auto_buys = 0
         for code in list(self._state['ready'].keys()):
