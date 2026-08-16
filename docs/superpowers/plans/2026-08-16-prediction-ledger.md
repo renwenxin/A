@@ -634,7 +634,7 @@ class LedgerStore:
 - [ ] **Step 4: 运行确认通过**
 
 Run: `python -m pytest ashare_review/tests/test_prediction_ledger.py -v`
-Expected: 13 passed（含 Task1 6 个 + Task2 2 个 + Task3 5 个）
+Expected: 12 passed（含 Task1 5 个 + Task2 2 个 + Task3 5 个）
 
 - [ ] **Step 5: 提交**
 
@@ -659,7 +659,8 @@ git commit -m "feat(ledger): SQLite 存储层（幂等写入/验证/聚合统计
 # ---------- Task 4: 编排层 record_day / validate_pending ----------
 
 class FakeTdx:
-    """返回两日行情（前一交易日 + 次日）：code -> [(open, close), (open, close)]"""
+    """返回可控行情：code -> {date_str: {'open':.., 'close':..}}，含 trade_date 列
+    审查修正：改为日期键控（service 按 next_date 定位日线）"""
     def __init__(self, data):
         self.data = data  # {code: [(prev_open, prev_close), (next_open, next_close)]}
 
@@ -897,8 +898,9 @@ def record_day(report: Optional[Dict], trade_date: str, db_path: Optional[str] =
     return LedgerStore(db_path).upsert_predictions(rows)
 
 
-def _pick_actual(tdx, code: str, zt_codes: set) -> Tuple[Optional[str], Optional[int]]:
-    """验证单只精选：TDX 次日行情 + 涨停集合判定。返回 (actual, hit)。"""
+def _pick_actual(tdx, code: str, zt_codes: set, next_date: str) -> Tuple[Optional[str], Optional[int]]:
+    """验证单只精选：定位 next_date 日线 + 涨停集合判定。返回 (actual, hit)。
+    审查修正：按 trade_date 定位 next_date 行（避免延迟/历史验证用错 K 线）。"""
     try:
         df = tdx.read_daily(code, _market_of(code))
         if df is None or df.empty or len(df) < 2:
@@ -1023,8 +1025,10 @@ def test_migrate_picks_history(tmp_path):
     }, open(hist, 'w', encoding='utf-8'))
     cal = TradingCalendar()
     # 600001 次日涨停；600002 次日 -2%；600003 无 TDX 数据（跳过）
-    tdx = FakeTdx({'600001': [(10.0, 10.0), (11.0, 11.0)],
-                   '600002': [(10.0, 10.0), (9.8, 9.8)]})
+    tdx = FakeTdx({'600001': {'20260813': {'open': 10.0, 'close': 10.0},
+                              '20260814': {'open': 11.0, 'close': 11.0}},
+                   '600002': {'20260813': {'open': 10.0, 'close': 10.0},
+                              '20260814': {'open': 9.8, 'close': 9.8}}})
     ak = FakeAk({})   # 无涨停池 → 降级按涨幅
     db = str(tmp_path / 't.db')
     inserted = migrate_picks_history(tdx, ak, calendar=cal, db_path=db, history_file=hist)
@@ -1082,7 +1086,7 @@ def migrate_picks_history(tdx, ak, calendar: Optional[TradingCalendar] = None,
             code = str(p.get('code', ''))
             if not code:
                 continue
-            actual, hit = _pick_actual(tdx, code, zt_codes)
+            actual, hit = _pick_actual(tdx, code, zt_codes, next_date)
             if actual is None:
                 continue
             inserted += store.upsert_predictions([{
