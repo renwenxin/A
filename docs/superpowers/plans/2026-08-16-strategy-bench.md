@@ -946,7 +946,7 @@ class ZTReplicaAdapter(StrategyAdapter):
 - [ ] **Step 4: 运行确认通过**
 
 Run: `python -m pytest ashare_review/tests/test_strategy_bench.py -v`
-Expected: 17 passed（12 + 5）
+Expected: 18 passed（12 + 6）
 
 - [ ] **Step 5: 提交**
 
@@ -1274,7 +1274,7 @@ def api_strategy_bench_compare():
 - [ ] **Step 4: 运行确认通过**
 
 Run: `python -m pytest ashare_review/tests/test_strategy_bench.py -v`
-Expected: 23 passed（20 + 3）
+Expected: 24 passed（21 + 3）
 
 - [ ] **Step 5: 提交**
 
