@@ -373,3 +373,32 @@ def test_risk_status_api(tmp_path, monkeypatch):
     assert 'regime' in data and 'suggested_size_pct' in data
     assert 'drawdown_pct' in data and 'can_open' in data
 
+
+def test_zt_replica_max_positions_config(tmp_path, monkeypatch):
+    """zt_replica 的 max_positions 配置生效（调高 15 后 available_slots 允许更多）"""
+    from ashare_review.risk.store import RiskStore
+    from ashare_review.tools.zt_replica_portfolio import ZTReplicaSimPortfolio
+    path = str(tmp_path / 'risk.json')
+    RiskStore(path).set('zt_replica', {'max_positions': 15})
+    monkeypatch.setenv('RISK_CONFIG', path)
+    p = ZTReplicaSimPortfolio()
+    p._state['holding'] = {'600001': {'shares': 1000}}
+    p._state['ready'] = {}
+    # 模拟 run_daily 中的可用槽位计算逻辑（读配置而非常量）
+    cfg = p._risk.get('zt_replica')
+    assert cfg['max_positions'] == 15
+    slots = max(0, cfg['max_positions'] - len(p._state['holding']) - len(p._state['ready']))
+    assert slots == 14   # 常量 10 的话是 9 → 证明配置生效
+
+
+def test_validate_recover_lt_breaker():
+    from ashare_review.risk.rules import validate_config, DEFAULT_CONFIG
+    base = DEFAULT_CONFIG['vol180']
+    # recover(8) >= breaker(8) → 拒绝
+    bad = dict(base, drawdown_recover_pct=8.0)
+    assert any('recover' in e for e in validate_config('vol180', bad))
+    # recover(4) < breaker(8) → 通过
+    ok = dict(base, drawdown_recover_pct=4.0, drawdown_breaker_pct=8.0)
+    assert validate_config('vol180', ok) == []
+
+

@@ -665,8 +665,8 @@ class ZTReplicaSimPortfolio:
                 'update_date': td}
 
         # 买入信号
-        available_slots = max(0, MAX_POSITIONS - len(self._state['holding']) - len(self._state['ready']))
         cfg = self._risk.get('zt_replica')
+        available_slots = max(0, cfg['max_positions'] - len(self._state['holding']) - len(self._state['ready']))
         holdings_val = sum(
             h.get('shares', 0) * (h.get('current_price', h.get('buy_price', 0)) or 0)
             for h in self._state['holding'].values()
@@ -713,7 +713,8 @@ class ZTReplicaSimPortfolio:
                 'break_pct': sig.get('break_pct', 0), 'limit_count': sig['limit_count'],
                 'ma_support': sig.get('ma_support', ''),
                 'sector_name': sig.get('sector_name', ''),
-                'mode': 'zt_replica', 'market_bull': is_bull}
+                'mode': 'zt_replica', 'market_bull': is_bull,
+                'suggested_size_pct': risk['suggested_size_pct']}
             new_buys += 1
 
         self._state['today_buys'] = new_buys   # 今日新开信号数（供风控 status 展示）
@@ -880,7 +881,8 @@ class ZTReplicaSimPortfolio:
                     df_b = self._read_stock(code, up_to_date=td.replace('-',''))
                     if df_b is not None and not df_b.empty: bp_actual = float(df_b['open'].iloc[-1])
                 except Exception: pass
-                actual_shares = int(INITIAL_CAPITAL * PER_POSITION_PCT / max(bp_actual, 0.01) / 100) * 100
+                size_pct = rd.get('suggested_size_pct', PER_POSITION_PCT)
+                actual_shares = int(INITIAL_CAPITAL * (size_pct / 100.0) / max(bp_actual, 0.01) / 100) * 100
                 if actual_shares < 100: actual_shares = 100
                 buy_cost = actual_shares * bp_actual * (1 + BUY_COMMISSION)
                 if buy_cost > self._state.get('cash', INITIAL_CAPITAL):

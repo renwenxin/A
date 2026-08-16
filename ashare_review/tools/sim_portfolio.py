@@ -1167,7 +1167,8 @@ class Vol180SimPortfolio:
                 except Exception:
                     pass
 
-                position_capital = INITIAL_CAPITAL * PER_POSITION_PCT
+                size_pct = rd.get('suggested_size_pct', PER_POSITION_PCT)
+                position_capital = INITIAL_CAPITAL * (size_pct / 100.0)
                 actual_shares = int(position_capital / max(buy_price_actual, 0.01) / 100) * 100
                 if actual_shares < 100: actual_shares = 100
                 buy_cost = actual_shares * buy_price_actual * (1 + BUY_COMMISSION)

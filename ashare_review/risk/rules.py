@@ -66,4 +66,11 @@ def validate_config(portfolio_id: str, cfg: dict) -> List[str]:
                 errors.append(f'regime_scale 缺少: {r}')
             elif not isinstance(rs[r], (int, float)) or rs[r] < 0:
                 errors.append(f'regime_scale[{r}] 必须 ≥0（当前 {rs.get(r)}）')
+    if ('drawdown_breaker_pct' in cfg and 'drawdown_recover_pct' in cfg
+            and isinstance(cfg['drawdown_breaker_pct'], (int, float))
+            and isinstance(cfg['drawdown_recover_pct'], (int, float))
+            and not isinstance(cfg['drawdown_breaker_pct'], bool)
+            and not isinstance(cfg['drawdown_recover_pct'], bool)
+            and cfg['drawdown_recover_pct'] >= cfg['drawdown_breaker_pct']):
+        errors.append('drawdown_recover_pct 必须小于 drawdown_breaker_pct')
     return errors
