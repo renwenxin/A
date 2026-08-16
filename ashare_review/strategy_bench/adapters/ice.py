@@ -10,7 +10,8 @@ class IceAdapter(StrategyAdapter):
     name = '冰点抄底'
     description = '冰点反转确认日收盘买入（缠论二买 + 超跌反弹）'
     param_schema = [
-        {'name': 'lookback_days', 'label': '回看天数', 'type': 'int', 'default': 250, 'min': 60, 'max': 500},
+        {'name': 'lookback_days', 'label': '回看天数', 'type': 'int', 'default': 250, 'min': 60, 'max': 500,
+         'help': '日历天数'},
     ]
 
     def normalize(self, raw_trades: List[Dict]) -> List[Dict]:

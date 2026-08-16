@@ -1,4 +1,5 @@
 """尾盘战法适配器（复刻 main() 全市场扫描流程）"""
+import os
 from typing import Dict, List, Optional
 
 from .base import StrategyAdapter, normalize_tail_signals
@@ -9,7 +10,8 @@ class TailAdapter(StrategyAdapter):
     name = '尾盘战法'
     description = '尾盘选股（超跌反弹 + 平台突破），次日开盘卖出'
     param_schema = [
-        {'name': 'days', 'label': '回测交易日数', 'type': 'int', 'default': 250, 'min': 30, 'max': 500},
+        {'name': 'days', 'label': '回测交易日数', 'type': 'int', 'default': 250, 'min': 30, 'max': 500,
+         'help': '交易日数（脚本默认 250）'},
         {'name': 'limit', 'label': '扫描股票数(0=全部)', 'type': 'int', 'default': 0, 'min': 0, 'max': 10000,
          'help': '调试用：限制扫描只数，0 表示全市场'},
     ]
@@ -27,11 +29,24 @@ class TailAdapter(StrategyAdapter):
             'drawdown_window': 60, 'drawdown_min': 25.0, 'daily_gain_min': 4.0,
             'box_window': 60, 'vol_ratio_min': 1.5, 'platform_width_max': 18.0,
         }
+        import json as _json
+        name_map = {}
+        nm_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                               'data', 'stock_name_map.json')
+        if os.path.exists(nm_path):
+            try:
+                with open(nm_path, 'r', encoding='utf-8') as f:
+                    name_map = _json.load(f)
+            except Exception:
+                pass
         stocks = [(c, m) for c, m in tdx.list_stocks() if m != 'bj' and tail.is_a_stock(c)]
         if limit > 0:
             stocks = stocks[:limit]
         all_signals = []
         for code, market in stocks:
+            name = name_map.get(code, '')
+            if name.startswith(('ST', '*ST', 'SST', 'S*ST')):
+                continue
             try:
                 df = tdx.read_daily(code, market)
             except Exception:

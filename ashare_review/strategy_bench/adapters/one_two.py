@@ -9,7 +9,8 @@ class OneTwoAdapter(StrategyAdapter):
     name = '1进2接力'
     description = '首板次日接力（双数据源：akshare 优先 + TDX 回退）'
     param_schema = [
-        {'name': 'lookback_days', 'label': '回看天数', 'type': 'int', 'default': 60, 'min': 10, 'max': 250},
+        {'name': 'lookback_days', 'label': '回看天数', 'type': 'int', 'default': 60, 'min': 10, 'max': 250,
+         'help': '交易日数（脚本默认 60）'},
         {'name': 'top_n', 'label': '每日入选前N', 'type': 'int', 'default': 5, 'min': 1, 'max': 20},
         {'name': 'min_score', 'label': '最低评分', 'type': 'int', 'default': 0, 'min': 0, 'max': 100,
          'help': '0 使用脚本内置默认(40)'},

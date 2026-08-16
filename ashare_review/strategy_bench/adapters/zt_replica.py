@@ -10,7 +10,8 @@ class ZTReplicaAdapter(StrategyAdapter):
     name = '涨停复制'
     description = '近期涨停回调企稳后的二次启动（含双响炮模式）'
     param_schema = [
-        {'name': 'lookback_days', 'label': '回看天数', 'type': 'int', 'default': 365, 'min': 60, 'max': 500},
+        {'name': 'lookback_days', 'label': '回看天数', 'type': 'int', 'default': 365, 'min': 60, 'max': 500,
+         'help': '日历天数（脚本默认 365）'},
         {'name': 'only_double_cannon', 'label': '仅双响炮', 'type': 'bool', 'default': False},
     ]
 
