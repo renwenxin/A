@@ -5,48 +5,272 @@
     <div class="page-header">
         <div>
             <div class="page-title">🧪 策略验证台</div>
-            <div class="page-date">统一回测 · 绩效对比 · FastAPI 后台任务</div>
+            <div class="page-date">统一回测 · 标准绩效 · 历史快照 · 双快照对比</div>
         </div>
     </div>
 
-    <div class="grid-2" style="align-items:start;">
-        <!-- 左：策略列表 -->
-        <div class="card">
-            <div class="card-header">🗂 选择策略</div>
-            <div class="card-body" id="strategy-list">
+    <div class="card">
+        <div class="card-header">
+            ① 选择策略
+            <span class="card-badge">5 个核心战法</span>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;" id="strategy-tabs">
                 {% for a in adapters %}
-                <div class="strategy-item" data-id="{{ a.strategy_id }}"
-                     style="border:1px solid var(--border,#333);border-radius:8px;padding:10px;margin-bottom:10px;cursor:pointer;">
-                    <div style="font-weight:600;">{{ a.name }}</div>
-                    <div style="opacity:.7;font-size:12px;margin-top:4px;">{{ a.description }}</div>
-                </div>
-                {% else %}
-                <div class="empty-result">暂无策略</div>
+                <button class="btn btn-secondary btn-sm strategy-tab" data-id="{{ a.strategy_id }}"
+                        {% if loop.first %}style="background:#4f46e5;color:#fff;"{% endif %}>
+                    {{ a.name }}
+                </button>
                 {% endfor %}
+                <!-- adapters 为 dict 列表（路由已序列化），JS 里用 ADAPTER_MAP[sid].param_schema -->
+            </div>
+            <div id="adapter-desc" style="margin-top:8px;color:#666;font-size:.9em;"></div>
+            <div id="param-form" style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;"></div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:12px;">
+                <button class="btn btn-primary" id="btn-run">⚡ 运行回测</button>
+                <span id="run-status" style="font-size:.9em;color:#666;"></span>
+            </div>
+            <div id="progress-bar" style="display:none;margin-top:10px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+                <div id="progress-fill" style="height:100%;width:0%;background:#4f46e5;transition:width .4s;"></div>
             </div>
         </div>
+    </div>
 
-        <!-- 右：快照 / 对比 -->
-        <div class="card">
-            <div class="card-header">📊 历史回测快照</div>
+    <div id="result-section" style="display:none;">
+        <div class="section-title">📊 回测结果</div>
+        <div class="stat-row" id="metric-cards"></div>
+        <div class="card" style="margin-top:12px;">
+            <div class="card-header">📈 权益曲线</div>
             <div class="card-body">
-                <table class="table">
-                    <thead><tr><th>ID</th><th>策略</th><th>年化</th><th>交易数</th></tr></thead>
+                <svg id="equity-chart" width="100%" height="220" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">📚 历史快照</div>
+    <div class="card">
+        <div class="card-body no-padding">
+            <div class="table-wrap">
+                <table class="sector-table">
+                    <tr><th></th><th>策略</th><th>时间</th><th>git</th><th>参数</th>
+                        <th>年化</th><th>回撤</th><th>夏普</th><th>胜率</th><th>交易数</th></tr>
                     <tbody>
                     {% for s in snapshots %}
-                    <tr>
-                        <td>{{ s.id }}</td>
+                    <tr data-snap-id="{{ s.id }}" data-strategy="{{ s.strategy_id }}">
+                        <td><input type="checkbox" class="snap-check"></td>
                         <td>{{ s.strategy_id }}</td>
-                        <td>{{ s.metrics.get('annual_return') if s.metrics else '-' }}</td>
-                        <td>{{ s.metrics.get('total_trades') if s.metrics else '-' }}</td>
+                        <td style="font-size:.85em;">{{ s.created_at }}</td>
+                        <td style="font-size:.85em;">{{ s.git_sha[:7] if s.git_sha }}</td>
+                        <td style="font-size:.85em;color:#666;">{{ s.params | tojson }}</td>
+                        <td>{{ '%.1f%%' % s.metrics.annual_return if s.metrics.get('annual_return') is not none else '—' }}</td>
+                        <td>{{ '%.1f%%' % s.metrics.max_drawdown if s.metrics.get('max_drawdown') is not none else '—' }}</td>
+                        <td>{{ '%.2f' % s.metrics.sharpe if s.metrics.get('sharpe') is not none else '—' }}</td>
+                        <td>{{ '%.1f%%' % s.metrics.win_rate if s.metrics.get('win_rate') is not none else '—' }}</td>
+                        <td>{{ s.trades_count }}</td>
                     </tr>
-                    {% else %}
-                    <tr><td colspan="4" style="opacity:.6;">暂无快照，点击左侧策略运行回测</td></tr>
                     {% endfor %}
+                    {% if not snapshots %}
+                    <tr><td colspan="10" style="color:#888;text-align:center;">暂无快照，运行一次回测后出现</td></tr>
+                    {% endif %}
                     </tbody>
                 </table>
             </div>
         </div>
+        <div class="card-body">
+            <button class="btn btn-secondary btn-sm" id="btn-compare" disabled>🔀 对比选中快照</button>
+            <span id="compare-status" style="font-size:.9em;color:#666;margin-left:8px;"></span>
+        </div>
+    </div>
+
+    <div id="compare-section" style="display:none;margin-top:16px;">
+        <div class="section-title">🔀 快照对比</div>
+        <div class="card">
+            <div class="card-body no-padding">
+                <div class="table-wrap">
+                    <table class="sector-table">
+                        <tr><th>指标</th><th>快照 A</th><th>快照 B</th><th>Δ</th><th>更优</th></tr>
+                        <tbody id="compare-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-top:12px;">
+            <div class="card-header">权益曲线叠加</div>
+            <div class="card-body">
+                <svg id="compare-chart" width="100%" height="220" viewBox="0 0 800 220" preserveAspectRatio="none"></svg>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+    // 策略元数据（服务端注入）
+    var ADAPTERS = {{ adapters | tojson }};
+    var ADAPTER_MAP = {};
+    ADAPTERS.forEach(function (a) { ADAPTER_MAP[a.strategy_id] = a; });
+    var current = ADAPTERS.length ? ADAPTERS[0].strategy_id : '';
+
+    function renderForm(sid) {
+        var a = ADAPTER_MAP[sid];
+        if (!a) return;
+        document.getElementById('adapter-desc').textContent = a.description || '';
+        var box = document.getElementById('param-form');
+        box.innerHTML = '';
+        a.param_schema.forEach(function (p) {
+            var label = document.createElement('label');
+            label.style.cssText = 'display:flex;flex-direction:column;font-size:.85em;gap:4px;';
+            label.innerHTML = '<span>' + p.label + '</span>';
+            var input;
+            if (p.type === 'bool') {
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.checked = !!p.default;
+                input.dataset.param = p.name;
+            } else {
+                input = document.createElement('input');
+                input.type = 'number';
+                input.value = p.default;
+                input.min = p.min; input.max = p.max;
+                input.style.cssText = 'padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;width:120px;';
+                input.dataset.param = p.name;
+            }
+            label.appendChild(input);
+            box.appendChild(label);
+        });
+    }
+
+    function currentParams() {
+        var params = {};
+        document.querySelectorAll('#param-form [data-param]').forEach(function (el) {
+            params[el.dataset.param] = el.type === 'checkbox' ? el.checked
+                : (el.type === 'number' ? Number(el.value) : el.value);
+        });
+        return params;
+    }
+
+    // 策略 tab
+    document.querySelectorAll('.strategy-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            current = btn.dataset.id;
+            document.querySelectorAll('.strategy-tab').forEach(function (b) {
+                b.style.background = (b === btn) ? '#4f46e5' : '';
+                b.style.color = (b === btn) ? '#fff' : '';
+            });
+            renderForm(current);
+        });
+    });
+
+    // 运行
+    document.getElementById('btn-run').addEventListener('click', function () {
+        var btn = this;
+        btn.disabled = true;
+        document.getElementById('progress-bar').style.display = 'block';
+        var status = document.getElementById('run-status');
+        status.textContent = '启动中…';
+        fetch('/api/strategy_bench/run', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({strategy_id: current, params: currentParams()})
+        }).then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) { status.textContent = '❌ ' + (d.error || '启动失败'); btn.disabled = false; return; }
+            pollJob(d.job_id, btn, status);
+          })
+          .catch(function () { status.textContent = '❌ 启动失败'; btn.disabled = false; });
+    });
+
+    function pollJob(jobId, btn, status) {
+        var fill = document.getElementById('progress-fill');
+        fetch('/api/strategy_bench/job/' + jobId)
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            status.textContent = j.progress || j.status;
+            fill.style.width = (j.status === 'done' || j.status === 'error') ? '100%' : '60%';
+            if (j.status === 'done') {
+                status.textContent = '✅ 回测完成';
+                setTimeout(function () { location.reload(); }, 600);
+            } else if (j.status === 'error') {
+                status.textContent = '❌ ' + (j.error || '回测失败');
+                btn.disabled = false;
+            } else {
+                setTimeout(function () { pollJob(jobId, btn, status); }, 2000);
+            }
+          })
+          .catch(function () { status.textContent = '❌ 轮询失败'; btn.disabled = false; });
+    }
+
+    // 快照对比
+    var checks = document.querySelectorAll('.snap-check');
+    checks.forEach(function (c) {
+        c.addEventListener('change', function () {
+            var n = document.querySelectorAll('.snap-check:checked').length;
+            document.getElementById('btn-compare').disabled = n !== 2;
+        });
+    });
+    document.getElementById('btn-compare').addEventListener('click', function () {
+        var ids = [];
+        document.querySelectorAll('.snap-check:checked').forEach(function (c) {
+            ids.push(c.closest('tr').dataset.snapId);
+        });
+        fetch('/api/strategy_bench/compare?a=' + ids[0] + '&b=' + ids[1])
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d.error) { document.getElementById('compare-status').textContent = '❌ ' + d.error; return; }
+            renderCompare(d);
+          });
+    });
+
+    function renderCompare(d) {
+        document.getElementById('compare-section').style.display = 'block';
+        var body = document.getElementById('compare-body');
+        body.innerHTML = '';
+        d.metrics.forEach(function (m) {
+            var tr = document.createElement('tr');
+            var better = m.better ? (m.better === 'b' ? 'B' : 'A') : '—';
+            tr.innerHTML = '<td>' + m.label + '</td><td>' + fmt(m.a) + '</td><td>' + fmt(m.b) + '</td>' +
+                '<td>' + (m.delta !== null && m.delta !== undefined ? fmt(m.delta, true) : '—') + '</td>' +
+                '<td>' + better + '</td>';
+            body.appendChild(tr);
+        });
+        drawCurve(document.getElementById('compare-chart'), [d.curves.a, d.curves.b], ['#4f46e5', '#16a34a']);
+    }
+
+    function fmt(v, signed) {
+        if (v === null || v === undefined) return '—';
+        var s = (signed && v > 0) ? '+' : '';
+        return s + (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2));
+    }
+
+    function drawCurve(svg, curves, colors) {
+        var W = 800, H = 220, pad = 12;
+        var all = [];
+        curves.forEach(function (c) { all = all.concat(c || []); });
+        if (!all.length) { return; }
+        var vals = all.map(function (p) { return p[1]; });
+        var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+        var span = (mx - mn) || 1;
+        var xmax = all.length - 1;
+        function pt(p, i) {
+            return [(pad + i / Math.max(xmax, 1) * (W - 2 * pad)).toFixed(1),
+                    (H - pad - (p[1] - mn) / span * (H - 2 * pad)).toFixed(1)];
+        }
+        svg.innerHTML = '';
+        curves.forEach(function (c) {
+            if (!c || !c.length) return;
+            var d = '';
+            c.forEach(function (p, i) { var xy = pt(p, i); d += (i ? 'L' : 'M') + xy[0] + ' ' + xy[1]; });
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', colors[curves.indexOf(c)]);
+            path.setAttribute('stroke-width', '2');
+            svg.appendChild(path);
+        });
+    }
+
+    if (current) renderForm(current);
+})();
+</script>
 {% endblock %}
