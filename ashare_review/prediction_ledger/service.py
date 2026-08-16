@@ -89,19 +89,25 @@ def record_day(report: Optional[Dict], trade_date: str, db_path: Optional[str] =
     return LedgerStore(db_path).upsert_predictions(rows)
 
 
+def _row_position(df, target) -> Optional[int]:
+    """返回 target(date) 在日线 DataFrame 中的位置；无该日或为首行返回 None。"""
+    if df is None or df.empty:
+        return None
+    df = df.reset_index(drop=True)
+    mask = df['trade_date'] == target
+    if not mask.any():
+        return None
+    pos = int(mask.idxmax())
+    return None if pos == 0 else pos
+
+
 def _pick_actual(tdx, code: str, zt_codes: set, next_date: str) -> Tuple[Optional[str], Optional[int]]:
     """验证单只精选：定位 next_date 的日线 + 涨停集合判定。返回 (actual, hit)。"""
     try:
         df = tdx.read_daily(code, _market_of(code))
-        if df is None or df.empty:
-            return None, None
-        df = df.reset_index(drop=True)
         target = datetime.strptime(next_date, '%Y%m%d').date()
-        mask = df['trade_date'] == target
-        if not mask.any():
-            return None, None
-        pos = int(mask.idxmax())
-        if pos == 0:
+        pos = _row_position(df, target)
+        if pos is None:
             return None, None
         prev_close = float(df.iloc[pos - 1]['close'])
         today_close = float(df.iloc[pos]['close'])
@@ -120,14 +126,8 @@ def _auction_actual(tdx, codes: List[str], next_date: str) -> Optional[str]:
     for code in codes:
         try:
             df = tdx.read_daily(code, _market_of(code))
-            if df is None or df.empty:
-                continue
-            df = df.reset_index(drop=True)
-            mask = df['trade_date'] == target
-            if not mask.any():
-                continue
-            pos = int(mask.idxmax())
-            if pos == 0:
+            pos = _row_position(df, target)
+            if pos is None:
                 continue
             prev_close = float(df.iloc[pos - 1]['close'])
             open_price = float(df.iloc[pos]['open'])

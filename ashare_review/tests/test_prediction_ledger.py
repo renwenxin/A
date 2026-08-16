@@ -386,3 +386,56 @@ def test_validate_pending_network_down_skips(tmp_path):
     rows = {r['pred_type']: r for r in store.rows(365)}
     assert rows['cycle']['hit'] is None
     assert rows['auction']['hit'] == 1
+
+
+def test_validate_pending_target_bar_in_middle(tmp_path):
+    """延迟/历史验证：目标 K 线在历史中间（非最后一行）也能正确定级"""
+    from ashare_review.prediction_ledger.service import record_day, validate_pending
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.utils.calendar import TradingCalendar
+    from datetime import datetime
+    db = str(tmp_path / 't.db')
+    record_day(_canned_report(), '20260814', db)
+    cal = TradingCalendar()
+    next_ymd = cal.next_trading_day(datetime.strptime('20260814', '%Y%m%d').date(),
+                                    offset=1).strftime('%Y%m%d')
+    # 3 根 K 线：目标 next_ymd 在中间（后面还有更新的 20260818）
+    tdx = FakeTdx({'600001': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 11.0, 'close': 11.0},
+                              '20260818': {'open': 9.0, 'close': 9.0}},
+                   '600002': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 9.5, 'close': 9.5},
+                              '20260818': {'open': 12.0, 'close': 12.0}}})
+    ak = FakeAk({next_ymd: [_lu_info('600001', consecutive=2)]})
+    n = validate_pending(tdx, ak, calendar=cal, db_path=db)
+    store = LedgerStore(db)
+    rows = {r['item_key']: r for r in store.rows(365) if r['pred_type'] == 'picks'}
+    # 600001 用 next_ymd 定级：+10% → zt（不是用 20260818 的 9.0 判 -10%）
+    assert rows['600001']['actual'] == 'zt' and rows['600001']['hit'] == 1
+    assert rows['600002']['actual'] == 'down' and rows['600002']['hit'] == 0
+
+
+def test_validate_pending_empty_pool_skips_cycle(tmp_path):
+    """涨停池拉取成功但为空 → cycle 跳过（不误判 down），picks 走涨幅降级"""
+    from ashare_review.prediction_ledger.service import record_day, validate_pending
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.utils.calendar import TradingCalendar
+    from datetime import datetime
+    db = str(tmp_path / 't.db')
+    record_day(_canned_report(), '20260814', db)
+    cal = TradingCalendar()
+    next_ymd = cal.next_trading_day(datetime.strptime('20260814', '%Y%m%d').date(),
+                                    offset=1).strftime('%Y%m%d')
+    tdx = FakeTdx({'600001': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 11.0, 'close': 11.0}},
+                   '600002': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 9.5, 'close': 9.5}}})
+    ak = FakeAk({})      # 成功返回但空池
+    n = validate_pending(tdx, ak, calendar=cal, db_path=db)
+    store = LedgerStore(db)
+    rows = {r['pred_type']: r for r in store.rows(365)}
+    assert rows['cycle']['hit'] is None      # 空池 → cycle 跳过
+    assert rows['auction']['hit'] == 1       # auction 走 TDX 不受影响
+    picks = {r['item_key']: r for r in store.rows(365) if r['pred_type'] == 'picks'}
+    assert picks['600001']['actual'] == 'zt' and picks['600001']['hit'] == 1
+    assert picks['600002']['actual'] == 'down' and picks['600002']['hit'] == 0
