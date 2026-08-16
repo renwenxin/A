@@ -477,3 +477,38 @@ def test_migrate_missing_file(tmp_path):
     from ashare_review.prediction_ledger.service import migrate_picks_history
     assert migrate_picks_history(None, None, history_file=str(tmp_path / 'nope.json'),
                                  db_path=str(tmp_path / 't.db')) == 0
+
+
+def test_migrate_bad_json(tmp_path, caplog):
+    """坏 JSON：返回 0 且记录告警（不伪装成'没有历史'）"""
+    import logging
+    from ashare_review.prediction_ledger.service import migrate_picks_history
+    hist = tmp_path / 'picks_history.json'
+    hist.write_text('{not valid json', encoding='utf-8')
+    with caplog.at_level(logging.WARNING, logger='ashare_review.prediction_ledger.service'):
+        n = migrate_picks_history(None, None, history_file=str(hist),
+                                  db_path=str(tmp_path / 't.db'))
+    assert n == 0
+    assert any('跳过迁移' in r.message for r in caplog.records)
+
+
+def test_migrate_network_down_fallback(tmp_path):
+    """迁移时涨停池网络失败 → 按涨幅降级判定"""
+    import json
+    from ashare_review.prediction_ledger.service import migrate_picks_history
+    from ashare_review.prediction_ledger.store import LedgerStore
+    from ashare_review.utils.calendar import TradingCalendar
+    hist = str(tmp_path / 'picks_history.json')
+    json.dump({'20260813': [{'code': '600001', 'name': 'A', 'score': 61, 'reasons': []}]},
+              open(hist, 'w', encoding='utf-8'))
+    cal = TradingCalendar()
+    tdx = FakeTdx({'600001': {'20260813': {'open': 10.0, 'close': 10.0},
+                              '20260814': {'open': 11.0, 'close': 11.0}}})
+    ak = FakeAk({}, raise_on={'20260814'})   # 网络失败
+    db = str(tmp_path / 't.db')
+    n = migrate_picks_history(tdx, ak, calendar=cal, db_path=db, history_file=hist)
+    assert n == 1
+    store = LedgerStore(db)
+    row = [r for r in store.rows(365) if r['item_key'] == '600001'][0]
+    assert row['actual'] == 'zt' and row['hit'] == 1   # 涨幅 +10% ≥9.8% → zt
+

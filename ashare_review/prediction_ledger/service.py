@@ -5,9 +5,12 @@ validate_pending:   自动验证所有未验证记录（tdx 本地行情 + ak �
 migrate_picks_history: 一次性追溯导入 picks_history.json 的历史精选
 """
 import json
+import logging
 import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 from ..utils.calendar import TradingCalendar
 from .store import LedgerStore
@@ -200,7 +203,8 @@ def migrate_picks_history(tdx, ak, calendar: Optional[TradingCalendar] = None,
     try:
         with open(history_file, 'r', encoding='utf-8') as f:
             history = json.load(f)
-    except Exception:
+    except Exception as e:
+        logger.warning('预测台账历史迁移：读取 %s 失败（%s），跳过迁移', history_file, e)
         return 0
     calendar = calendar or TradingCalendar()
     store = LedgerStore(db_path)
