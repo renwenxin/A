@@ -613,6 +613,7 @@ Expected: FAIL — 行为不符（止损仍硬编码 -6%，config 改动不生�
             'opened_today': new_buys,
             'total_value': self._state.get('cash', INITIAL_CAPITAL) + holdings_val,
             'history_peak': hist_peak,
+            'breaker_tripped': (self._state.get('last_risk') or {}).get('breaker_tripped', False),
         }, regime)
         if risk['blocked_reasons']:
             print(f"[SimPortfolio] 风控拦截开仓: {'；'.join(risk['blocked_reasons'])}")
@@ -724,6 +725,7 @@ Expected: FAIL — 行为不符
             'opened_today': 0,
             'total_value': self._state.get('cash', INITIAL_CAPITAL) + holdings_val,
             'history_peak': hist_peak,
+            'breaker_tripped': (self._state.get('last_risk') or {}).get('breaker_tripped', False),
         }, regime)
         if risk['blocked_reasons']:
             print(f"[ZTReplica] 风控拦截开仓: {'；'.join(risk['blocked_reasons'])}")
@@ -861,7 +863,8 @@ def _portfolio_risk_state(portfolio_id: str) -> dict:
     for snap in state_data.get('portfolio_history', []) or []:
         hist_peak = max(hist_peak, snap.get('total', 0) or 0)
     return {'positions': positions, 'opened_today': 0,
-            'total_value': total_value, 'history_peak': hist_peak}
+            'total_value': total_value, 'history_peak': hist_peak,
+            'breaker_tripped': bool((state_data.get('last_risk') or {}).get('breaker_tripped', False))}
 
 
 @app.route('/api/risk/status')
