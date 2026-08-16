@@ -244,16 +244,22 @@ def test_store_summary_unverified_excluded(tmp_path):
 # ---------- Task 4: 编排层 record_day / validate_pending ----------
 
 class FakeTdx:
-    """返回两日行情（前一交易日 + 次日）：code -> [(open, close), (open, close)]"""
+    """返回可控行情：code -> {date_str: {'open':.., 'close':..}}，含 trade_date 列"""
     def __init__(self, data):
-        self.data = data  # {code: [(prev_open, prev_close), (next_open, next_close)]}
+        self.data = data
 
     def read_daily(self, code, market):
         import pandas as pd
-        bars = self.data.get(str(code))
-        if not bars:
+        from datetime import datetime
+        d = self.data.get(str(code))
+        if not d:
             return pd.DataFrame()
-        return pd.DataFrame([{'open': b[0], 'close': b[1]} for b in bars])
+        rows = []
+        for ds, bar in d.items():
+            rows.append({'trade_date': datetime.strptime(ds, '%Y%m%d').date(),
+                         'open': bar['open'], 'close': bar['close']})
+        df = pd.DataFrame(rows)
+        return df.sort_values('trade_date').reset_index(drop=True)
 
 
 class FakeAk:
@@ -321,8 +327,10 @@ def test_validate_pending_picks(tmp_path):
     d = datetime.strptime('20260814', '%Y%m%d').date()
     n = cal.next_trading_day(d, offset=1)
     next_ymd = n.strftime('%Y%m%d')
-    tdx = FakeTdx({'600001': [(10.0, 10.0), (11.0, 11.0)],
-                   '600002': [(10.0, 10.0), (9.5, 9.5)]})
+    tdx = FakeTdx({'600001': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 11.0, 'close': 11.0}},
+                   '600002': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 9.5, 'close': 9.5}}})
     ak = FakeAk({next_ymd: [_lu_info('600001', consecutive=2)]})
     n_validated = validate_pending(tdx, ak, calendar=cal, db_path=db)
     assert n_validated == 4
@@ -342,8 +350,10 @@ def test_validate_pending_cycle_and_auction(tmp_path):
     cal = TradingCalendar()
     next_ymd = cal.next_trading_day(datetime.strptime('20260814', '%Y%m%d').date(),
                                     offset=1).strftime('%Y%m%d')
-    tdx = FakeTdx({'600001': [(10.0, 10.0), (10.2, 10.5)],
-                   '600002': [(10.0, 10.0), (10.1, 10.0)]})
+    tdx = FakeTdx({'600001': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 10.2, 'close': 10.5}},
+                   '600002': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 10.1, 'close': 10.0}}})
     pool = [_lu_info(f'600{i:03d}') for i in range(67)]  # 覆盖 index0/1 后恰余 66 只不同股票：r=66/60=1.1 → up
     pool[0], pool[1] = _lu_info('600001'), _lu_info('600002')
     ak = FakeAk({next_ymd: pool})
@@ -365,8 +375,10 @@ def test_validate_pending_network_down_skips(tmp_path):
     cal = TradingCalendar()
     next_ymd = cal.next_trading_day(datetime.strptime('20260814', '%Y%m%d').date(),
                                     offset=1).strftime('%Y%m%d')
-    tdx = FakeTdx({'600001': [(10.0, 10.0), (11.0, 11.0)],
-                   '600002': [(10.0, 10.0), (9.5, 9.5)]})
+    tdx = FakeTdx({'600001': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 11.0, 'close': 11.0}},
+                   '600002': {'20260814': {'open': 10.0, 'close': 10.0},
+                              next_ymd: {'open': 9.5, 'close': 9.5}}})
     ak = FakeAk({}, raise_on={next_ymd})
     n = validate_pending(tdx, ak, calendar=cal, db_path=db)
     assert n == 3

@@ -89,33 +89,48 @@ def record_day(report: Optional[Dict], trade_date: str, db_path: Optional[str] =
     return LedgerStore(db_path).upsert_predictions(rows)
 
 
-def _pick_actual(tdx, code: str, zt_codes: set) -> Tuple[Optional[str], Optional[int]]:
-    """验证单只精选：TDX 次日行情 + 涨停集合判定。返回 (actual, hit)。"""
+def _pick_actual(tdx, code: str, zt_codes: set, next_date: str) -> Tuple[Optional[str], Optional[int]]:
+    """验证单只精选：定位 next_date 的日线 + 涨停集合判定。返回 (actual, hit)。"""
     try:
         df = tdx.read_daily(code, _market_of(code))
-        if df is None or df.empty or len(df) < 2:
+        if df is None or df.empty:
             return None, None
-        prev_close = float(df.iloc[-2]['close'])
-        today_close = float(df.iloc[-1]['close'])
+        df = df.reset_index(drop=True)
+        target = datetime.strptime(next_date, '%Y%m%d').date()
+        mask = df['trade_date'] == target
+        if not mask.any():
+            return None, None
+        pos = int(mask.idxmax())
+        if pos == 0:
+            return None, None
+        prev_close = float(df.iloc[pos - 1]['close'])
+        today_close = float(df.iloc[pos]['close'])
         today_chg = (today_close - prev_close) / prev_close * 100 if prev_close else 0.0
     except Exception:
         return None, None
-    # 涨停判定：次日涨停池集合 或 涨幅达标（涨停池网络失败时的降级）
     is_zt = str(code) in zt_codes or today_chg >= _zt_limit_pct(code)
     actual = grade_pick(today_chg, is_zt)
     return actual, hit_for('picks', None, actual)
 
 
-def _auction_actual(tdx, codes: List[str]) -> Optional[str]:
+def _auction_actual(tdx, codes: List[str], next_date: str) -> Optional[str]:
     """当日涨停池次日平均高开幅度分级。数据不可用返回 None。"""
     gaps = []
+    target = datetime.strptime(next_date, '%Y%m%d').date()
     for code in codes:
         try:
             df = tdx.read_daily(code, _market_of(code))
-            if df is None or df.empty or len(df) < 2:
+            if df is None or df.empty:
                 continue
-            prev_close = float(df.iloc[-2]['close'])
-            open_price = float(df.iloc[-1]['open'])
+            df = df.reset_index(drop=True)
+            mask = df['trade_date'] == target
+            if not mask.any():
+                continue
+            pos = int(mask.idxmax())
+            if pos == 0:
+                continue
+            prev_close = float(df.iloc[pos - 1]['close'])
+            open_price = float(df.iloc[pos]['open'])
             if prev_close:
                 gaps.append((open_price / prev_close - 1) * 100)
         except Exception:
@@ -147,13 +162,14 @@ def validate_pending(tdx, ak, calendar: Optional[TradingCalendar] = None,
         except Exception:
             next_pool, pool_ok = [], False
         zt_codes = {str(lu.code) for lu in next_pool}
+        cycle_ok = pool_ok and len(next_pool) > 0
 
         for row in rows:
             try:
                 if row['pred_type'] == 'picks':
-                    actual, hit = _pick_actual(tdx, row['item_key'], zt_codes)
+                    actual, hit = _pick_actual(tdx, row['item_key'], zt_codes, next_date)
                 elif row['pred_type'] == 'cycle':
-                    if not pool_ok:
+                    if not cycle_ok:
                         continue
                     detail = json.loads(row['detail']) if row['detail'] else {}
                     today_zt = int(detail.get('total_zt', 0))
@@ -161,7 +177,7 @@ def validate_pending(tdx, ak, calendar: Optional[TradingCalendar] = None,
                     hit = hit_for('cycle', row['direction'], actual)
                 elif row['pred_type'] == 'auction':
                     detail = json.loads(row['detail']) if row['detail'] else {}
-                    actual = _auction_actual(tdx, detail.get('pool_codes', []))
+                    actual = _auction_actual(tdx, detail.get('pool_codes', []), next_date)
                     hit = hit_for('auction', row['direction'], actual)
                 else:
                     continue
