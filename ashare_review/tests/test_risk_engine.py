@@ -180,10 +180,40 @@ def test_evaluate_drawdown_breaker():
     r2 = evaluate(cfg, {'positions': 1, 'opened_today': 0,
                         'total_value': 1_012_000, 'history_peak': 1_100_000}, '强势趋势')
     assert r2['can_open'] is False
-    # 熔断后回撤 < 4% → 解除
+    # 无 breaker_tripped（默认 False，纯阈值路径）回撤 3.18% < 8% → 放行
     r3 = evaluate(cfg, {'positions': 1, 'opened_today': 0,
                         'total_value': 1_065_000, 'history_peak': 1_100_000}, '强势趋势')
     assert r3['can_open'] is True
+    assert r3['breaker_tripped'] is False
+
+
+def test_evaluate_hysteresis():
+    """熔断触发后需回撤 < 恢复线(4%) 才解除（滞回）"""
+    from ashare_review.risk.evaluate import evaluate
+    cfg = _cfg()
+    # 触发熔断
+    r1 = evaluate(cfg, {'positions': 0, 'opened_today': 0, 'total_value': 1_010_000,
+                        'history_peak': 1_100_000, 'breaker_tripped': False}, '强势趋势')
+    assert r1['can_open'] is False and r1['breaker_tripped'] is True
+    # 回撤 6%（< 熔断 8% 但 > 恢复线 4%）→ 仍拦截
+    r2 = evaluate(cfg, {'positions': 0, 'opened_today': 0, 'total_value': 1_034_000,
+                        'history_peak': 1_100_000, 'breaker_tripped': True}, '强势趋势')
+    assert r2['can_open'] is False
+    assert any('恢复线' in s for s in r2['blocked_reasons'])
+    # 回撤 3%（< 恢复线 4%）→ 解除
+    r3 = evaluate(cfg, {'positions': 0, 'opened_today': 0, 'total_value': 1_067_000,
+                        'history_peak': 1_100_000, 'breaker_tripped': True}, '强势趋势')
+    assert r3['can_open'] is True and r3['breaker_tripped'] is False
+
+
+def test_evaluate_nan_total_blocks():
+    """净值 NaN → 保守拦截（不绕过熔断）"""
+    from ashare_review.risk.evaluate import evaluate
+    cfg = _cfg()
+    r = evaluate(cfg, {'positions': 0, 'opened_today': 0,
+                       'total_value': float('nan'), 'history_peak': 1_000_000}, '强势趋势')
+    assert r['can_open'] is False
+    assert any('净值' in s for s in r['blocked_reasons'])
 
 
 def test_evaluate_regime_scale():
