@@ -46,7 +46,7 @@ def normalize_one_two_trades(raw_trades: List[Dict]) -> List[Dict]:
 
 def normalize_tail_signals(sig_df, ret_col: str,
                            calendar: TradingCalendar) -> List[Dict]:
-    """尾盘：信号行 → trade_date 入场，ret_col(%) 为收益，exit=下一交易日"""
+    """尾盘：信号行 → trade_date 入场，ret_col(小数，如 0.03=3%) ×100 转百分数，exit=下一交易日"""
     if sig_df is None or sig_df.empty:
         return []
     trades = []
@@ -64,7 +64,7 @@ def normalize_tail_signals(sig_df, ret_col: str,
         if nxt is None:
             continue
         trades.append({'entry_date': td, 'exit_date': nxt.strftime('%Y%m%d'),
-                       'return_pct': float(ret)})
+                       'return_pct': float(ret) * 100})
     return trades
 
 

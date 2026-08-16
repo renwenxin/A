@@ -172,14 +172,15 @@ def test_normalize_tail_signals():
     from ashare_review.utils.calendar import TradingCalendar
     cal = TradingCalendar()
     sig = pd.DataFrame([
-        {'trade_date': '2026-08-10', 'open_ret': 2.5, 'signal': '超跌'},
-        {'trade_date': '2026-08-11', 'open_ret': -1.0, 'signal': '平台突破'},
+        {'trade_date': '2026-08-10', 'open_ret': 0.025, 'signal': '超跌'},
+        {'trade_date': '2026-08-11', 'open_ret': -0.01, 'signal': '平台突破'},
     ])
     trades = normalize_tail_signals(sig, 'open_ret', cal)
     assert len(trades) == 2
     assert trades[0]['entry_date'] == '20260810'
-    assert trades[0]['return_pct'] == 2.5
-    assert trades[0]['exit_date'] == '20260811'   # 2026-08-10 的下一个交易日
+    assert trades[0]['return_pct'] == 2.5      # 0.025 × 100
+    assert trades[0]['exit_date'] == '20260811'
+    assert trades[1]['return_pct'] == -1.0     # -0.01 × 100
 
 
 def test_normalize_none_and_nan_guards():

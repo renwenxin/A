@@ -25,7 +25,7 @@ class IceAdapter(StrategyAdapter):
         lookback = int(params.get('lookback_days', 250))
         end = date.today() - timedelta(days=1)
         start = end - timedelta(days=lookback)
-        state_df = market_state.build_market_state(tdx, start, end)
+        state_df = market_state.load_state(start, end)   # load_state 内部会补 emotion/regime 列
         if state_df is None or state_df.empty:
             return []
         bt = IceBottomBacktest(tdx=tdx)
