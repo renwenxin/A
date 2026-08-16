@@ -109,3 +109,39 @@ def test_store_corrupt_json_falls_back(tmp_path):
     assert s.get('vol180')['stop_loss_pct'] == -6.0
 
 
+
+def test_store_set_invalid_raises(tmp_path):
+    from ashare_review.risk.store import RiskStore
+    s = RiskStore(str(tmp_path / 'risk.json'))
+    try:
+        s.set('vol180', {'stop_loss_pct': -50.0})
+        assert False, '应抛 ValueError'
+    except ValueError:
+        pass
+    try:
+        s.set('nope', {})
+        assert False, '应抛 ValueError'
+    except ValueError:
+        pass
+
+
+def test_store_get_schema_invalid_falls_back(tmp_path):
+    """合法 JSON 但 schema 非法 → 回退默认并告警"""
+    import logging
+    from ashare_review.risk.store import RiskStore
+    p = tmp_path / 'risk.json'
+    p.write_text('{"vol180": {"regime_scale": 5, "stop_loss_pct": -50.0}}', encoding='utf-8')
+    s = RiskStore(str(p))
+    cfg = s.get('vol180')
+    assert cfg['stop_loss_pct'] == -6.0          # 回退默认（-4 被丢弃）
+    assert cfg['regime_scale']['强势趋势'] == 1.0
+
+
+def test_store_get_unknown_portfolio(tmp_path):
+    from ashare_review.risk.store import RiskStore
+    s = RiskStore(str(tmp_path / 'risk.json'))
+    try:
+        s.get('nope')
+        assert False, '应抛 ValueError'
+    except ValueError:
+        pass

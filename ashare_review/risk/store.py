@@ -3,11 +3,15 @@ import json
 import logging
 import os
 import tempfile
+import threading
 from typing import Dict, Optional
 
 from .rules import DEFAULT_CONFIG, validate_config
 
 logger = logging.getLogger(__name__)
+
+# 进程内锁：串行化 set 的读-改-写，防并发丢失更新
+_LOCK = threading.Lock()
 
 CONFIG_PATH = os.environ.get(
     'RISK_CONFIG',
@@ -19,10 +23,13 @@ def _merge_default(portfolio_id: str, saved: dict) -> dict:
     """已保存配置与默认合并：缺字段用默认。"""
     base = dict(DEFAULT_CONFIG[portfolio_id])
     for k, v in (saved or {}).items():
-        if k == 'regime_scale' and isinstance(v, dict):
-            merged = dict(base['regime_scale'])
-            merged.update(v)
-            base['regime_scale'] = merged
+        if k == 'regime_scale':
+            if isinstance(v, dict):
+                merged = dict(base['regime_scale'])
+                merged.update(v)
+                base['regime_scale'] = merged
+            else:
+                logger.warning('风控配置 regime_scale 非法（%r），保留默认', v)
         else:
             base[k] = v
     return base
@@ -43,14 +50,25 @@ class RiskStore:
             logger.warning('风控配置读取失败 %s（%s），回退默认', self.path, e)
         return {}
 
-    def get(self, portfolio_id: str) -> dict:
-        raw = self._load_raw()
+    def _get_from_raw(self, raw: dict, portfolio_id: str) -> dict:
         saved = raw.get(portfolio_id)
         cfg = _merge_default(portfolio_id, saved)
+        errors = validate_config(portfolio_id, cfg)
+        if errors:
+            logger.warning('风控配置校验失败 %s（%s），回退默认',
+                           portfolio_id, '; '.join(errors))
+            return dict(DEFAULT_CONFIG[portfolio_id])
         return cfg
 
+    def get(self, portfolio_id: str) -> dict:
+        if portfolio_id not in DEFAULT_CONFIG:
+            raise ValueError(f'未知持仓: {portfolio_id}')
+        raw = self._load_raw()
+        return self._get_from_raw(raw, portfolio_id)
+
     def get_all(self) -> Dict[str, dict]:
-        return {pid: self.get(pid) for pid in DEFAULT_CONFIG}
+        raw = self._load_raw()
+        return {pid: self._get_from_raw(raw, pid) for pid in DEFAULT_CONFIG}
 
     def set(self, portfolio_id: str, cfg: dict) -> None:
         """校验并保存单份配置（缺字段用默认补齐）。非法抛 ValueError。"""
@@ -60,16 +78,17 @@ class RiskStore:
         errors = validate_config(portfolio_id, full)
         if errors:
             raise ValueError('; '.join(errors))
-        raw = self._load_raw()
-        raw[portfolio_id] = full
-        os.makedirs(os.path.dirname(self.path) or '.', exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(self.path) or '.',
-                                   suffix='.tmp', prefix='risk_config_')
-        try:
-            with os.fdopen(fd, 'w', encoding='utf-8') as f:
-                json.dump(raw, f, ensure_ascii=False, indent=2)
-            os.replace(tmp, self.path)
-        except Exception:
-            if os.path.exists(tmp):
-                os.remove(tmp)
-            raise
+        with _LOCK:
+            raw = self._load_raw()
+            raw[portfolio_id] = full
+            os.makedirs(os.path.dirname(self.path) or '.', exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=os.path.dirname(self.path) or '.',
+                                       suffix='.tmp', prefix='risk_config_')
+            try:
+                with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                    json.dump(raw, f, ensure_ascii=False, indent=2)
+                os.replace(tmp, self.path)
+            except Exception:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
+                raise
