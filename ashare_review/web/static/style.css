@@ -758,3 +758,17 @@ table a:hover { text-decoration: underline; }
 .tips { background: var(--bg-subtle); border-radius: var(--r-md); padding: var(--sp-4) var(--sp-5); font-size: var(--fs-13); color: var(--muted); }
 .tips-row { display: flex; gap: var(--sp-2); padding: 3px 0; }
 
+
+
+/* ===== 首页功能卡状态徽标 ===== */
+.hc-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: var(--brand, #4f46e5);
+    font-size: 0.78em;
+    font-weight: 600;
+    white-space: nowrap;
+}
