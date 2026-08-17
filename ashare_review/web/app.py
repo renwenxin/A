@@ -1803,6 +1803,15 @@ def api_ledger_validate():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+@app.route('/api/ledger/summary')
+def api_ledger_summary():
+    """预测台账统计摘要（首页徽标用，30 天窗口）"""
+    from ..prediction_ledger.service import DB_PATH
+    from ..prediction_ledger.store import LedgerStore
+    store = LedgerStore(DB_PATH)
+    return jsonify(store.summary())
+
+
 # ── 消息雷达（事件驱动分析） ──
 
 @app.route('/event_radar')
