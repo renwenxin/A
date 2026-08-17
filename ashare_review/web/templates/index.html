@@ -58,6 +58,20 @@
             <p><strong>五指标战法：</strong>启动突破 V1–V3 / 接力 / N 字反包 / 冰点底。</p>
             <div class="hc-meta">含 V2 选股池状态机管理（仓位分配）</div>
         </a>
+        <a href="/breakout_v3" class="home-card">
+            <h2><span class="hc-icon">🚀</span>启动突破 V3 <span class="nav-badge" style="vertical-align:middle;">主力</span></h2>
+            <p><strong>MAVOL180 突破战法升级版：</strong>zigzag 找顶线突破 + 竞价确认 + N 字反包信号 + 移动止盈。</p>
+            <p><strong>模拟交易面板：</strong>候选池 → 观察池 → 就绪 → 持仓 → 已完成，全流程跟踪。</p>
+        </a>
+        <a href="/breakout_v2" class="home-card">
+            <h2><span class="hc-icon">🧮</span>V2 选股池</h2>
+            <p><strong>V2 状态机选股池：</strong>观察 → 就绪 → 持仓流转，含仓位分配与买入信号管理。</p>
+            <div class="hc-meta">与多策略选股联动，V2 池状态机</div>
+        </a>
+        <a href="/breakout" class="home-card">
+            <h2><span class="hc-icon">📐</span>V1 启动突破</h2>
+            <p><strong>经典启动突破筛选：</strong>压力位突破 + 放量确认，原始突破形态选股。</p>
+        </a>
         <a href="/auction_analysis" class="home-card">
             <h2><span class="hc-icon">🔔</span>竞价四维分析</h2>
             <p><strong>9:25 竞价结束即时分析：</strong>集合竞价量价异动 / 开盘强度排名 / 竞价抢筹识别 / 高开弱转强。</p>
@@ -68,11 +82,6 @@
     <!-- ====== 盘中交易 ====== -->
     <div class="section-title">盘中交易 · 盯盘与持仓</div>
     <div class="card-grid">
-        <a href="/breakout_v3" class="home-card">
-            <h2><span class="hc-icon">🚀</span>启动突破 V3 <span class="nav-badge" style="vertical-align:middle;">主力</span></h2>
-            <p><strong>MAVOL180 突破战法升级版：</strong>zigzag 找顶线突破 + 竞价确认 + N 字反包信号 + 移动止盈。</p>
-            <p><strong>模拟交易面板：</strong>候选池 → 观察池 → 就绪 → 持仓 → 已完成，全流程跟踪。</p>
-        </a>
         <a href="/zt_replica" class="home-card">
             <h2><span class="hc-icon">📋</span>涨停复制战法</h2>
             <p><strong>涨停板复制模型：</strong>识别首板/二板涨停 → 跟踪回踩 → 等待复制信号 → 模拟买卖。</p>
@@ -82,12 +91,17 @@
         <a href="/sim_portfolio" class="home-card">
             <h2><span class="hc-icon">💼</span>模拟持仓</h2>
             <p><strong>统一持仓管理：</strong>备选标的 / 模拟持仓 / 已完成交易三板块，支持加仓、减仓、清仓与成本重算。</p>
-            <div class="hc-meta">贴近真实交易的资金模型</div>
+            <div class="hc-meta">贴近真实交易的资金模型 <span class="hc-badge" id="badge-portfolio"></span></div>
         </a>
         <a href="/v4_monitor" class="home-card">
             <h2><span class="hc-icon">📊</span>V4 监控手册</h2>
             <p><strong>实盘候选池监控：</strong>盘前检查清单 + 买入/卖出信号面板 + 市场情绪。</p>
             <div class="hc-meta">按流程手册逐项操作</div>
+        </a>
+        <a href="/stock/000001" class="home-card">
+            <h2><span class="hc-icon">📈</span>个股深度分析</h2>
+            <p><strong>单票技术面全景：</strong>多周期均线 / MACD / 筹码分布 / 量比，自动给出止损位、止盈目标与仓位建议。</p>
+            <div class="hc-meta">输入任意 6 位代码即可分析（点击进入示例页）</div>
         </a>
     </div>
 
@@ -103,13 +117,30 @@
             <h2><span class="hc-icon">🎯</span>行情诊断</h2>
             <p><strong>三战法 × 行情分类：</strong>缠论趋势 + 小盘风格 + 情绪温度 → 六档行情，自动推荐对应战法与今日标的。</p>
         </a>
+        <a href="/event_radar" class="home-card">
+            <h2><span class="hc-icon">📡</span>消息雷达</h2>
+            <p><strong>事件驱动分析链：</strong>事件 → 产业 → 公司 → 资金 → 股价，12 个预置主题，勾选即分析。</p>
+            <p><strong>产出：</strong>产业链节点 / 龙头 / 潜力股 / 龙虎榜 / 明日要点，一键导出。</p>
+            <div class="hc-meta">盘后做功课 <span class="hc-badge" id="badge-radar"></span></div>
+        </a>
+        <a href="/prediction_ledger" class="home-card">
+            <h2><span class="hc-icon">📒</span>预测台账</h2>
+            <p><strong>复盘预测的次日验证：</strong>精选标的 / 情绪周期方向 / 竞价预期三类预测，自动验证并统计准确率。</p>
+            <div class="hc-meta">预测→验证→校准闭环 <span class="hc-badge" id="badge-ledger"></span></div>
+        </a>
+    </div>
+
+    <!-- ====== 数据与研究 ====== -->
+    <div class="section-title">数据与研究 · 随时</div>
+    <div class="card-grid">
+        <a href="/strategy_bench" class="home-card">
+            <h2><span class="hc-icon">🧪</span>策略验证台</h2>
+            <p><strong>5 大战法统一回测：</strong>V3 / 1进2 / 冰点 / 尾盘 / 涨停复制，标准绩效指标 + 历史快照 + 双快照对比（含 git 版本对比）。</p>
+            <div class="hc-meta">策略迭代的度量闭环 <span class="hc-badge" id="badge-bench"></span></div>
+        </a>
         <a href="/fund_screening" class="home-card">
             <h2><span class="hc-icon">💰</span>基金挑选</h2>
             <p><strong>养基体系五条件：</strong>按板块筛出符合标准的主动基金 Top5，支持关键词搜索。</p>
-        </a>
-        <a href="/stock/000001" class="home-card">
-            <h2><span class="hc-icon">📈</span>个股深度分析</h2>
-            <p><strong>单票技术面全景：</strong>多周期均线 / MACD / 筹码分布 / 量比，自动给出止损位、止盈目标与仓位建议。</p>
         </a>
     </div>
 
@@ -125,4 +156,54 @@
     </div>
 
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+// ===== 首页状态徽标（轻量：失败静默隐藏，不阻塞渲染） =====
+(function () {
+    function fill(id, text) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = text; }
+    }
+    function pct(v) {
+        if (v === null || v === undefined) return '—';
+        return (v * 100).toFixed(0) + '%';
+    }
+    // 预测台账：精选/周期命中率
+    fetch('/api/ledger/summary')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            fill('badge-ledger', '🎯 精选 ' + pct(d.picks && d.picks.rate) +
+                ' · 周期 ' + pct(d.cycle && d.cycle.rate));
+        }).catch(function () {});
+    // 策略验证台：最近快照
+    fetch('/api/strategy_bench/snapshots')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var s = (d.snapshots || [])[0];
+            if (!s) { fill('badge-bench', '🧪 暂无快照'); return; }
+            var t = (s.created_at || '').slice(11, 16);
+            var ann = s.metrics && s.metrics.annual_return;
+            fill('badge-bench', '🧪 ' + t + (ann === null || ann === undefined ? '' : ' · 年化 ' + ann.toFixed(0) + '%'));
+        }).catch(function () {});
+    // 消息雷达：今日结果
+    fetch('/api/radar/results')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var res = d.result;
+            if (res && (res.themes || []).length) {
+                fill('badge-radar', '📡 今日 ' + res.themes.length + ' 主题已分析');
+            } else {
+                fill('badge-radar', '📡 今日待分析');
+            }
+        }).catch(function () {});
+    // 模拟持仓 + 风控状态
+    fetch('/api/risk/status?portfolio=vol180')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var st = d.can_open ? '✅ 可开仓' : '⛔ 风控拦截';
+            fill('badge-portfolio', '💼 ' + (d.positions || 0) + ' 只 · ' + st);
+        }).catch(function () {});
+})();
+</script>
 {% endblock %}
