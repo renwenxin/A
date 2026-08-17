@@ -182,7 +182,7 @@
         .then(function (d) {
             var s = (d.snapshots || [])[0];
             if (!s) { fill('badge-bench', '🧪 暂无快照'); return; }
-            var t = (s.created_at || '').slice(11, 16);
+            var t = (s.created_at && s.created_at.length >= 16) ? s.created_at.slice(11, 16) : '';
             var ann = s.metrics && s.metrics.annual_return;
             fill('badge-bench', '🧪 ' + t + (ann === null || ann === undefined ? '' : ' · 年化 ' + ann.toFixed(0) + '%'));
         }).catch(function () {});
@@ -191,8 +191,8 @@
         .then(function (r) { return r.json(); })
         .then(function (d) {
             var res = d.result;
-            if (res && (res.themes || []).length) {
-                fill('badge-radar', '📡 今日 ' + res.themes.length + ' 主题已分析');
+            if (res && (res.events || []).length) {
+                fill('badge-radar', '📡 今日 ' + res.events.length + ' 主题已分析');
             } else {
                 fill('badge-radar', '📡 今日待分析');
             }
