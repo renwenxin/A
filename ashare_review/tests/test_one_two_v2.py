@@ -42,3 +42,122 @@ def test_weight_store(tmp_path):
     bad = tmp_path / 'bad.json'
     bad.write_text('{broken', encoding='utf-8')
     assert WeightStore(str(bad)).get()['dimensions']['quality'] == 30
+
+# ---------- Task 2: 8 维打分 ----------
+
+def _lu(code='600001', name='测试', t='10:00', cons=1, seal=True, broken=False,
+        seal_amt=5000.0, turnover=8000.0, cap=40.0, price=8.0, board='换手板'):
+    from ashare_review.data.models import LimitUpInfo
+    return LimitUpInfo(code=code, name=name, limit_up_time=t, seal_amount=seal_amt,
+                       turnover=turnover, float_market_cap=cap, consecutive=cons,
+                       is_first=cons == 1, is_seal=seal, is_broken=broken,
+                       board_type=board, close_price=price)
+
+
+def _weights():
+    from ashare_review.one_two_v2.weights import DEFAULT_WEIGHTS
+    return DEFAULT_WEIGHTS
+
+
+def test_candidate_filter():
+    from ashare_review.one_two_v2.picks import filter_candidates
+    pool = [
+        _lu(code='600001', t='09:35', seal_amt=5000, turnover=8000),
+        _lu(code='600002', t='09:25', seal_amt=5000, turnover=8000),
+        _lu(code='600003', cons=3),
+        _lu(code='000001', t='10:00'),
+        _lu(code='300001', t='10:00'),
+        _lu(code='830001', t='10:00'),
+    ]
+    cands = filter_candidates(pool)
+    codes = sorted(c['code'] for c in cands)
+    assert codes == ['000001', '600001']
+
+
+def test_score_quality():
+    from ashare_review.one_two_v2.picks import score_dimension
+    w = _weights()
+    lu = _lu(t='09:35', seal_amt=6000, turnover=8000, cap=40.0)
+    r = score_dimension('quality', lu, {}, w)
+    assert r['score'] > 20
+    lu2 = _lu(t='14:30', seal_amt=2000, turnover=8000)
+    r2 = score_dimension('quality', lu2, {}, w)
+    assert r2['score'] < r['score']
+
+
+def test_score_theme_stage():
+    from ashare_review.one_two_v2.picks import score_dimension
+    w = _weights()
+    ctx = {'sector': {'zt_count': 6, 'max_consecutive': 2, 'is_new_theme': True}}
+    r = score_dimension('theme_stage', _lu(), ctx, w)
+    assert r['score'] > 0 and '试水' in r['reason']
+    ctx2 = {'sector': {'zt_count': 9, 'max_consecutive': 5}}
+    r2 = score_dimension('theme_stage', _lu(), ctx2, w)
+    assert r2['score'] < 0 and '兑现' in r2['reason']
+
+
+def test_score_volume_health():
+    from ashare_review.one_two_v2.picks import score_dimension
+    w = _weights()
+    r = score_dimension('volume_health', _lu(), {'today_vol': 800, 'prev_high_vol': 1000}, w)
+    assert r['score'] > 0
+    r2 = score_dimension('volume_health', _lu(), {'today_vol': 200, 'prev_high_vol': 1000}, w)
+    assert r2['score'] < 0
+    r3 = score_dimension('volume_health', _lu(), {'today_vol': 2000, 'prev_high_vol': 1000}, w)
+    assert r3['score'] < 0
+
+
+def test_score_emotion_energy_status():
+    from ashare_review.one_two_v2.picks import score_dimension
+    w = _weights()
+    r = score_dimension('emotion', _lu(), {'zt_trend': 'double_ice'}, w)
+    assert r['score'] > 0
+    r2 = score_dimension('emotion', _lu(), {'zt_trend': 'double_climax'}, w)
+    assert r2['score'] < 0
+    r3 = score_dimension('energy_ladder', _lu(), {'ladder_at_2': True}, w)
+    assert r3['score'] > 0
+    r4 = score_dimension('energy_ladder', _lu(), {'ladder_at_2': False, 'ladder_at_3': True}, w)
+    assert r4['score'] < 0
+    r5 = score_dimension('status', _lu(), {'upper_same_theme': False}, w)
+    assert r5['score'] > 0
+    r6 = score_dimension('status', _lu(), {'upper_same_theme': True}, w)
+    assert r6['score'] < 0
+
+
+def test_tactic_classify():
+    from ashare_review.one_two_v2.picks import classify_tactic
+    assert classify_tactic(_lu(t='14:30')) == 'weak_strong'
+    assert classify_tactic(_lu(t='10:00', seal=True, broken=True)) == 'weak_strong'
+    t = classify_tactic(_lu(t='09:40'))
+    assert t in ('graph', 'auction')
+
+# ---------- Task 3: 竞价确认 ----------
+
+def test_auction_ratio_tiers():
+    from ashare_review.one_two_v2.auction import grade_auction_ratio
+    from ashare_review.one_two_v2.weights import DEFAULT_WEIGHTS
+    w = DEFAULT_WEIGHTS['thresholds']
+    assert grade_auction_ratio(12.0, 40.0, w)['level'] == 'extreme'
+    assert grade_auction_ratio(5.5, 40.0, w)['level'] == 'high'
+    assert grade_auction_ratio(3.2, 40.0, w)['level'] == 'mid'
+    assert grade_auction_ratio(1.0, 40.0, w)['level'] == 'low'
+
+
+def test_auction_tactic_trigger():
+    from ashare_review.one_two_v2.auction import check_trigger
+    r = check_trigger('weak_strong', open_change_pct=4.0,
+                      auction_volume=600, preclose_volume=1000, prev_high=800.0, gap_price=None)
+    assert r['triggered'] is True and '弱转强' in r['note']
+    r2 = check_trigger('weak_strong', open_change_pct=1.0,
+                       auction_volume=600, preclose_volume=1000, prev_high=800.0, gap_price=None)
+    assert r2['triggered'] is False
+    r3 = check_trigger('graph', open_change_pct=2.0, auction_volume=0,
+                       preclose_volume=0, prev_high=9.5, gap_price=10.2)
+    assert r3['triggered'] is True and '图形' in r3['note']
+    r4 = check_trigger('graph', open_change_pct=2.0, auction_volume=0,
+                       preclose_volume=0, prev_high=10.5, gap_price=10.2)
+    assert r4['triggered'] is False
+    r5 = check_trigger('auction', open_change_pct=2.0, auction_volume=0,
+                       preclose_volume=0, prev_high=0.0, gap_price=None,
+                       ratio=6.0, thresholds={'auction_ratio_low': 3.0})
+    assert r5['triggered'] is True
