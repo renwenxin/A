@@ -28,7 +28,7 @@ DEFAULT_PROVIDERS = {
     ),
     # 本地 Ollama（OpenAI 兼容接口，无需 API Key）
     'ollama': LLMProviderConfig(
-        model='qwen2.5:latest',
+        model='qwen3:8b',
         api_key_env='OLLAMA_API_KEY',
         base_url='http://localhost:11434/v1',
         timeout=180,

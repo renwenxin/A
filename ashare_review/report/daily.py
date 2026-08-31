@@ -16,10 +16,11 @@ import os
 import struct
 import numpy as np
 from datetime import date, datetime, timedelta, time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from collections import Counter, defaultdict
 from ..data.tdx_reader import TdxReader, RECORD_SIZE
 from ..data.akshare_fetcher import AkshareFetcher
+from ..analysis.auction_verify import verify_minute_auction
 from ..utils.calendar import TradingCalendar
 from .events import get_events_for_period, get_event_summary_text
 from ..utils.log import get_logger
@@ -42,6 +43,14 @@ _NEXT_BIAS_BY_STAGE = {
 _AUCTION_DIRECTION = {
     '火爆': 'high', '偏强': 'high', '中性': 'flat',
     '偏弱': 'low', '观望': 'low',
+}
+
+# ---- 题材阶段徽标（逻辑哥《龙头股翻倍战法》三阶段） ----
+_THEME_BADGE = {
+    '试水期': '🚀试水期',
+    '兑现期': '⚠️兑现期',
+    '朦胧期': '🌫️朦胧期',
+    '中性': '➖中性',
 }
 
 
@@ -130,7 +139,9 @@ class DailyReport:
         weak_to_strong = self._find_weak_to_strong_candidates(limit_ups)
 
         # ==================== 短线情绪（增强版） ====================
-        sentiment = self._generate_sentiment(limit_ups, market_overview, cycle)
+        sentiment = self._generate_sentiment(
+            limit_ups, market_overview, cycle,
+            sector_analysis=sector_analysis, concept_analysis=concept_analysis)
 
         # ==================== 竞价预期预测 ====================
         auction_forecast = self._forecast_next_auction(limit_ups, cycle)
@@ -916,14 +927,15 @@ class DailyReport:
     def _plausible_breadth(o: Dict) -> bool:
         """防御性校验实时快照的涨跌家数是否在 A 股可能范围内。
 
-        A 股约 5600 只，涨跌平合计不可能超过 7000（超过说明把指数/基金/转债
-        等非股票也算进去了，比如旧代码把 9000+ 个 .day 文件全扫进去）；
+        A 股约 5600 只，涨跌平合计明显低于 4500 说明实时接口只返回了
+        半截行情（例如只抓到约 3000 只）；超过 7000 说明把指数/基金/转债
+        等非股票也算进去了，比如旧代码把 9000+ 个 .day 文件全扫进去；
         全市场单日平均涨跌幅也不可能超过 ±30%（北交所单日 ±30% 极限）。
         不满足就当作坏快照丢弃，走通达信本地数据兜底，避免污染复盘。
         """
         total = (o.get('up_count', 0) + o.get('down_count', 0)
                  + o.get('flat_count', 0))
-        if total <= 0 or total > 7000:
+        if total < 4500 or total > 7000:
             return False
         if abs(o.get('avg_change_pct', 0.0)) > 30:
             return False
@@ -935,6 +947,7 @@ class DailyReport:
             'up_count': 0, 'down_count': 0, 'flat_count': 0,
             'limit_up_count': 0, 'limit_down_count': 0,
             'avg_change_pct': 0.0,
+            'open_up_count': 0, 'open_down_count': 0, 'open_flat_count': 0,
         }
         td_date = None
         if trade_date:
@@ -963,6 +976,14 @@ class DailyReport:
                     if (overview['total_volume'] > 0
                             and overview['up_count'] + overview['down_count'] > 0
                             and self._plausible_breadth(overview)):
+                        # 开盘涨跌家数走 TDX 日线口径（spot 快照无今开/昨收）
+                        try:
+                            ob = self.tdx.get_market_breadth(trade_date=td_date)
+                            overview['open_up_count'] = ob['open_up_count']
+                            overview['open_down_count'] = ob['open_down_count']
+                            overview['open_flat_count'] = ob['open_flat_count']
+                        except Exception:
+                            pass
                         return overview
             except Exception as e:
                 logger.warning(f"大盘概况(spot)异常: {e}")
@@ -988,6 +1009,9 @@ class DailyReport:
             overview['limit_up_count'] = breadth['limit_up_count']
             overview['limit_down_count'] = breadth['limit_down_count']
             overview['avg_change_pct'] = breadth.get('avg_change_pct', 0.0)
+            overview['open_up_count'] = breadth['open_up_count']
+            overview['open_down_count'] = breadth['open_down_count']
+            overview['open_flat_count'] = breadth['open_flat_count']
             logger.info(f"通达信扫描{breadth['scanned']}只: "
                   f"涨{overview['up_count']} 跌{overview['down_count']} "
                   f"成交额{overview['total_volume']:.0f}亿")
@@ -1000,7 +1024,8 @@ class DailyReport:
     # 短线情绪（增强版）
     # ------------------------------------------------------------------
     def _generate_sentiment(self, limit_ups: List, market_overview: Dict,
-                             cycle: Dict) -> Dict:
+                             cycle: Dict, sector_analysis: Dict = None,
+                             concept_analysis: Dict = None) -> Dict:
         total = len(limit_ups)
         sealed = sum(1 for lu in limit_ups if lu.is_seal)
         broken_count = sum(1 for lu in limit_ups if lu.is_broken)
@@ -1028,7 +1053,9 @@ class DailyReport:
             mood_desc = cycle['stage_desc']
 
         broken_rate = broken_count / max(total, 1) * 100
-        picks = self._select_top_picks(limit_ups)
+        picks = self._select_top_picks(
+            limit_ups, sector_analysis=sector_analysis,
+            concept_analysis=concept_analysis, cycle=cycle)
 
         return {
             'mood': mood,
@@ -1047,7 +1074,121 @@ class DailyReport:
             ),
         }
 
-    def _select_top_picks(self, limit_ups: List) -> List[Dict]:
+    def _load_limit_count_index(self) -> Dict[str, int]:
+        """从 limit_up_pool.json 加载 {code: 年涨停次数}。
+
+        LimitUpInfo 从未设置 limit_up_count 字段（旧代码 getattr 恒为 0，股性分是死代码），
+        改从涨停池累计的 limit_count 读真实股性，兼作"人气聚集力"信号。
+        """
+        if not os.path.exists(LIMIT_UP_POOL_FILE):
+            return {}
+        try:
+            with open(LIMIT_UP_POOL_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return {str(p.get('code', '')).zfill(6): int(p.get('limit_count', 0))
+                    for p in data.get('pool', [])}
+        except Exception:
+            return {}
+
+    def _classify_theme_stage(self, sector: Optional[Dict],
+                              cycle_stage: str = '') -> Tuple[str, int, str]:
+        """按逻辑哥《龙头股翻倍战法》题材三阶段定位板块。
+
+        朦胧期(纯概念/孤立涨停) → 试水期(政策落地/技术突破，爆发力最强，1进2主战场)
+        → 兑现期(充分发酵/业绩兑现，1进2追高风险大)。
+        用当日板块涨停家数+最高连板+是否新题材作信号（单日快照近似）。
+        """
+        if not sector:
+            return '朦胧期', -5, '孤立涨停·无板块效应'
+        zt = sector.get('zt_count', 0)
+        max_cons = sector.get('max_consecutive', 1)
+        # 兑现期/过热：涨停潮已充分发酵(≥8只)且出现高度板(≥4)，或过热时情绪周期走坏
+        if zt >= 8 and (max_cons >= 4 or cycle_stage in ('高潮末期', '高潮期', '退潮期')):
+            return '兑现期', -8, f'板块涨停潮{zt}只·高度{max_cons}板·追高兑现风险'
+        # 试水期：板块有连板或新题材多首板启动，或直接涨停潮(≥5)
+        if zt >= 5 or (zt >= 3 and (max_cons >= 2 or sector.get('is_new_theme'))):
+            return '试水期', 10, f'板块发酵{zt}只·高度{max_cons}板·爆发力最强'
+        # 朦胧期：孤立涨停(1-2只)无板块效应
+        if zt <= 2:
+            return '朦胧期', -5, f'板块仅{zt}只·概念随机·一日游风险'
+        return '中性', 0, f'板块{zt}只·待发酵'
+
+    def _assess_leader_traits(self, lu, sector: Optional[Dict],
+                              limit_count: int) -> Dict:
+        """龙头三特质打分（包容性/人气聚集力/持续性逻辑）。
+
+        全部用涨停池+板块聚合可得信号，无额外网络依赖。
+        """
+        score = 0
+        reasons = []
+        traits = {'popularity': 0, 'inclusive': 0, 'logic': 0}
+
+        # --- 人气聚集力：股性(关注度) + 换手率(资金汇聚) ---
+        pop = 0
+        if limit_count >= 15:
+            pop += 6
+            reasons.append(f'人气旺·股性{limit_count}次/年')
+        elif limit_count >= 10:
+            pop += 4
+            reasons.append(f'人气聚集·股性{limit_count}次/年')
+        elif limit_count >= 5:
+            pop += 2
+            reasons.append(f'股性活跃({limit_count}次/年)')
+        mcap = lu.float_market_cap or 0
+        turnover = lu.turnover or 0
+        if mcap > 0:
+            turnover_rate = turnover / (mcap * 10000) * 100  # 换手率%
+            if turnover_rate >= 15:
+                pop += 3
+                reasons.append(f'换手{turnover_rate:.0f}%·资金汇聚')
+            elif turnover_rate >= 8:
+                pop += 1
+                reasons.append(f'换手{turnover_rate:.0f}%')
+        traits['popularity'] = pop
+        score += pop
+
+        # --- 包容性：换手板(能上车) + 封成比适中(有承接不过度) ---
+        inc = 0
+        if not _is_yizi_board(lu):
+            inc += 3
+            reasons.append('换手板·包容性强')
+        else:
+            inc -= 3
+            reasons.append('一字板·无法上车')
+        if lu.turnover and lu.seal_amount and lu.turnover > 0:
+            sr = lu.seal_amount / lu.turnover
+            if 0.5 <= sr <= 2.0:
+                inc += 2
+                reasons.append(f'封成比{sr:.2f}·有承接')
+            elif sr >= 3.0:
+                inc -= 2
+                reasons.append(f'封成比{sr:.2f}·巨封难上车')
+        traits['inclusive'] = inc
+        score += inc
+
+        # --- 持续性逻辑：板块涨停潮支撑 ---
+        log = 0
+        if sector:
+            zt = sector.get('zt_count', 0)
+            max_cons = sector.get('max_consecutive', 1)
+            if zt >= 5:
+                log += 5
+                reasons.append(f'涨停潮板块({zt}只)')
+            elif zt >= 3:
+                log += 3
+                reasons.append(f'强势板块({zt}只)')
+            if max_cons >= 2:
+                log += 2
+                reasons.append(f'板块有高度({max_cons}板)')
+        traits['logic'] = log
+        score += log
+
+        return {'score': score, 'reasons': reasons, 'traits': traits}
+
+    def _select_top_picks(self, limit_ups: List,
+                          sector_analysis: Dict = None,
+                          concept_analysis: Dict = None,
+                          cycle: Dict = None) -> List[Dict]:
         """精选备选标的 — 龙哥1进2接力选股体系
 
         复盘页"1进2接力"表格的数据源。严格只收首板（连板数==1），
@@ -1064,7 +1205,23 @@ class DailyReport:
         8) 股性活跃（年涨停次数多）
         9) 优先N字结构+箱体突破+60/89日线粘合
         10) 热点板块（不在退潮板块）
+        11) 题材阶段定位（逻辑哥龙头翻倍战法：试水期爆发最强/朦胧期一日游/兑现期追高危险）
+        12) 龙头三特质（包容性/人气聚集力/持续性逻辑）
+        13) 概念命中加分（属于多股涨停的强势概念）
         """
+        # 板块/概念/股性索引（逻辑哥题材阶段+龙头三特质框架）
+        sector_map = {}
+        if sector_analysis:
+            for s in sector_analysis.get('all_sectors', []):
+                sector_map[s.get('name', '')] = s
+        concept_map_by_code = defaultdict(list)
+        if concept_analysis:
+            for cs in concept_analysis.get('concept_sectors', []):
+                for c in cs.get('member_codes', []):
+                    concept_map_by_code[c].append(cs)
+        limit_count_index = self._load_limit_count_index()
+        cycle_stage = (cycle or {}).get('stage', '')
+
         picks = []
         for lu in limit_ups:
             # 1进2接力只收首板（多板标的走龙头/连板体系，不在此列表混入）
@@ -1179,8 +1336,8 @@ class DailyReport:
             score += 8
             reasons.append('首板·1进2候选（核心模式）')
 
-            # ---- 三、股性评分（历史涨停次数） ----
-            limit_up_count = getattr(lu, 'limit_up_count', 0)
+            # ---- 三、股性评分（历史涨停次数，来自 limit_up_pool.json） ----
+            limit_up_count = limit_count_index.get(str(lu.code).zfill(6), 0)
             if limit_up_count >= 15:
                 score += 8
                 reasons.append(f'股性极活({limit_up_count}次/年)·妖股基因')
@@ -1190,9 +1347,36 @@ class DailyReport:
             elif limit_up_count >= 5:
                 score += 2
                 reasons.append(f'股性尚可({limit_up_count}次/年)')
-            elif limit_up_count <= 1:
+            elif 0 < limit_up_count <= 1:
                 score -= 2
                 reasons.append('股性冷门·首次涨停')
+            # limit_up_count==0 = 涨停池无记录（未知），不扣分
+
+            # ---- 三.5、题材阶段 + 龙头三特质 + 概念命中（逻辑哥龙头翻倍战法框架） ----
+            sector = sector_map.get(lu.board_type or '') if lu.board_type else None
+            stage_label, stage_mod, stage_reason = self._classify_theme_stage(
+                sector, cycle_stage)
+            if stage_mod:
+                score += stage_mod
+                reasons.append(f'{stage_label}·{stage_reason}')
+            traits = self._assess_leader_traits(lu, sector, limit_up_count)
+            score += traits['score']
+            reasons.extend(traits['reasons'])
+            concept_bonus = 0
+            concept_hits = concept_map_by_code.get(str(lu.code).zfill(6), [])
+            if concept_hits:
+                strongest = max(concept_hits, key=lambda c: c.get('zt_count', 0))
+                if strongest.get('zt_count', 0) >= 3:
+                    concept_bonus += 2
+                    reasons.append(
+                        f"概念命中:{strongest['name']}({strongest['zt_count']}只)")
+                    if not sector:
+                        # 无行业板块时用最强概念兜底显示
+                        sector = {'name': strongest['name'],
+                                  'zt_count': strongest['zt_count'],
+                                  'max_consecutive': strongest.get('max_consecutive', 1),
+                                  'strength': '概念'}
+            score += concept_bonus
 
             # ---- 四、板块/板型标记 ----
             board_type = getattr(lu, 'board_type', '') or '-'
@@ -1228,6 +1412,17 @@ class DailyReport:
                     'limit_up_time': str(lu.limit_up_time),
                     'max_volume': max_vol,
                     'max_volume_50': max_vol // 2,
+                    # 逻辑哥《龙头股翻倍战法》框架字段
+                    'theme_stage': stage_label,
+                    'theme_label': _THEME_BADGE.get(stage_label, stage_label),
+                    'sector_name': sector.get('name', '') if sector else (lu.board_type or ''),
+                    'sector_zt_count': sector.get('zt_count', 0) if sector else 0,
+                    'sector_max_cons': sector.get('max_consecutive', 0) if sector else 0,
+                    'sector_strength': sector.get('strength', '') if sector else '',
+                    'limit_up_count': limit_up_count,
+                    'trait_popularity': traits['traits']['popularity'],
+                    'trait_inclusive': traits['traits']['inclusive'],
+                    'trait_logic': traits['traits']['logic'],
                 })
 
         picks.sort(key=lambda x: x['score'], reverse=True)
@@ -1612,6 +1807,7 @@ class DailyReport:
             market = 'sh' if str(code).startswith('6') else 'sz'
             if str(code).startswith(('8', '4')):
                 market = 'bj'
+            today_open = 0.0
             try:
                 df = self.tdx.read_daily(code, market)
                 if df is None or df.empty or len(df) < 2:
@@ -1619,6 +1815,7 @@ class DailyReport:
                 today_bar = df.iloc[-1]
                 yesterday_bar = df.iloc[-2]
                 today_chg = (today_bar['close'] - yesterday_bar['close']) / yesterday_bar['close'] * 100
+                today_open = float(today_bar['open'] or 0)
             except Exception:
                 today_chg = 0
 
@@ -1626,6 +1823,21 @@ class DailyReport:
             is_zt_today = code in today_zt_codes
             today_zt = today_zt_codes.get(code)
             is_2board = is_zt_today and today_zt and today_zt.consecutive >= 2
+
+            # 用当日分钟线验证竞价判断（A/B/C 形态 + 9:24/9:25 量能三档优先）
+            auction = None
+            try:
+                ai = self.ak.fetch_one_auction(code)
+                v24 = v25 = None
+                # push2ex 只回"当日"竞价：与 trade_date 开盘价对得上才采信，
+                # 避免历史日期报告拿到错日竞价量；取不到则降级纯 A/B/C 判定
+                if ai is not None and ai.vol_0925 and today_open and \
+                        abs(ai.auction_price - today_open) / today_open <= 0.005:
+                    v24, v25 = ai.vol_0924, ai.vol_0925
+                auction = verify_minute_auction(self.tdx, code, market, trade_date,
+                                                vol_0924=v24, vol_0925=v25)
+            except Exception:
+                auction = None
 
             results.append({
                 'code': code,
@@ -1635,6 +1847,7 @@ class DailyReport:
                 'today_chg': round(today_chg, 2),
                 'is_zt_today': is_zt_today,
                 'is_2board': is_2board,
+                'auction': auction,
                 'result': '✅ 2连板成功' if is_2board else (
                     '🔥 涨停' if is_zt_today else (
                         '📈 收涨' if today_chg > 0 else (

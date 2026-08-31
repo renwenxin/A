@@ -26,6 +26,18 @@ def _clean_proxy():
         os.environ.pop(k, None)
 
 
+def _auction_cum_volumes(recs: list) -> tuple:
+    """从 push2ex 分时笔取 9:24/9:25 时点累计量（手）。
+
+    push2ex getStockFenShi 的 v 为"当日累计成交量(手)"（非单笔增量）。
+    返回 (9:24累计, 9:25竞价总量)；无对应分笔时该值为 0。
+    """
+    def _cum_last(lo: int, hi: int) -> int:
+        vals = [r.get('v', 0) for r in recs if lo <= r.get('t', 0) <= hi]
+        return vals[-1] if vals else 0
+    return _cum_last(92400, 92459), _cum_last(92500, 92559)
+
+
 class AkshareFetcher:
     """A股行情数据获取器，带SQLite缓存和自动降级"""
 
@@ -623,11 +635,15 @@ class AkshareFetcher:
         """获取单只股票的竞价分时明细，聚合为 AuctionInfo
 
         分时数据格式: {"t": 91500, "p": 11240, "v": 204, "bs": 4}
-        t=时间(HHMMSS), p=价格*1000, v=成交量(手), bs=买卖方向
+        t=时间(HHMMSS), p=价格*1000, v=当日累计成交量(手), bs=买卖方向
+
+        注意：v 为当日累计量，竞价总量取 9:25 时点累计值（不能增量求和）；
+        9:24/9:25 取时点累计，与 fetch_one_auction 口径一致。竞价期含 9:25
+        整分钟（t<=92559），9:30 起为连续竞价。
         """
         url = self._AUCTION_EM_BASE
         params = {
-            'pagesize': '100',
+            'pagesize': '1000',  # 高笔频股票前100笔只到9:22，放大以覆盖9:25
             'ut': '7eea3edcaed734bea9cbfc24409ed989',
             'dpt': 'wzfscj',
             'pageindex': '0',
@@ -648,31 +664,27 @@ class AkshareFetcher:
             if not records:
                 return None
 
-            # 聚合竞价期 (t <= 92500) 的数据，同时按分钟分组
-            auction_vol_lots = 0       # 手
-            auction_amount_yuan = 0.0  # 元
-            auction_price = 0.0
-            vol_0924_lots = 0          # 9:24分成交量(手)
-            vol_0925_lots = 0          # 9:25分成交量(手)
+            # push2ex 的 v 为当日累计量(手)，取 9:24/9:25 时点累计值，
+            # 不能增量求和（旧实现 += v 会把竞价量放大约 34 倍）。
+            # 竞价期 = 9:15~9:25 整分钟（t <= 92559），9:30 起为连续竞价。
+            vol_0924_lots, vol_0925_lots = _auction_cum_volumes(records)
+            auction_vol_lots = vol_0925_lots or vol_0924_lots  # 竞价总量
+            if not auction_vol_lots:
+                return None
 
+            # 竞价成交额：逐笔增量×价格累加（累计 v 需做差分）
+            auction_amount_yuan = 0.0
+            prev_v = 0
+            auction_price = 0.0
             for r in records:
                 t = r.get('t', 0)
-                if t > 92500:
+                if t > 92559:
                     break
-                v = r.get('v', 0)         # 手
+                v = r.get('v', 0)         # 手（当日累计）
                 p = r.get('p', 0) / 1000  # 元/股
-                auction_vol_lots += v
-                auction_amount_yuan += v * 100 * p
-                auction_price = p         # 最后一笔为开盘价
-
-                # 按分钟统计：9:24 (92400-92459) 和 9:25 (92500-92559)
-                if 92400 <= t <= 92459:
-                    vol_0924_lots += v
-                elif 92500 <= t <= 92559:
-                    vol_0925_lots += v
-
-            if auction_vol_lots == 0:
-                return None
+                auction_price = p         # 9:25 最后一笔为开盘价
+                auction_amount_yuan += (v - prev_v) * 100 * p
+                prev_v = v
 
             prev_close = ds.get('cp', 0) / 1000  # 昨收
             open_change_pct = 0.0
@@ -692,11 +704,24 @@ class AkshareFetcher:
                 auction_price=auction_price,
                 open_change_pct=open_change_pct,
                 preclose_volume=0,
-                vol_0924=int(vol_0924_lots * 100),                     # 9:24分竞价量(股)
-                vol_0925=int(vol_0925_lots * 100),                     # 9:25分竞价量(股)
+                vol_0924=int(vol_0924_lots * 100),                     # 9:24时点累计竞价量(股)
+                vol_0925=int(vol_0925_lots * 100),                     # 9:25竞价总量(股)
             )
         except Exception as e:
             # 单个股票失败不影响全局
+            return None
+
+    def fetch_one_auction(self, code: str) -> Optional[AuctionInfo]:
+        """获取单只股票当日竞价明细（供复盘验证等按需调用）。
+
+        code: 6 位股票代码。market 自动映射：6 开头→'1'（沪），其余→'0'（深）。
+        与 _fetch_one_auction 同口径（v 为当日累计量，取 9:25 时点累计值）。
+        失败（网络/无数据）返回 None，不抛异常。
+        """
+        market = '1' if str(code).startswith('6') else '0'
+        try:
+            return self._fetch_one_auction(str(code), market)
+        except Exception:
             return None
 
     # ------------------------------------------------------------------

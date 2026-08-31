@@ -6,7 +6,7 @@
 import os
 import sqlite3
 from datetime import date, timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS predictions (
@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS predictions (
   detail TEXT DEFAULT '',
   actual TEXT,
   hit INTEGER,
+  win INTEGER,
+  win_open INTEGER,
+  win_high INTEGER,
   created_at TEXT DEFAULT (datetime('now','localtime'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pred ON predictions(pred_date, pred_type, item_key);
@@ -45,6 +48,14 @@ class LedgerStore:
         conn = self._connect()
         try:
             conn.executescript(SCHEMA)
+            # 迁移：旧库补 win 三口径列（次日收盘/开盘/高点 vs 首日开盘）
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(predictions)")]
+            if 'win' not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN win INTEGER")
+            if 'win_open' not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN win_open INTEGER")
+            if 'win_high' not in cols:
+                conn.execute("ALTER TABLE predictions ADD COLUMN win_high INTEGER")
             conn.commit()
         finally:
             conn.close()
@@ -79,23 +90,39 @@ class LedgerStore:
         finally:
             conn.close()
 
-    def mark_verified(self, row_id: int, actual: str, hit: int) -> None:
+    def mark_verified(self, row_id: int, actual: str, hit: int,
+                      win: Optional[int] = None, win_open: Optional[int] = None,
+                      win_high: Optional[int] = None) -> None:
         conn = self._connect()
         try:
-            conn.execute("UPDATE predictions SET actual=?, hit=? WHERE id=?",
-                         (actual, hit, row_id))
+            conn.execute("UPDATE predictions SET actual=?, hit=?, win=?, win_open=?, win_high=? "
+                         "WHERE id=?",
+                         (actual, hit, win, win_open, win_high, row_id))
             conn.commit()
         finally:
             conn.close()
 
     def set_actual(self, pred_date: str, pred_type: str, item_key: str,
-                   actual: str, hit: int) -> None:
+                   actual: str, hit: int, win: Optional[int] = None,
+                   win_open: Optional[int] = None, win_high: Optional[int] = None) -> None:
         """按唯一键补写验证结果（迁移用，幂等）。"""
         conn = self._connect()
         try:
-            conn.execute("UPDATE predictions SET actual=?, hit=? "
+            conn.execute("UPDATE predictions SET actual=?, hit=?, win=?, win_open=?, win_high=? "
                          "WHERE pred_date=? AND pred_type=? AND item_key=?",
-                         (actual, hit, pred_date, pred_type, item_key))
+                         (actual, hit, win, win_open, win_high, pred_date, pred_type, item_key))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def update_detail(self, pred_date: str, pred_type: str, item_key: str,
+                      detail: str) -> None:
+        """按唯一键刷新明细（不覆盖 actual/hit）。复盘报告重生成时更新明细用。"""
+        conn = self._connect()
+        try:
+            conn.execute("UPDATE predictions SET detail=? "
+                         "WHERE pred_date=? AND pred_type=? AND item_key=?",
+                         (detail, pred_date, pred_type, item_key))
             conn.commit()
         finally:
             conn.close()
@@ -106,7 +133,9 @@ class LedgerStore:
         try:
             rows = conn.execute(
                 "SELECT * FROM predictions WHERE pred_date >= ? "
-                "ORDER BY pred_date DESC, id DESC", (cutoff,)).fetchall()
+                "ORDER BY pred_date DESC, "
+                "CASE WHEN pred_type = 'market_open' THEN 1 ELSE 0 END, "
+                "id DESC", (cutoff,)).fetchall()
             return [dict(r) for r in rows]
         finally:
             conn.close()
@@ -152,14 +181,87 @@ class LedgerStore:
                                 if verified else None})
             cycle = _rate('cycle')
             auction = _rate('auction')
+            pick_auction = _rate('pick_auction')
+            # 竞价判断按判定拆分命中率；胜率三口径=次日收盘/开盘/高点 vs 首日开盘（关联同标的精选）
+            pick_auction_buckets = []
+            for verdict in ('抢筹', '达标', '观望'):
+                row = conn.execute(
+                    "SELECT COUNT(*) AS total, "
+                    "SUM(CASE WHEN pa.hit = 1 THEN 1 ELSE 0 END) AS hit, "
+                    "SUM(CASE WHEN pa.hit IS NOT NULL THEN 1 ELSE 0 END) AS verified, "
+                    "SUM(CASE WHEN p.win = 1 THEN 1 ELSE 0 END) AS wins, "
+                    "SUM(CASE WHEN p.win IS NOT NULL THEN 1 ELSE 0 END) AS win_verified, "
+                    "SUM(CASE WHEN p.win_open = 1 THEN 1 ELSE 0 END) AS wins_open, "
+                    "SUM(CASE WHEN p.win_open IS NOT NULL THEN 1 ELSE 0 END) AS win_open_verified, "
+                    "SUM(CASE WHEN p.win_high = 1 THEN 1 ELSE 0 END) AS wins_high, "
+                    "SUM(CASE WHEN p.win_high IS NOT NULL THEN 1 ELSE 0 END) AS win_high_verified "
+                    "FROM predictions pa "
+                    "LEFT JOIN predictions p ON p.pred_date = pa.pred_date "
+                    "AND p.item_key = pa.item_key AND p.pred_type = 'picks' "
+                    "WHERE pa.pred_type='pick_auction' "
+                    "AND pa.direction=? AND pa.pred_date >= ?",
+                    (verdict, cutoff)).fetchone()
+                verified = row['verified'] or 0
+                win_verified = row['win_verified'] or 0
+                win_open_verified = row['win_open_verified'] or 0
+                win_high_verified = row['win_high_verified'] or 0
+                pick_auction_buckets.append({
+                    'label': verdict, 'total': row['total'] or 0,
+                    'verified': verified, 'hit': row['hit'] or 0,
+                    'rate': round((row['hit'] or 0) / verified, 4)
+                    if verified else None,
+                    'wins': row['wins'] or 0,
+                    'win_rate': round((row['wins'] or 0) / win_verified, 4)
+                    if win_verified else None,
+                    'wins_open': row['wins_open'] or 0,
+                    'win_open_rate': round((row['wins_open'] or 0) / win_open_verified, 4)
+                    if win_open_verified else None,
+                    'wins_high': row['wins_high'] or 0,
+                    'win_high_rate': round((row['wins_high'] or 0) / win_high_verified, 4)
+                    if win_high_verified else None})
             pending = conn.execute(
-                "SELECT COUNT(*) AS n FROM predictions WHERE hit IS NULL"
+                "SELECT COUNT(*) AS n FROM predictions WHERE hit IS NULL "
+                "AND pred_type != 'market_open'"
             ).fetchone()['n'] or 0
             verified_days = conn.execute(
                 "SELECT COUNT(DISTINCT pred_date) AS n FROM predictions WHERE hit IS NOT NULL"
             ).fetchone()['n'] or 0
+
+            # 次日收盘胜负汇总：胜 = 次日收盘 > 首日开盘（仅精选）
+            def _win_counts(where_extra: str = '', params: tuple = ()) -> Dict:
+                row = conn.execute(
+                    "SELECT COUNT(*) AS total, "
+                    "SUM(CASE WHEN win = 1 THEN 1 ELSE 0 END) AS wins "
+                    f"FROM predictions WHERE pred_type='picks' AND win IS NOT NULL "
+                    f"AND pred_date >= ? {where_extra}",
+                    (cutoff,) + params).fetchone()
+                total = row['total'] or 0
+                wins = row['wins'] or 0
+                return {'total': total, 'wins': wins,
+                        'losses': total - wins,
+                        'rate': round(wins / total, 4) if total else None}
+            win = _win_counts()
+            win_buckets = []
+            for label, lo, hi in SCORE_BUCKETS:
+                conds = []
+                sqlp = ()
+                if lo is not None:
+                    conds.append("score >= ?")
+                    sqlp = sqlp + (lo,)
+                if hi is not None:
+                    conds.append("score < ?")
+                    sqlp = sqlp + (hi,)
+                where_extra = (" AND " + " AND ".join(conds)) if conds else ""
+                win_buckets.append({
+                    'label': label,
+                    **_win_counts(where_extra, sqlp),
+                })
+
             return {'picks': picks, 'buckets': buckets,
                     'cycle': cycle, 'auction': auction,
+                    'pick_auction': pick_auction,
+                    'pick_auction_buckets': pick_auction_buckets,
+                    'win': win, 'win_buckets': win_buckets,
                     'coverage': {'verified_days': verified_days, 'pending': pending}}
         finally:
             conn.close()

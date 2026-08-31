@@ -1,7 +1,7 @@
 """通达信 .day 文件解析器"""
 import os, struct
 from datetime import date
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import pandas as pd
 from .models import DailyBar
 
@@ -83,43 +83,62 @@ class TdxReader:
         m = market[:2].lower()
         return os.path.join(self.vipdoc, m, 'minline')
 
-    def read_minute_max_volume(self, code: str, market: str, target_date: str = None) -> int:
-        """读取1分钟线的当日最高单分钟成交量（单位：手）
+    def read_minute_bars(self, code: str, market: str, days: int = 15) -> List[dict]:
+        """读取最近 days 个交易日的 1 分钟线。
 
-        TDX 1分钟线格式 (.lc1): 32字节/条
-        date(I) time(I) open(f) high(f) low(f) amount(f) volume(I) reserved(I)
+        TDX .lc1 每 32 字节一条：
+          date(H) time(H) open(f) high(f) low(f) close(f) amount(f) volume(I) reserved(I)
+        date 为 TDX 编码：(year-2004)*2048 + month*100 + day
+        time 为当天分钟数（如 571 = 09:31）。
 
-        文件按时间升序排列，每天约240条记录（4小时×60分钟）。
-        取最后240条作为最新交易日数据，取volume最大值。
-
-        返回: 最高单分钟成交量（手），无数据返回0
+        返回 [{date:'YYYY-MM-DD', time:571, open, high, low, close, amount, volume}]
+        按文件顺序（时间升序）。volume 单位为股。
         """
         fpath = os.path.join(self._minute_dir(market), f'{market}{code}.lc1')
         if not os.path.exists(fpath):
-            return 0
+            return []
         try:
             with open(fpath, 'rb') as f:
                 data = f.read()
-            total_records = len(data) // 32
-            if total_records < 10:
-                return 0
-
-            # 最后~240条 = 最新交易日
-            lookback = min(240, total_records)
-            start_record = total_records - lookback
-
-            max_vol = 0  # 股
-            for i in range(start_record, total_records):
+            total = len(data) // 32
+            if total == 0:
+                return []
+            start = max(0, total - days * 240)
+            bars = []
+            for i in range(start, total):
                 offset = i * 32
-                # IIffffII: date(I) time(I) o(f) h(f) l(f) amt(f) vol(I) reserved(I)
-                _, _, _, _, _, _, vol, _ = struct.unpack(
-                    'IIffffII', data[offset:offset+32])
-                if vol > max_vol and vol < 500_000_000:  # 过滤异常值
-                    max_vol = vol
-
-            return max_vol // 100  # 股→手
+                dt, tm, op, hi, lo, cl, amt, vol, _ = struct.unpack(
+                    'HHfffffII', data[offset:offset + 32])
+                yr = 2004 + dt // 2048
+                rest = dt % 2048
+                bars.append({
+                    'date': f'{yr}-{rest // 100:02d}-{rest % 100:02d}',
+                    'time': tm,
+                    'open': op, 'high': hi, 'low': lo, 'close': cl,
+                    'amount': amt, 'volume': vol,
+                })
+            return bars
         except Exception:
+            return []
+
+    def read_minute_max_volume(self, code: str, market: str, target_date: str = None) -> int:
+        """读取最新交易日的最高单分钟成交量（单位：手）
+
+        基于 read_minute_bars 正确解析 .lc1（旧版 struct 解包错误已修复）。
+        返回: 最高单分钟成交量（手），无数据返回0
+        """
+        bars = self.read_minute_bars(code, market, days=1)
+        if not bars:
             return 0
+        last_date = bars[-1]['date']
+        max_vol = 0
+        for b in bars:
+            if b['date'] != last_date:
+                continue
+            v = b['volume']
+            if 0 < v < 500_000_000:  # 过滤异常值
+                max_vol = max(max_vol, v)
+        return max_vol // 100  # 股→手
 
     def list_stocks(self) -> List[Tuple[str, str]]:
         """列出所有股票 (code, market)"""
@@ -186,13 +205,41 @@ class TdxReader:
         result['total_amount'] = round(result['sh_amount'] + result['sz_amount'], 0)
         return result
 
+    def _find_date_pair(self, fpath: str, target_date: date) -> Optional[tuple]:
+        """从 .day 文件尾部向前定位 target_date 的记录及其前一交易日记录。
+
+        返回 (target_rec, prev_rec)；目标日在文件首条（无前一交易日）或找不到
+        时返回 None。target_rec 的开盘/收盘 vs prev_rec 的收盘即该日开盘涨跌。
+        """
+        target_int = target_date.year * 10000 + target_date.month * 100 + target_date.day
+        fsize = os.path.getsize(fpath)
+        if fsize < RECORD_SIZE * 2:
+            return None
+        with open(fpath, 'rb') as f:
+            pos = fsize - RECORD_SIZE
+            while pos >= 0:
+                f.seek(pos)
+                rec = f.read(RECORD_SIZE)
+                if struct.unpack('I', rec[:4])[0] == target_int:
+                    if pos < RECORD_SIZE:
+                        return None
+                    f.seek(pos - RECORD_SIZE)
+                    prev = f.read(RECORD_SIZE)
+                    return rec, prev
+                pos -= RECORD_SIZE
+        return None
+
     def get_market_breadth(self, trade_date: date = None) -> dict:
         """扫描全市场 .day 文件，统计沪深京 A 股涨跌家数
 
-        每个文件只读尾部 64 字节（最后 2 条记录），
+        trade_date=None → 最新交易日（读每个文件尾部 2 条记录，快）；
+        trade_date=指定日期 → 从尾部向前定位该日记录 + 前一交易日，计算该日
+        口径（不再静默回退最新日，修掉历史日期错位 bug）。
         A 股约 5600 只约需 1-3 秒。结果按日期缓存到内存。
         只统计真正的 A 股（is_a_share_stock 过滤），
         排除 ETF/LOF、转债、B 股、指数、通达信板块指数等非股票证券。
+        除收盘涨跌家数外，同时统计开盘口径（open_up_count/open_down_count）：
+        高开=open>昨收，低开=open<昨收，供"今日开盘涨跌家数"展示。
         """
         cache_key = str(trade_date) if trade_date else 'latest'
         if not hasattr(self, '_breadth_cache'):
@@ -201,6 +248,7 @@ class TdxReader:
             return self._breadth_cache[cache_key]
 
         up = down = flat = limit_up = limit_down = 0
+        open_up = open_down = open_flat = 0
         chg_sum = 0.0
         scanned = 0
 
@@ -217,30 +265,30 @@ class TdxReader:
                     continue
                 fpath = os.path.join(d, fn)
                 try:
-                    fsize = os.path.getsize(fpath)
-                    if fsize < RECORD_SIZE * 2:
-                        continue
-                    # 只读尾部 64 字节（最后 2 条 32 字节记录）
-                    read_size = min(RECORD_SIZE * 2, fsize)
-                    with open(fpath, 'rb') as f:
-                        f.seek(fsize - read_size)
-                        tail = f.read(read_size)
+                    if trade_date is None:
+                        # 最新交易日：只读尾部 64 字节（最后 2 条记录）
+                        fsize = os.path.getsize(fpath)
+                        if fsize < RECORD_SIZE * 2:
+                            continue
+                        read_size = min(RECORD_SIZE * 2, fsize)
+                        with open(fpath, 'rb') as f:
+                            f.seek(fsize - read_size)
+                            tail = f.read(read_size)
+                        last_rec = tail[-RECORD_SIZE:]
+                        prev_rec = tail[-RECORD_SIZE*2:-RECORD_SIZE] if len(tail) >= RECORD_SIZE*2 else last_rec
+                    else:
+                        # 指定日期：定位该日记录 + 前一交易日
+                        pair = self._find_date_pair(fpath, trade_date)
+                        if pair is None:
+                            continue
+                        last_rec, prev_rec = pair
 
-                    last_rec = tail[-RECORD_SIZE:]
-                    prev_rec = tail[-RECORD_SIZE*2:-RECORD_SIZE] if len(tail) >= RECORD_SIZE*2 else last_rec
-
-                    _, _, _, _, close, amt, _, _ = struct.unpack('IIIIIfII', last_rec)
+                    _, open_i, _, _, close, amt, _, _ = struct.unpack('IIIIIfII', last_rec)
                     _, _, _, _, prev_close, _, _, _ = struct.unpack('IIIIIfII', prev_rec)
 
                     close_price = close / 100.0
                     prev_price = prev_close / 100.0
-
-                    if trade_date:
-                        dt_int = struct.unpack('I', last_rec[:4])[0]
-                        dt_str = str(dt_int)
-                        bar_date = date(int(dt_str[:4]), int(dt_str[4:6]), int(dt_str[6:8]))
-                        if bar_date != trade_date:
-                            continue
+                    open_price = open_i / 100.0
 
                     scanned += 1
 
@@ -257,6 +305,18 @@ class TdxReader:
                     else:
                         flat += 1
 
+                    # 开盘口径：高开=open>昨收，低开=open<昨收
+                    if prev_price > 0 and open_price > 0:
+                        open_pct = (open_price - prev_price) / prev_price * 100
+                        if open_pct > 0:
+                            open_up += 1
+                        elif open_pct < 0:
+                            open_down += 1
+                        else:
+                            open_flat += 1
+                    elif prev_price > 0:
+                        open_flat += 1  # 开盘价缺失，归入平开
+
                     if change_pct >= 9.9:
                         limit_up += 1
                     elif change_pct <= -9.9:
@@ -268,6 +328,8 @@ class TdxReader:
         result = {
             'up_count': up, 'down_count': down, 'flat_count': flat,
             'limit_up_count': limit_up, 'limit_down_count': limit_down,
+            'open_up_count': open_up, 'open_down_count': open_down,
+            'open_flat_count': open_flat,
             'scanned': scanned,
             'avg_change_pct': round(chg_sum / scanned, 2) if scanned else 0.0,
         }

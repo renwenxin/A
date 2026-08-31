@@ -539,6 +539,21 @@ table a:hover { text-decoration: underline; }
 .opinion-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-13); }
 .op-agent { font-weight: 600; min-width: 90px; color: var(--ink-2); }
 
+/* 个股 F10 档案 + 分析 */
+.f10-dim { border-bottom: 1px dashed var(--line); padding: 8px 0; }
+.f10-dim:last-child { border-bottom: none; }
+.f10-dim-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.f10-dim-level { font-size: 14px; }
+.f10-dim-verdict { font-size: 13px; color: var(--ink-2); }
+.f10-dim-points { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; }
+.f10-dim-pt { font-size: 12px; color: var(--ink-2); }
+.f10-dim-pt label { color: var(--muted); margin-right: 4px; }
+.f10-dim-pt b { color: var(--ink); }
+.f10-dim-pt em { color: #888; margin-left: 4px; font-style: normal; }
+.f10-seat { font-size: 11px; padding: 1px 5px; border-radius: 4px; margin-right: 4px; }
+.f10-seat.inst { background: #ede9fe; color: #7c3aed; }
+.f10-seat.yz { background: #fef3c7; color: #b45309; }
+
 /* ================================================================
    复盘页组件
    ================================================================ */
@@ -772,3 +787,78 @@ table a:hover { text-decoration: underline; }
     font-weight: 600;
     white-space: nowrap;
 }
+
+/* ===== 共振信号页（resonance.html）===== */
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--muted); }
+
+/* 冰点判定徽标 */
+.ice-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: var(--fs-14);
+}
+.ice-badge-ice_strong { background: var(--danger-soft); color: var(--danger); }
+.ice-badge-ice { background: var(--warn-soft); color: var(--warn); }
+.ice-badge-near_ice { background: #fefce8; color: #ca8a04; }
+.ice-badge-normal { background: var(--bg-subtle); color: var(--muted); }
+
+/* 冰点判定明细行 */
+.ice-detail {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 4px 0;
+    font-size: var(--fs-13);
+    border-bottom: 1px solid var(--line);
+}
+.ice-detail:last-child { border-bottom: none; }
+.ice-detail-dim { font-weight: 600; min-width: 88px; color: var(--ink-2); }
+.ice-detail-score { font-family: var(--font-mono); font-weight: 700; min-width: 28px; }
+.ice-detail-score.up { color: var(--up); }
+.ice-detail-score.down { color: var(--down); }
+.ice-detail-reason { color: var(--muted); }
+
+/* 板块动量筛选 tab */
+.momentum-filters { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.momentum-filter {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: var(--fs-12);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+}
+.momentum-filter:hover { border-color: var(--line-strong); }
+.momentum-filter.active {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+}
+
+/* 板块动量类型徽标 */
+.momentum-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 5px;
+    font-size: var(--fs-11);
+    font-weight: 700;
+    white-space: nowrap;
+}
+.momentum-badge-surge { background: var(--up-soft); color: var(--up); }
+.momentum-badge-progressive { background: var(--info-soft); color: var(--info); }
+.momentum-badge-sustained { background: #f3e8ff; color: #7c3aed; }
+.momentum-badge-declining { background: var(--warn-soft); color: var(--warn); }
+.momentum-badge-dormant { background: var(--bg-subtle); color: var(--faint); }
+.momentum-badge-insufficient { background: var(--bg-subtle); color: var(--faint); }
+.momentum-badge-normal { background: var(--bg-subtle); color: var(--ink-2); }
+
+/* 涨停序列紧凑数字串 */
+.zt-seq { font-size: var(--fs-12); letter-spacing: 0.5px; }
+.zt-sep { color: var(--faint); }
+

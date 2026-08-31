@@ -52,3 +52,20 @@ def hit_for(pred_type: str, direction: Optional[str], actual: Optional[str]) -> 
     if not direction:
         return None
     return 1 if direction == actual else 0
+
+
+def hit_for_auction_verdict(verdict: str, actual: Optional[str]) -> Optional[int]:
+    """竞价判断命中：抢筹/达标看涨、观望看跌。无法判定返回 None。
+
+    抢筹 = 强信号 → 需涨停/涨≥3%；达标 = 可参与 → 收涨即可；
+    观望 = 规避 → 不涨（震荡/大跌）才算规避正确。
+    """
+    if not actual:
+        return None
+    if verdict == '抢筹':
+        return 1 if actual in ('zt', 'up3') else 0
+    if verdict == '达标':
+        return 1 if actual in ('up', 'up3', 'zt') else 0
+    if verdict == '观望':
+        return 1 if actual in ('flat', 'down') else 0
+    return None
