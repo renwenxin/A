@@ -4,7 +4,17 @@
     <div class="page-breadcrumb">
         <span>数据查询</span><span class="sep">›</span><span class="current">个股详情</span>
     </div>
-    <div class="page-date">📅 <strong>{{ code }}</strong></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="page-date">📅 <strong>{{ code }}</strong></div>
+        <form onsubmit="jumpStock(event, this)" style="display:flex;gap:6px;align-items:center;">
+            <input type="text" name="code" value="{{ code }}" placeholder="输入6位代码切换个股"
+                   pattern="\d{6}" maxlength="6" inputmode="numeric" autocomplete="off"
+                   style="width:170px;padding:5px 8px;font-size:12px;
+                          border:1px solid var(--line-strong,#d0d5dd);border-radius:6px;
+                          background:var(--surface,#fff);color:var(--ink-2,#444);">
+            <button type="submit" class="btn btn-primary btn-sm">切换</button>
+        </form>
+    </div>
 </div>
 <div class="content-area">
 
@@ -261,6 +271,20 @@
 
 </div>
 
+<!-- ====== F10 个股档案 + 个股分析 ====== -->
+<div class="stock-card" style="margin-top:20px">
+    <h3>📋 F10 个股档案 + 个股分析
+        <span class="card-badge">东财F10</span>
+        <button onclick="loadF10('{{ code }}', true)"
+                class="btn btn-sm" style="float:right;margin-right:6px">刷新F10</button>
+        <button onclick="loadF10('{{ code }}', false)"
+                class="btn btn-sm btn-primary" style="float:right">分析</button>
+    </h3>
+    <div id="f10-analysis">
+        <p style="color:#888;">正在加载 F10 档案（首次几秒，当天之后秒开）…</p>
+    </div>
+</div>
+
 <div class="back-link">
     <a href="javascript:history.back()">← 返回</a>
 </div>
@@ -325,6 +349,261 @@ function loadAIOpinions(code) {
 
     el.innerHTML = html;
 }
+
+/* ── F10 档案渲染 ── */
+
+function yi(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    var n = Number(v);
+    if (isNaN(n)) return esc(String(v));
+    var abs = Math.abs(n);
+    if (abs >= 1e8) return (n / 1e8).toFixed(2) + '亿';
+    if (abs >= 1e4) return (n / 1e4).toFixed(0) + '万';
+    return n.toFixed(0);
+}
+function pct1(v, signed) {
+    if (v === null || v === undefined) return '—';
+    var n = Number(v);
+    return (signed && n > 0 ? '+' : '') + n.toFixed(1) + '%';
+}
+function numOr() {
+    for (var i = 0; i < arguments.length; i++) {
+        if (arguments[i] != null) return Number(arguments[i]);
+    }
+    return null;
+}
+function mItem(label, value, note) {
+    return '<div class="metric-item"><div class="metric-label">' + esc(label) +
+        '</div><div class="metric-value">' + value + '</div>' +
+        (note ? '<div style="font-size:11px;color:#888;">' + esc(note) + '</div>' : '') + '</div>';
+}
+function seatTag(name) {
+    name = name || '';
+    if (/机构专用|沪股通|深股通|北向|港股通/.test(name)) {
+        return '<span class="f10-seat inst">机构</span>';
+    }
+    return '<span class="f10-seat yz">游资</span>';
+}
+function renderBizGroup(title, items) {
+    if (!items || !items.length) return '';
+    var h = '<h4 style="font-size:13px;color:#7c3aed;margin:8px 0 4px;">' + title + '</h4>' +
+        '<div class="bar-table-wrap"><table class="bar-table">' +
+        '<tr><th>项目</th><th>收入占比</th><th>毛利率</th></tr>';
+    items.slice(0, 4).forEach(function (it) {
+        h += '<tr><td>' + esc(it.item) + '</td><td>' +
+            (it.income_ratio != null ? it.income_ratio.toFixed(1) + '%' : '—') +
+            '</td><td>' + (it.gross_margin != null ? it.gross_margin.toFixed(1) + '%' : '—') +
+            '</td></tr>';
+    });
+    return h + '</table></div>';
+}
+function dimVerdict(a, key) {
+    var dm = null;
+    (a.dims || []).forEach(function (d) { if (d.key === key) dm = d; });
+    if (!dm) return '';
+    return '<div class="risk-note" style="margin-top:8px;">' + (dm.level || '🟡') +
+        ' ' + esc(dm.verdict || '') + '</div>';
+}
+
+function renderF10(el, data) {
+    var f10 = data.f10 || {};
+    var a = data.analysis || {};
+    var ctx = data.ctx || {};
+    var parts = [];
+
+    parts.push('<div style="font-size:12px;color:#888;margin-bottom:12px;">数据源：东财 F10 公开接口 · 抓取 ' +
+        esc(data.fetched_at || '—') + '（每代码每天最多抓 1 次）</div>');
+
+    /* 估值快照 */
+    var v = f10.valuation || {};
+    parts.push('<div class="stock-card"><h3>📐 估值快照 <span class="card-badge">实时</span></h3><div class="metric-grid">');
+    parts.push(mItem('东财行业', esc(v.board_name || '—')));
+    parts.push(mItem('总市值', yi(v.total_mv)));
+    parts.push(mItem('流通市值', yi(v.float_mv)));
+    parts.push(mItem('PE(TTM)', v.pe_ttm != null ? Number(v.pe_ttm).toFixed(1) : '—',
+        v.pe_ttm != null && v.pe_ttm < 0 ? '亏损' : ''));
+    parts.push(mItem('PB', v.pb != null ? Number(v.pb).toFixed(2) : '—'));
+    parts.push(mItem('PS(TTM)', v.ps_ttm != null ? Number(v.ps_ttm).toFixed(2) : '—'));
+    parts.push(mItem('总股本', v.total_shares != null ? (v.total_shares / 1e8).toFixed(2) + '亿股' : '—'));
+    parts.push(mItem('流通股本', v.float_shares != null ? (v.float_shares / 1e8).toFixed(2) + '亿股' : '—'));
+    parts.push('</div></div>');
+
+    /* 三列：主营 / 财务 / 股东 */
+    parts.push('<div class="stock-dashboard">');
+
+    // ① 主营业务 + 产品结构
+    parts.push('<div class="stock-col"><div class="stock-card"><h3>① 主营业务 + 产品结构</h3>');
+    var biz = f10.business;
+    if (biz) {
+        parts.push(renderBizGroup('按行业', biz.by_industry));
+        parts.push(renderBizGroup('按产品', biz.by_product));
+        parts.push(renderBizGroup('按地区', biz.by_region));
+        if (biz.scope) parts.push('<p class="empty-hint" style="margin-top:6px;">' + esc(biz.scope.slice(0, 60)) + '…</p>');
+    } else {
+        parts.push('<p class="empty-hint">主营数据不足</p>');
+    }
+    parts.push('</div></div>');
+
+    // ② 财务三大表
+    parts.push('<div class="stock-col"><div class="stock-card"><h3>② 财务三大表 <span class="card-badge">' + esc((f10.financial || {}).report_date || '') + '</span></h3>');
+    var fin = f10.financial;
+    if (fin && fin.lrb && Object.keys(fin.lrb).length) {
+        var lrb = fin.lrb, zcf = fin.zcfzb || {}, xj = fin.xjllb || {};
+        var income = numOr(lrb.OPERATE_INCOME, lrb.TOTAL_OPERATE_INCOME);
+        var gm = (income && lrb.OPERATE_COST) ? (income - lrb.OPERATE_COST) / income * 100 : null;
+        var dr = (zcf.TOTAL_ASSETS && zcf.TOTAL_LIABILITIES) ? zcf.TOTAL_LIABILITIES / zcf.TOTAL_ASSETS * 100 : null;
+        parts.push('<h4 style="font-size:13px;color:#7c3aed;margin:8px 0 4px;">利润表</h4><div class="metric-grid">');
+        parts.push(mItem('营业收入', yi(income)));
+        parts.push(mItem('毛利率', gm != null ? gm.toFixed(1) + '%' : '—'));
+        parts.push(mItem('归母净利', yi(lrb.PARENT_NETPROFIT)));
+        parts.push(mItem('扣非净利', yi(lrb.DEDUCT_PARENT_NETPROFIT)));
+        parts.push(mItem('营收同比', pct1(lrb.TOTAL_OPERATE_INCOME_YOY, true)));
+        parts.push(mItem('净利同比', pct1(lrb.PARENT_NETPROFIT_YOY, true)));
+        parts.push('</div>');
+        parts.push('<h4 style="font-size:13px;color:#7c3aed;margin:8px 0 4px;">资产负债表</h4><div class="metric-grid">');
+        parts.push(mItem('货币资金', yi(zcf.MONETARYFUNDS)));
+        parts.push(mItem('应收账款', yi(zcf.ACCOUNTS_RECE)));
+        parts.push(mItem('存货', yi(zcf.INVENTORY)));
+        parts.push(mItem('商誉', yi(zcf.GOODWILL)));
+        parts.push(mItem('总资产', yi(zcf.TOTAL_ASSETS)));
+        parts.push(mItem('总负债', yi(zcf.TOTAL_LIABILITIES)));
+        parts.push(mItem('资产负债率', dr != null ? dr.toFixed(1) + '%' : '—'));
+        parts.push(mItem('归母净资产', yi(zcf.TOTAL_PARENT_EQUITY)));
+        parts.push('</div>');
+        parts.push('<h4 style="font-size:13px;color:#7c3aed;margin:8px 0 4px;">现金流量表</h4><div class="metric-grid">');
+        parts.push(mItem('经营现金流', yi(xj.NETCASH_OPERATE)));
+        parts.push(mItem('投资现金流', yi(xj.NETCASH_INVEST)));
+        parts.push(mItem('筹资现金流', yi(xj.NETCASH_FINANCE)));
+        parts.push('</div>');
+        parts.push(dimVerdict(a, 'financial_health'));
+    } else {
+        parts.push('<p class="empty-hint">财务数据不足</p>');
+    }
+    parts.push('</div></div>');
+
+    // ⑤ 股东结构
+    parts.push('<div class="stock-col"><div class="stock-card"><h3>⑤ 股东结构</h3>');
+    var sh = f10.shareholders;
+    if (sh) {
+        parts.push('<div class="metric-grid">');
+        parts.push(mItem('实控人', esc(sh.controller || '—'),
+            sh.controller && /国有资产|人民政府|国资委/.test(sh.controller) ? '国资背景' : ''));
+        parts.push(mItem('股东户数', sh.holders != null ? Number(sh.holders).toLocaleString() : '—'));
+        parts.push(mItem('户数环比', pct1(sh.holders_change_pct, true)));
+        parts.push(mItem('集中度', esc(sh.hold_focus || '—')));
+        parts.push(mItem('前十大占比', sh.top10_ratio != null ? sh.top10_ratio.toFixed(1) + '%' : '—'));
+        parts.push(mItem('机构持仓', sh.inst_ratio != null ? sh.inst_ratio.toFixed(1) + '%' + (sh.inst_count ? ' (' + sh.inst_count + '家)' : '') : '—'));
+        parts.push('</div>');
+        if (sh.top10 && sh.top10.length) {
+            parts.push('<div class="bar-table-wrap" style="margin-top:8px;"><table class="bar-table">');
+            parts.push('<tr><th>前十大股东</th><th>持股%</th><th>变动</th></tr>');
+            sh.top10.slice(0, 6).forEach(function (t) {
+                parts.push('<tr><td>' + esc(t.name) + '</td><td>' +
+                    (t.ratio != null ? t.ratio.toFixed(1) : '—') + '</td><td>' +
+                    esc(t.change || '—') + '</td></tr>');
+            });
+            parts.push('</table></div>');
+        }
+        parts.push(dimVerdict(a, 'chip_structure'));
+    } else {
+        parts.push('<p class="empty-hint">股东数据不足</p>');
+    }
+    parts.push('</div></div>');
+
+    // ④ 涨停逻辑
+    parts.push('<div class="stock-col"><div class="stock-card"><h3>④ 涨停逻辑 / 异动原因</h3>');
+    var li = ctx.limit_info;
+    parts.push('<div class="metric-grid">');
+    if (li) {
+        parts.push(mItem('今日状态', '涨停 ' + li.consecutive + '连板'));
+        if (li.limit_up_time) parts.push(mItem('涨停时间', esc(String(li.limit_up_time))));
+        if (li.seal_amount) parts.push(mItem('封单', yi(li.seal_amount * 1e4)));
+        if (li.turnover_yi) parts.push(mItem('换手额', esc(String(li.turnover_yi)) + ' 亿'));
+        if (li.seal_pressure != null) parts.push(mItem('封成比', Number(li.seal_pressure).toFixed(1) + '%'));
+    } else {
+        parts.push(mItem('今日状态', '未涨停'));
+    }
+    parts.push(mItem('所属题材', esc((ctx.board_names || []).join('、') || '—')));
+    parts.push('</div>');
+    parts.push(dimVerdict(a, 'up_reason'));
+    parts.push('</div></div>');
+
+    // ③ 龙虎榜
+    parts.push('<div class="stock-col"><div class="stock-card"><h3>③ 龙虎榜</h3>');
+    var lhb = f10.lhb;
+    if (lhb && lhb.records && lhb.records.length) {
+        parts.push('<div class="bar-table-wrap"><table class="bar-table">');
+        parts.push('<tr><th>日期</th><th>原因</th><th>净买额</th><th>上榜后5日</th></tr>');
+        lhb.records.slice(0, 3).forEach(function (r) {
+            parts.push('<tr><td>' + esc(r.date) + '</td><td>' + esc((r.reason || '').slice(0, 16)) +
+                '</td><td>' + yi(r.net_amt) + '</td><td>' + (r.d5 != null ? pct1(r.d5, true) : '—') + '</td></tr>');
+        });
+        parts.push('</table></div>');
+        var buy = lhb.seats_buy || [], sell = lhb.seats_sell || [];
+        if (buy.length) {
+            parts.push('<div style="margin-top:8px;font-size:12px;color:#c2410c;"><strong>买方席位</strong><br>' +
+                buy.slice(0, 4).map(function (s) {
+                    return seatTag(s.name) + ' ' + esc(s.name.slice(0, 16)) + ' ' + yi(s.buy);
+                }).join('<br>') + '</div>');
+        }
+        if (sell.length) {
+            parts.push('<div style="margin-top:6px;font-size:12px;color:#555;"><strong>卖方席位</strong><br>' +
+                sell.slice(0, 4).map(function (s) {
+                    return seatTag(s.name) + ' ' + esc(s.name.slice(0, 16)) + ' ' + yi(s.sell);
+                }).join('<br>') + '</div>');
+        }
+        parts.push(dimVerdict(a, 'capital_profile'));
+    } else {
+        parts.push('<p class="empty-hint">近期未上榜龙虎榜</p>');
+        parts.push(dimVerdict(a, 'capital_profile'));
+    }
+    parts.push('</div></div>');
+
+    parts.push('</div>'); // close stock-dashboard
+
+    /* 个股分析：9 维度 + 总结 */
+    parts.push('<div class="stock-card" style="margin-top:20px"><h3>🧭 个股分析 <span class="card-badge">确定性规则</span></h3>');
+    (a.dims || []).forEach(function (dm) {
+        parts.push('<div class="f10-dim">');
+        parts.push('<div class="f10-dim-head"><span class="f10-dim-level">' + (dm.level || '🟡') +
+            '</span><strong>' + esc(dm.title) + '</strong>' +
+            '<span class="f10-dim-verdict">' + esc(dm.verdict || '') + '</span></div>');
+        if (dm.points && dm.points.length) {
+            parts.push('<div class="f10-dim-points">');
+            dm.points.forEach(function (p) {
+                parts.push('<span class="f10-dim-pt"><label>' + esc(p.label) + '</label><b>' +
+                    esc(p.value) + '</b>' + (p.note ? '<em>' + esc(p.note) + '</em>' : '') + '</span>');
+            });
+            parts.push('</div>');
+        }
+        parts.push('</div>');
+    });
+    parts.push('<div class="strategy-tip" style="margin-top:12px;line-height:1.9;">' + esc(a.summary || '') + '</div>');
+    parts.push('</div>');
+
+    el.innerHTML = parts.join('');
+}
+
+function loadF10(code, refresh) {
+    var el = document.getElementById('f10-analysis');
+    if (!el) return;
+    el.innerHTML = '<p style="color:#888;">加载 F10 档案' + (refresh ? '（强制刷新中…）' : '…') + '</p>';
+    fetch('/api/stock/f10/' + code + (refresh ? '?refresh=1' : ''))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (!d.success) {
+                el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>' +
+                    esc(d.error || 'F10 加载失败') + '</div>';
+                return;
+            }
+            renderF10(el, d.data);
+        })
+        .catch(function (e) {
+            el.innerHTML = '<div class="error-box"><span class="error-icon">!</span>请求失败：' + esc(e.message) + '</div>';
+        });
+}
+
+loadF10('{{ code }}', false);
 </script>
 
 {% endif %}
