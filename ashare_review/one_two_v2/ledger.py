@@ -37,6 +37,14 @@ class Ledger:
         conn.row_factory = sqlite3.Row
         return conn
 
+    def _row_to_dict(self, row) -> dict:
+        d = dict(row)
+        try:
+            d['dimensions'] = json.loads(d.get('dimensions') or '{}')
+        except Exception:
+            d['dimensions'] = {}
+        return d
+
     def _init(self) -> None:
         conn = self._conn()
         try:
@@ -76,7 +84,7 @@ class Ledger:
         try:
             row = conn.execute(
                 "SELECT * FROM picks WHERE pick_date=? AND code=?", (pick_date, code)).fetchone()
-            return dict(row) if row else None
+            return self._row_to_dict(row) if row else None
         finally:
             conn.close()
 
@@ -98,7 +106,17 @@ class Ledger:
             else:
                 rows = conn.execute(
                     "SELECT * FROM picks ORDER BY pick_date DESC, score DESC LIMIT 30").fetchall()
-            return [dict(r) for r in rows]
+            return [self._row_to_dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def clear_day(self, pick_date: str) -> int:
+        """删除指定日期的全部精选（重跑盘后精选时覆盖当日，保证当日=最新一批）。"""
+        conn = self._conn()
+        try:
+            cur = conn.execute("DELETE FROM picks WHERE pick_date=?", (pick_date,))
+            conn.commit()
+            return cur.rowcount
         finally:
             conn.close()
 

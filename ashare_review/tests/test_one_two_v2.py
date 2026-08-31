@@ -341,3 +341,39 @@ def test_build_pick_context_fills_volume():
     ctx = build_pick_context(pool, tdx=tdx, trade_date='20260831')
     assert ctx['scored']['600001']['today_vol'] == 800
     assert ctx['scored']['600001']['prev_high_vol'] > 0
+
+# ---------- 修复：dimensions 解析 + 当日覆盖 ----------
+
+def test_ledger_list_parses_dimensions(tmp_path):
+    from ashare_review.one_two_v2.ledger import Ledger
+    l = Ledger(str(tmp_path / 't.db'))
+    l.record_pick('20260831', '600001', 'A', 55.0,
+                  {'quality': {'score': 20, 'reason': 'x'}}, 'auction')
+    rows = l.list_picks('20260831')
+    assert isinstance(rows[0]['dimensions'], dict)
+    assert rows[0]['dimensions']['quality']['score'] == 20
+
+
+def test_ledger_clear_day(tmp_path):
+    from ashare_review.one_two_v2.ledger import Ledger
+    l = Ledger(str(tmp_path / 't.db'))
+    l.record_pick('20260831', '600001', 'A', 50.0, {}, 'auction')
+    l.record_pick('20260831', '600002', 'B', 45.0, {}, 'graph')
+    l.record_pick('20260830', '600003', 'C', 40.0, {}, 'auction')
+    assert l.clear_day('20260831') == 2
+    assert len(l.list_picks('20260831')) == 0
+    assert len(l.list_picks('20260830')) == 1   # 其他日期不受影响
+
+
+def test_run_picks_overwrites_day(tmp_path, monkeypatch):
+    """同日重跑盘后精选 → 当日记录被覆盖为最新一批（≤top_n）"""
+    from ashare_review.one_two_v2 import service as svc
+    from ashare_review.one_two_v2.ledger import Ledger
+    monkeypatch.setattr(svc, 'LEDGER_DB', str(tmp_path / 't.db'))
+    pool1 = [_lu(code='600001', t='09:40', seal_amt=6000, turnover=8000, cap=40.0)]
+    pool2 = [_lu(code='600002', t='10:00', seal_amt=3000, turnover=8000, cap=60.0)]
+    svc.run_picks(pool1, trade_date='20260831')
+    svc.run_picks(pool2, trade_date='20260831')
+    l = Ledger(str(tmp_path / 't.db'))
+    rows = l.list_picks('20260831')
+    assert len(rows) == 1 and rows[0]['code'] == '600002'   # 最新一批覆盖

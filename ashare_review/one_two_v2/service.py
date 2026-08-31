@@ -190,6 +190,7 @@ def run_picks(pool: List, weights: Optional[dict] = None,
     picks_out.sort(key=lambda x: x['score'], reverse=True)
     picks_out = picks_out[:top_n]
     if ledger:
+        ledger.clear_day(td)   # 覆盖当日，保证今日精选=最新一批
         for p in picks_out:
             ledger.record_pick(td, p['code'], p['name'], p['score'],
                                p['dimensions'], p['tactic'], mcap=p.get('mcap'))
