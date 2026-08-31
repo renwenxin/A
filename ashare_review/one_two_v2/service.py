@@ -27,16 +27,43 @@ def _today() -> str:
     return date.today().strftime('%Y%m%d')
 
 
+def _volume_health_data(tdx, code: str, trade_date: str,
+                        lookback: int = 60) -> tuple:
+    """TDX 日线算量能：今日成交量 + 前 lookback 日最高成交量。返回 (today_vol, prev_high_vol)。"""
+    from datetime import datetime
+    market = 'bj' if code.startswith(('8', '4', '92')) else ('sh' if code.startswith('6') else 'sz')
+    try:
+        df = tdx.read_daily(code, market)
+        if df is None or df.empty or 'volume' not in df.columns:
+            return 0, 0
+        df = df.reset_index(drop=True)
+        target = datetime.strptime(trade_date, '%Y%m%d').date()
+        pos = None
+        for i in range(len(df) - 1, -1, -1):
+            if df['trade_date'].iloc[i] <= target:
+                pos = i
+                break
+        if pos is None:
+            return 0, 0
+        today_vol = float(df.iloc[pos]['volume'] or 0)
+        start = max(0, pos - lookback)
+        prev_high = float(df['volume'].iloc[start:pos].max()) if pos > start else 0
+        return today_vol, prev_high
+    except Exception:
+        return 0, 0
+
+
 def build_pick_context(pool: List, tdx=None, calendar=None,
                        concept_map: Optional[dict] = None,
-                       state_df=None) -> Dict:
-    """组装 8 维打分所需上下文（板块聚合/高能量梯队/情绪趋势/概念叠加/地位）。
+                       state_df=None, trade_date: Optional[str] = None) -> Dict:
+    """组装 8 维打分所需上下文（板块聚合/高能量梯队/情绪趋势/量能/概念叠加/地位）。
 
     返回 {"scored": {code: {sector, zt_trend, ladder_at_2, ladder_at_3,
                             today_vol, prev_high_vol, concept_count, upper_same_theme}}}
     """
     calendar = calendar or TradingCalendar()
     concept_map = concept_map or {}
+    td = trade_date or _today()
     sector = {}
     for lu in pool or []:
         ind = str(getattr(lu, 'board_type', '') or '未知')
@@ -79,12 +106,15 @@ def build_pick_context(pool: List, tdx=None, calendar=None,
     for lu in pool or []:
         code = str(lu.code)
         ind = str(getattr(lu, 'board_type', '') or '未知')
+        tv, pv = 0, 0
+        if tdx is not None:
+            tv, pv = _volume_health_data(tdx, code, td)
         scored[code] = {
             'sector': sector.get(ind, {}),
             'zt_trend': zt_trend,
             'ladder_at_2': ladder_at_2,
             'ladder_at_3': ladder_at_3,
-            'today_vol': 0, 'prev_high_vol': 0,
+            'today_vol': tv, 'prev_high_vol': pv,
             'concept_count': len(code_to_concepts.get(code, [])),
             'upper_same_theme': bool(set(code_to_concepts.get(code, [])) & upper_concepts),
         }
@@ -139,11 +169,14 @@ def _verify_one(row) -> tuple:
 
 def run_picks(pool: List, weights: Optional[dict] = None,
               ctx: Optional[dict] = None, trade_date: Optional[str] = None,
-              top_n: int = 8, ledger: Optional[Ledger] = None) -> Dict:
-    """盘后精选：过滤候选 → 8 维打分 → 落库。返回 {total, picks, date}"""
+              top_n: int = 8, ledger: Optional[Ledger] = None, tdx=None) -> Dict:
+    """盘后精选：过滤候选 → 组装上下文 → 8 维打分 → 落库。返回 {total, picks, date}"""
     weights = weights or default_weights()
     ledger = ledger or Ledger(LEDGER_DB)
     td = trade_date or _today()
+    if ctx is None:
+        from ..data.tdx_reader import TdxReader
+        ctx = build_pick_context(pool, tdx=tdx or TdxReader(), trade_date=td)
     cands = picks_mod.filter_candidates(pool or [])
     picks_out = []
     for c in cands[:50]:
@@ -192,7 +225,6 @@ def start_job(kind: str, params: dict) -> str:
                 JOBS[job_id]['progress'] = '运行中…'
             if kind == 'picks':
                 from ..data.akshare_fetcher import AkshareFetcher
-                from ..utils.cache import CACHE_DIR  # noqa
                 pool = AkshareFetcher().get_limit_up_pool()
                 r = run_picks(pool, trade_date=params.get('trade_date') or None)
                 with _JOBS_LOCK:

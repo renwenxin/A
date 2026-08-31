@@ -295,3 +295,49 @@ def test_one_two_page_and_api(tmp_path, monkeypatch):
     assert rv5.status_code == 200
     rv6 = c.get('/api/one_two/picks')
     assert rv6.status_code == 200
+
+# ---------- Task 8b: 量能前高量真实计算 ----------
+
+class FakeTdxVol:
+    """可控日线（含 volume）：code -> [(YYYYMMDD, volume), ...]"""
+    def __init__(self, data):
+        self.data = data
+
+    def read_daily(self, code, market):
+        import pandas as pd
+        from datetime import datetime
+        bars = self.data.get(str(code))
+        if not bars:
+            return pd.DataFrame()
+        rows = [{'trade_date': datetime.strptime(d, '%Y%m%d').date(),
+                 'open': 10.0, 'close': 10.0, 'volume': v} for d, v in bars]
+        return pd.DataFrame(rows).sort_values('trade_date').reset_index(drop=True)
+
+
+def test_volume_health_data():
+    from ashare_review.one_two_v2.service import _volume_health_data
+    # 60 根：前 59 根最高 1000，第 60 根(选股日) 800
+    bars = [(f'2026060{i}', 100 + i * 5) for i in range(1, 10)] +            [(f'202606{i:02d}', 200) for i in range(10, 20)] +            [(f'202606{i:02d}', 1000) for i in range(20, 30)] +            [(f'202607{i:02d}', 300) for i in range(1, 10)] +            [(f'202607{i:02d}', 250) for i in range(10, 20)] +            [(f'202607{i:02d}', 900) for i in range(20, 30)] +            [(f'202608{i:02d}', 400) for i in range(1, 10)] +            [('20260831', 800)]
+    tdx = FakeTdxVol({'600001': bars})
+    today_vol, prev_high = _volume_health_data(tdx, '600001', '20260831')
+    assert today_vol == 800
+    assert prev_high == 1000    # 前 60 日最高
+
+
+def test_volume_health_no_tdx_data():
+    from ashare_review.one_two_v2.service import _volume_health_data
+    tdx = FakeTdxVol({})
+    assert _volume_health_data(tdx, '600001', '20260831') == (0, 0)
+
+
+def test_build_pick_context_fills_volume():
+    from ashare_review.one_two_v2.service import build_pick_context
+    bars = [(f'202606{i:02d}', 100 + i) for i in range(1, 30)] +            [(f'202607{i:02d}', 200 + i) for i in range(1, 30)] +            [('20260831', 800)]
+    tdx = FakeTdxVol({'600001': bars, '600002': bars})
+    pool = [
+        _lu(code='600001', t='09:40', board='半导体'),
+        _lu(code='600002', cons=2, t='09:25', board='半导体'),
+    ]
+    ctx = build_pick_context(pool, tdx=tdx, trade_date='20260831')
+    assert ctx['scored']['600001']['today_vol'] == 800
+    assert ctx['scored']['600001']['prev_high_vol'] > 0
