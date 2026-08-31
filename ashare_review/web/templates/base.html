@@ -40,6 +40,10 @@
                 <span class="nav-label">多策略选股</span>
                 <span class="nav-badge">盘前</span>
             </a>
+            <a href="/one_two_picks" class="nav-item {% if request.endpoint == 'one_two_picks' %}active{% endif %}">
+                <span class="nav-icon">🧩</span>
+                <span class="nav-label">今日1进2</span>
+            </a>
             <a href="/auction_analysis" class="nav-item {% if request.endpoint == 'auction_analysis' %}active{% endif %}">
                 <span class="nav-icon">🔔</span>
                 <span class="nav-label">竞价分析</span>
@@ -60,6 +64,10 @@
                 <span class="nav-icon">📝</span>
                 <span class="nav-label">复盘分析</span>
             </a>
+            <a href="/resonance" class="nav-item {% if request.endpoint == 'resonance' %}active{% endif %}">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-label">共振信号</span>
+            </a>
             <a href="/regime_picks" class="nav-item {% if request.endpoint == 'regime_picks' %}active{% endif %}">
                 <span class="nav-icon">🎯</span>
                 <span class="nav-label">行情诊断</span>
@@ -79,10 +87,6 @@
             <a href="/strategy_bench" class="nav-item {% if request.endpoint == 'strategy_bench' %}active{% endif %}">
                 <span class="nav-icon">🧪</span>
                 <span class="nav-label">策略验证台</span>
-            </a>
-            <a href="/stock/000001" class="nav-item {% if request.endpoint == 'stock_detail' %}active{% endif %}">
-                <span class="nav-icon">📈</span>
-                <span class="nav-label">个股分析</span>
             </a>
         </nav>
 
@@ -128,6 +132,25 @@
             a.addEventListener('click', closeNav);
         });
     })();
+    </script>
+
+    <script>
+    // 个股代码跳转：任意页面输入 6 位代码 → /stock/<code>
+    function jumpStock(e, src) {
+        if (e && e.preventDefault) e.preventDefault();
+        var input = src;
+        if (src && src.querySelector) {
+            input = src.querySelector('input[name="code"]') || src.querySelector('input');
+        }
+        var code = (input ? input.value || '' : '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            alert('请输入 6 位数字股票代码');
+            if (input) { input.focus(); input.select(); }
+            return false;
+        }
+        window.location.href = '/stock/' + code;
+        return false;
+    }
     </script>
 </body>
 </html>

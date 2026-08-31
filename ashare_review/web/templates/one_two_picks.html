@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}今日1进2 · 竞价交易系统{% endblock %}
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <div>
+            <div class="page-title">🧩 今日1进2</div>
+            <div class="page-date">盘后精选（视频方法论 8 维）→ 次日竞价确认 → 实盘结果校准</div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">📋 今日精选 <span class="card-badge">{{ today_picks|length }} 只</span></div>
+        <div class="card-body no-padding">
+            <div class="table-wrap">
+                <table class="sector-table">
+                    <tr><th>代码</th><th>名称</th><th>总分</th><th>战法</th></tr>
+                    {% for p in today_picks %}
+                    <tr><td>{{ p.code }}</td><td>{{ p.name }}</td><td><strong>{{ p.score }}</strong></td>
+                        <td>{{ {'auction':'竞价爆量','graph':'图形突破','weak_strong':'弱转强'}.get(p.tactic, p.tactic) }}</td></tr>
+                    {% endfor %}
+                    {% if not today_picks %}
+                    <tr><td colspan="4" style="color:#888;text-align:center;">暂无精选</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

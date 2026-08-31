@@ -269,3 +269,29 @@ def test_build_pick_context():
     assert s1['concept_count'] == 1
     assert s1['upper_same_theme'] is True
     assert s1['ladder_at_2'] is True or s1['ladder_at_3'] is True
+
+# ---------- Task 6: Web API ----------
+
+def test_one_two_page_and_api(tmp_path, monkeypatch):
+    from ashare_review.one_two_v2 import service as svc
+    from ashare_review.one_two_v2 import weights as wmod
+    from ashare_review.web.app import app
+    monkeypatch.setattr(svc, 'LEDGER_DB', str(tmp_path / 't.db'))
+    monkeypatch.setattr(wmod, '_WEIGHTS_PATH', str(tmp_path / 'w.json'))
+    app.config['TESTING'] = True
+    c = app.test_client()
+    rv = c.get('/one_two_picks')
+    assert rv.status_code == 200
+    body = rv.data.decode('utf-8')
+    assert '今日1进2' in body
+    rv2 = c.get('/api/one_two/weights')
+    assert rv2.status_code == 200
+    assert rv2.get_json()['dimensions']['quality'] == 30
+    rv3 = c.post('/api/one_two/weights', json={'dimensions': {'quality': 40}})
+    assert rv3.status_code == 200
+    rv4 = c.post('/api/one_two/weights', json={'dimensions': {'quality': 99}})
+    assert rv4.status_code == 400
+    rv5 = c.get('/api/one_two/ledger/stats')
+    assert rv5.status_code == 200
+    rv6 = c.get('/api/one_two/picks')
+    assert rv6.status_code == 200
