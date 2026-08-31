@@ -203,3 +203,69 @@ def test_ledger_pending_verification(tmp_path):
     pending = l.get_pending()
     assert len(pending) == 2
     assert pending[0]['pick_date'] == '20260830'
+
+# ---------- Task 5: 编排 ----------
+
+def _ws():
+    from ashare_review.one_two_v2.weights import DEFAULT_WEIGHTS
+    return DEFAULT_WEIGHTS
+
+
+def test_run_picks(tmp_path, monkeypatch):
+    from ashare_review.one_two_v2 import service as svc
+    from ashare_review.one_two_v2.ledger import Ledger
+    monkeypatch.setattr(svc, 'LEDGER_DB', str(tmp_path / 't.db'))
+    result = svc.run_picks(
+        pool=[_lu(code='600001', t='09:40', seal_amt=6000, turnover=8000, cap=40.0)],
+        weights=_ws(), ctx={'scored': {'600001': {'zt_trend': 'double_ice'}}},
+        trade_date='20260831')
+    assert result['total'] == 1
+    assert result['picks'][0]['code'] == '600001'
+    l = Ledger(str(tmp_path / 't.db'))
+    assert len(l.list_picks('20260831')) == 1
+
+
+def test_run_picks_empty_pool(tmp_path, monkeypatch):
+    from ashare_review.one_two_v2 import service as svc
+    monkeypatch.setattr(svc, 'LEDGER_DB', str(tmp_path / 't.db'))
+    r = svc.run_picks(pool=[], weights=_ws())
+    assert r['total'] == 0 and r['picks'] == []
+
+
+def test_verify_pending_fake(tmp_path, monkeypatch):
+    from ashare_review.one_two_v2 import service as svc
+    from ashare_review.one_two_v2.ledger import Ledger
+    monkeypatch.setattr(svc, 'LEDGER_DB', str(tmp_path / 't.db'))
+    l = Ledger(str(tmp_path / 't.db'))
+    l.record_pick('20260828', '600001', 'A', 50.0, {'quality': {'score': 10}}, 'auction')
+    n = svc.verify_pending(ledger=l, verify_fake=lambda row: ('zt', 1, None))
+    assert n == 1
+    assert l.get_pick('20260828', '600001')['hit'] == 1
+
+
+def test_grade_next_day():
+    from ashare_review.one_two_v2.service import _grade_next_day
+    assert _grade_next_day(10.0, 11.0, '600001') == ('zt', 1)
+    assert _grade_next_day(10.0, 10.3, '600001') == ('up3', 1)
+    assert _grade_next_day(10.0, 9.7, '600001') == ('flat', 0)
+    assert _grade_next_day(10.0, 9.0, '600001') == ('down', 0)
+    assert _grade_next_day(10.0, 11.8, '300001') == ('up3', 1)
+    assert _grade_next_day(10.0, 12.2, '300001') == ('zt', 1)
+
+
+def test_build_pick_context():
+    from ashare_review.one_two_v2.service import build_pick_context
+    pool = [
+        _lu(code='600001', t='09:40', board='半导体'),
+        _lu(code='600002', cons=2, t='09:25', board='半导体'),
+        _lu(code='600003', cons=3, t='09:25', board='其他'),
+    ]
+    import pandas as pd
+    state_df = pd.DataFrame({'limit_up': [80, 60, 40]})
+    concept_map = {'半导体': {'members': {'600001': 1, '600002': 1}}}
+    ctx = build_pick_context(pool, concept_map=concept_map, state_df=state_df)
+    s1 = ctx['scored']['600001']
+    assert s1['zt_trend'] == 'double_ice'
+    assert s1['concept_count'] == 1
+    assert s1['upper_same_theme'] is True
+    assert s1['ladder_at_2'] is True or s1['ladder_at_3'] is True
