@@ -7,23 +7,154 @@
             <div class="page-title">🧩 今日1进2</div>
             <div class="page-date">盘后精选（视频方法论 8 维）→ 次日竞价确认 → 实盘结果校准</div>
         </div>
+        <div>
+            <button class="btn btn-primary" onclick="runPicks()">⚡ 盘后精选</button>
+            <button class="btn btn-secondary" onclick="refreshAuction()">🔔 刷新竞价</button>
+            <button class="btn btn-secondary" onclick="openWeights()">⚙️ 权重</button>
+        </div>
     </div>
+
+    <!-- 📋 今日精选 -->
+    <div class="section-title">📋 今日精选（盘后）</div>
     <div class="card">
-        <div class="card-header">📋 今日精选 <span class="card-badge">{{ today_picks|length }} 只</span></div>
         <div class="card-body no-padding">
             <div class="table-wrap">
                 <table class="sector-table">
-                    <tr><th>代码</th><th>名称</th><th>总分</th><th>战法</th></tr>
+                    <tr><th>代码</th><th>名称</th><th>总分</th><th>战法</th><th>质量</th><th>题材</th>
+                        <th>情绪</th><th>梯队</th><th>量能</th><th>叠加</th><th>市值</th><th>地位</th></tr>
+                    <tbody>
                     {% for p in today_picks %}
-                    <tr><td>{{ p.code }}</td><td>{{ p.name }}</td><td><strong>{{ p.score }}</strong></td>
-                        <td>{{ {'auction':'竞价爆量','graph':'图形突破','weak_strong':'弱转强'}.get(p.tactic, p.tactic) }}</td></tr>
+                    <tr>
+                        <td>{{ p.code }}</td><td>{{ p.name }}</td>
+                        <td><strong>{{ p.score }}</strong></td>
+                        <td>{{ {'auction':'竞价爆量','graph':'图形突破','weak_strong':'弱转强'}.get(p.tactic, p.tactic) }}</td>
+                        {% set d = p.dimensions %}
+                        <td>{{ d.get('quality', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('theme_stage', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('emotion', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('energy_ladder', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('volume_health', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('theme_overlay', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('cap_price', {}).get('score', '—') if d is mapping else '—' }}</td>
+                        <td>{{ d.get('status', {}).get('score', '—') if d is mapping else '—' }}</td>
+                    </tr>
                     {% endfor %}
                     {% if not today_picks %}
-                    <tr><td colspan="4" style="color:#888;text-align:center;">暂无精选</td></tr>
+                    <tr><td colspan="12" style="color:#888;text-align:center;">暂无精选，点击「⚡ 盘后精选」生成</td></tr>
                     {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔔 竞价确认 -->
+    <div class="section-title">🔔 竞价确认（次日 9:25 后）</div>
+    <div class="card">
+        <div class="card-body no-padding">
+            <div class="table-wrap">
+                <table class="sector-table">
+                    <tr><th>代码</th><th>名称</th><th>战法</th><th>竞价涨幅</th><th>爆量比</th><th>信号</th></tr>
+                    <tbody id="auction-body">
+                        <tr><td colspan="6" style="color:#888;text-align:center;">点「🔔 刷新竞价」拉取数据</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📊 战绩 -->
+    <div class="section-title">📊 战绩（实盘结果校准）</div>
+    <div class="card">
+        <div class="card-body no-padding">
+            <div class="table-wrap">
+                <table class="sector-table">
+                    <tr><th>维度</th><th>正分样本/命中</th><th>正分命中率</th><th>非正分样本/命中</th><th>非正分命中率</th></tr>
+                    <tbody>
+                    {% for dim, st in stats.dimensions.items() %}
+                    <tr>
+                        <td>{{ {'quality':'质量','theme_stage':'题材阶段','emotion':'情绪周期','energy_ladder':'高能量梯队',
+                                'volume_health':'合理量能','theme_overlay':'题材叠加','cap_price':'市值票值','status':'地位'}.get(dim, dim) }}</td>
+                        <td>{{ st.pos_hit }}/{{ st.pos_total }}</td>
+                        <td>{{ '%.0f%%' % (st.pos_rate*100) if st.pos_rate is not none else '—' }}</td>
+                        <td>{{ st.neg_hit }}/{{ st.neg_total }}</td>
+                        <td>{{ '%.0f%%' % (st.neg_rate*100) if st.neg_rate is not none else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ⚙️ 权重弹窗 -->
+<div id="weights-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:99;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:20px;width:480px;max-width:92vw;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <strong>⚙️ 打分权重（保存后次日盘后生效）</strong>
+            <button class="btn btn-secondary btn-sm" onclick="closeWeights()">✕</button>
+        </div>
+        <div id="weights-form" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeWeights()">取消</button>
+            <button class="btn btn-primary" onclick="saveWeights()">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+var DIM_LABELS = {'quality':'质量','theme_stage':'题材阶段','emotion':'情绪周期','energy_ladder':'高能量梯队',
+    'volume_health':'合理量能','theme_overlay':'题材叠加','cap_price':'市值票值','status':'地位'};
+
+function runPicks() {
+    fetch('/api/one_two/picks/run', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'})
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) { alert('盘后精选已启动，3 秒后刷新'); setTimeout(function(){ location.reload(); }, 3000); } });
+}
+function refreshAuction() {
+    fetch('/api/one_two/auction/refresh', {method: 'POST'})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var body = document.getElementById('auction-body');
+            if (!d.ok) { body.innerHTML = '<tr><td colspan="6" style="color:#dc2626;">' + (d.error || '失败') + '</td></tr>'; return; }
+            if (!d.items.length) { body.innerHTML = '<tr><td colspan="6" style="color:#888;">今日无竞价数据（可能尚未到 9:25 或昨日无精选）</td></tr>'; return; }
+            body.innerHTML = '';
+            d.items.forEach(function (it) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + it.code + '</td><td>' + it.name + '</td><td>' +
+                    (DIM_LABELS[it.tactic] || it.tactic) + '</td><td>' +
+                    (it.open_change_pct !== null && it.open_change_pct !== undefined ? it.open_change_pct.toFixed(1) + '%' : '—') +
+                    '</td><td>' + it.ratio.toFixed(1) + '%</td><td>' + it.label + '</td>';
+                body.appendChild(tr);
+            });
+        });
+}
+function openWeights() {
+    fetch('/api/one_two/weights')
+        .then(function (r) { return r.json(); })
+        .then(function (w) {
+            var box = document.getElementById('weights-form');
+            box.innerHTML = '';
+            Object.keys(w.dimensions).forEach(function (k) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+                row.innerHTML = '<span style="font-size:.9em;">' + (DIM_LABELS[k] || k) + '</span>' +
+                    '<input data-dim="' + k + '" type="number" value="' + w.dimensions[k] + '" style="width:100px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;">';
+                box.appendChild(row);
+            });
+            document.getElementById('weights-modal').style.display = 'flex';
+        });
+}
+function saveWeights() {
+    var dims = {};
+    document.querySelectorAll('#weights-form [data-dim]').forEach(function (el) { dims[el.dataset.dim] = Number(el.value); });
+    fetch('/api/one_two/weights', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({dimensions: dims})})
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (!d.ok) { alert('保存失败: ' + (d.error || '')); return; } closeWeights(); alert('权重已保存，次日盘后选股生效'); });
+}
+function closeWeights() { document.getElementById('weights-modal').style.display = 'none'; }
+</script>
 {% endblock %}
