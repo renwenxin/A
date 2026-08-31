@@ -162,3 +162,44 @@ def test_auction_tactic_trigger():
                        preclose_volume=0, prev_high=0.0, gap_price=None,
                        ratio=6.0, thresholds={'auction_ratio_low': 3.0})
     assert r5['triggered'] is True
+
+# ---------- Task 4: 台账 ----------
+
+def test_ledger_record_and_verify(tmp_path):
+    from ashare_review.one_two_v2.ledger import Ledger
+    l = Ledger(str(tmp_path / 't.db'))
+    pid = l.record_pick('20260831', '600001', '测试', 55.0,
+                        {'quality': 20}, 'auction', mcap=40.0)
+    assert pid > 0
+    assert l.record_pick('20260831', '600001', '测试', 55.0, {}, 'auction') == 0
+    n = l.verify_pick('20260831', '600001', 'zt', 1, 6.5)
+    assert n == 1
+    row = l.get_pick('20260831', '600001')
+    assert row['next_result'] == 'zt' and row['hit'] == 1
+    assert row['auction_ratio'] == 6.5
+    assert row['mcap'] == 40.0
+
+
+def test_ledger_dimension_stats(tmp_path):
+    from ashare_review.one_two_v2.ledger import Ledger
+    l = Ledger(str(tmp_path / 't.db'))
+    for i, (score, hit) in enumerate([(30, 1), (25, 1), (20, 0), (-5, 0), (0, 0)]):
+        l.record_pick('20260831', f'6000{i:02d}', 'X', float(score),
+                      {'quality': {'score': score}}, 'auction')
+        l.verify_pick('20260831', f'6000{i:02d}', 'zt' if hit else 'down', hit, 0)
+    stats = l.dimension_stats()
+    q = stats['dimensions']['quality']
+    assert q['pos_total'] == 3 and q['pos_hit'] == 2
+    assert q['neg_total'] == 2 and q['neg_hit'] == 0
+    t = stats['by_tactic']
+    assert t['auction']['total'] == 5
+
+
+def test_ledger_pending_verification(tmp_path):
+    from ashare_review.one_two_v2.ledger import Ledger
+    l = Ledger(str(tmp_path / 't.db'))
+    l.record_pick('20260831', '600001', 'A', 50.0, {}, 'auction')
+    l.record_pick('20260830', '600002', 'B', 45.0, {}, 'graph')
+    pending = l.get_pending()
+    assert len(pending) == 2
+    assert pending[0]['pick_date'] == '20260830'
