@@ -377,3 +377,16 @@ def test_run_picks_overwrites_day(tmp_path, monkeypatch):
     l = Ledger(str(tmp_path / 't.db'))
     rows = l.list_picks('20260831')
     assert len(rows) == 1 and rows[0]['code'] == '600002'   # 最新一批覆盖
+
+def test_theme_overlay_coverage_aware():
+    from ashare_review.one_two_v2.picks import score_dimension
+    w = _weights()
+    # 小库(5概念) + 0 概念 → 中性 0（不惩罚）
+    r = score_dimension('theme_overlay', _lu(), {'concept_count': 0, 'concept_coverage': 5}, w)
+    assert r['score'] == 0 and '未覆盖' in r['reason']
+    # 大库(100概念) + 0 概念 → 惩罚（真孤立）
+    r2 = score_dimension('theme_overlay', _lu(), {'concept_count': 0, 'concept_coverage': 100}, w)
+    assert r2['score'] < 0
+    # 有概念 → 正分
+    r3 = score_dimension('theme_overlay', _lu(), {'concept_count': 3, 'concept_coverage': 100}, w)
+    assert r3['score'] > 0

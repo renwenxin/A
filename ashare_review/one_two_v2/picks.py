@@ -99,10 +99,13 @@ def score_dimension(dim: str, lu, ctx: dict, weights: dict) -> Dict:
         return {'score': 0, 'reason': '量能数据缺失'}
     if dim == 'theme_overlay':
         n = ctx.get('concept_count', 0)
+        coverage = ctx.get('concept_coverage', 100)   # 概念库覆盖大小
         if n >= 3:
             return {'score': w, 'reason': f'题材叠加({n}概念)·万金油'}
         if n >= 1:
             return {'score': w * 0.5, 'reason': f'{n}概念'}
+        if coverage < 20:
+            return {'score': 0, 'reason': '概念库未覆盖(小库)'}   # 小库时未知≠孤立，不惩罚
         return {'score': -w * 0.25, 'reason': '题材孤立'}
     if dim == 'cap_price':
         cap = lu.float_market_cap or 0

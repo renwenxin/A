@@ -27,6 +27,23 @@ def _today() -> str:
     return date.today().strftime('%Y%m%d')
 
 
+def _load_concept_map() -> dict:
+    """加载 data/concept_map.json，返回 {概念名: {members, partial, source}}（空→{}）。"""
+    import json as _json
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                       'data', 'concept_map.json')
+    try:
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                d = _json.load(f)
+            c = d.get('concepts') if isinstance(d, dict) else None
+            if isinstance(c, dict):
+                return c
+    except Exception:
+        pass
+    return {}
+
+
 def _volume_health_data(tdx, code: str, trade_date: str,
                         lookback: int = 60) -> tuple:
     """TDX 日线算量能：今日成交量 + 前 lookback 日最高成交量。返回 (today_vol, prev_high_vol)。"""
@@ -116,6 +133,7 @@ def build_pick_context(pool: List, tdx=None, calendar=None,
             'ladder_at_3': ladder_at_3,
             'today_vol': tv, 'prev_high_vol': pv,
             'concept_count': len(code_to_concepts.get(code, [])),
+            'concept_coverage': len(concept_map),
             'upper_same_theme': bool(set(code_to_concepts.get(code, [])) & upper_concepts),
         }
     return {'scored': scored}
@@ -176,7 +194,8 @@ def run_picks(pool: List, weights: Optional[dict] = None,
     td = trade_date or _today()
     if ctx is None:
         from ..data.tdx_reader import TdxReader
-        ctx = build_pick_context(pool, tdx=tdx or TdxReader(), trade_date=td)
+        ctx = build_pick_context(pool, tdx=tdx or TdxReader(),
+                                concept_map=_load_concept_map(), trade_date=td)
     cands = picks_mod.filter_candidates(pool or [])
     picks_out = []
     for c in cands[:50]:
