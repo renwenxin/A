@@ -378,6 +378,18 @@ class StartBreakoutScreenerV2(StartBreakoutScreener):
                     if check_close > high_20_before * 1.015:
                         return None  # 已提前突破，排除
 
+            # ── 追高排除: 相对真实压力位(前60日最高高点, 排除当日)已突破超过阈值 → 放弃 ──
+            # 找顶线 DRAWLINE 外推在强势股中易虚高，用真实前高兜底校验。
+            # 教学: "八个点以下才做" · 突破压力位>10%的追高标的不做。
+            high_60_before = float(df['high'].iloc[max(0, idx-60):idx].max()) if idx >= 1 else 0
+            if high_60_before > 0:
+                chase_pct = (close_now - high_60_before) / high_60_before * 100
+                detail['chase_pct'] = round(chase_pct, 1)
+                features['chase_pct'] = chase_pct
+                chase_limit = 8.0 if is_main else 12.0  # 主板8% · 创科12%
+                if chase_pct > chase_limit:
+                    return None  # 已突破真实前高超过阈值 → 追高，排除
+
             # [Core] near 60-day high (保留，作为辅助参考)
             high60 = df['high'].iloc[max(0, idx-60):idx+1].max()
             dist_60 = (close_now - high60) / high60 * 100

@@ -137,6 +137,19 @@ class V3Backtest:
         return 0.095
 
     @staticmethod
+    def _chase_limit_pct(code: str) -> float:
+        """追高上限(%)：已突破压力位的累计涨幅超过该比例 → 放弃（追高不做）。
+
+        与实盘 sim_portfolio 完全一致（教学: "八个点以下才做"、
+        页面模板/V4 口径: 10cm ≤6% / 20cm ≤8% / 30cm ≤30%），
+        保证历史回测与实盘选股口径一致。
+        """
+        c = str(code).zfill(6)
+        if c.startswith(('300', '301', '688')): return 8.0
+        if c.startswith(('8', '4')): return 30.0
+        return 6.0
+
+    @staticmethod
     def _is_main_board(code: str) -> bool:
         code = str(code).zfill(6)
         return code.startswith(('60', '00', '001', '002'))
@@ -716,6 +729,10 @@ class V3Backtest:
                     continue
 
                 total_signals += 1
+
+                # V3 追高上限: 已突破压力位超过板块阈值 → 放弃（与实盘口径一致）
+                if dist_pct > self._chase_limit_pct(code):
+                    continue
 
                 # V3 过滤: 死亡区间 3-5%
                 if 3 < abs(dist_pct) <= 5:

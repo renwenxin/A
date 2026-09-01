@@ -38,6 +38,13 @@ PRESSURE_DIST_PCT = 10.0       # 距压力位≤10%
 MAVOL_PERIOD = 180
 MAVOL_MULTIPLIER = 1.2         # 量>MAVOL180×1.2
 
+# ── 追高上限（启动突破教学） ──
+# 视频: 突破瞬间 8 个点以下才做（"突破压力位大于10%的追高标的不做"）
+# 页面模板/V4 池已确立口径: 10cm ≤6% / 20cm ≤8% / 30cm ≤30%
+CHASE_LIMIT_PCT = 6.0          # 10cm 主板: 突破后累计涨幅 >6% → 放弃
+CHASE_LIMIT_GEM_PCT = 8.0      # 20cm 创业板/科创板
+CHASE_LIMIT_BJ_PCT = 30.0      # 30cm 北交所
+
 # ── 资金/仓位模型（与回测一致） ──
 INITIAL_CAPITAL = 1_000_000.0  # 初始资金 100万
 MAX_POSITIONS = 10             # 最大持仓数
@@ -140,6 +147,20 @@ class Vol180SimPortfolio:
         if code.startswith(('300', '301', '688')): return 0.199
         if code.startswith(('8', '4')): return 0.299
         return 0.095
+
+    @staticmethod
+    def _chase_limit_pct(code: str) -> float:
+        """追高上限(%)：已突破压力位的累计涨幅超过该比例 → 放弃（追高不做）。
+
+        规则来源: 启动突破教学视频（"八个点以下才做"、"突破压力位>10%的追高不做"）
+        + 页面模板/V4 池已确立口径: 10cm ≤6% / 20cm ≤8% / 30cm ≤30%。
+        """
+        c = str(code).zfill(6)
+        if c.startswith(('300', '301', '688')):
+            return CHASE_LIMIT_GEM_PCT
+        if c.startswith(('8', '4')):
+            return CHASE_LIMIT_BJ_PCT
+        return CHASE_LIMIT_PCT
 
     @staticmethod
     def _is_main_board(code: str) -> bool:
@@ -417,6 +438,10 @@ class Vol180SimPortfolio:
                 dist_pct = round((close - pressure) / pressure * 100, 1)
 
                 if dist_pct > 0:
+                    # 追高上限: 已突破压力位超过板块阈值 → 放弃
+                    # (教学: "八个点以下才做" · 突破压力位>10%的追高不做)
+                    if dist_pct > self._chase_limit_pct(code):
+                        continue
                     candidates.append({
                         'code': code, 'close': round(close, 2),
                         'top_line': pressure, 'dist_pct': dist_pct,
@@ -460,6 +485,11 @@ class Vol180SimPortfolio:
             if c['close'] > c['top_line'] and c['vol'] > c['mavol180'] * MAVOL_MULTIPLIER:
                 vol_ratio = c.get('vol_ratio', 0)
                 dist_pct = abs(c.get('dist_pct', 0))
+
+                # ── 追高上限（双保险）: 已突破压力位超过板块阈值 → 放弃 ──
+                # (教学: "八个点以下才做" · 突破压力位>10%的追高不做)
+                if c.get('dist_pct', 0) > self._chase_limit_pct(c['code']):
+                    continue
 
                 # ── V2/V3 过滤规则 ──
                 if mode in ('v2', 'v3'):
