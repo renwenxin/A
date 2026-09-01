@@ -289,12 +289,14 @@ class Vol180SimPortfolio:
                 dt, op, hi, lo, cl_int, amt, vol, _ = struct.unpack('IIIIIfII', raw[offset:offset + RECORD_SIZE])
                 closes.append(cl_int / 100.0)
                 volumes.append(float(vol))
-            # 最新一根
+            # 最新一根 + 昨收（当日突破 CROSS 判定用）
             import numpy as np
             close = closes[-1]
             vol = volumes[-1]
+            prev_close = closes[-2] if len(closes) >= 2 else 0
             mavol180 = float(np.mean(volumes[-MAVOL_PERIOD:])) if len(volumes) >= MAVOL_PERIOD else 0
-            return {'close': round(close, 2), 'vol': int(vol), 'mavol180': round(mavol180, 0)}
+            return {'close': round(close, 2), 'prev_close': round(prev_close, 2),
+                    'vol': int(vol), 'mavol180': round(mavol180, 0)}
         except Exception:
             return None
 
@@ -444,6 +446,7 @@ class Vol180SimPortfolio:
                 close = latest['close']
                 vol = latest['vol']
                 mavol180 = latest['mavol180']
+                prev_close = latest.get('prev_close', 0)
 
                 if mavol180 <= 0:
                     continue
@@ -457,6 +460,7 @@ class Vol180SimPortfolio:
                         continue
                     candidates.append({
                         'code': code, 'close': round(close, 2),
+                        'prev_close': round(prev_close, 2),
                         'top_line': pressure, 'dist_pct': dist_pct,
                         'vol': int(vol), 'mavol180': round(mavol180, 0),
                         'vol_ratio': round(vol / mavol180, 1) if mavol180 > 0 else 0,
@@ -469,6 +473,7 @@ class Vol180SimPortfolio:
 
                 candidates.append({
                     'code': code, 'close': round(close, 2),
+                    'prev_close': round(prev_close, 2),
                     'top_line': pressure, 'dist_pct': dist_pct,
                     'vol': int(vol), 'mavol180': round(mavol180, 0),
                     'vol_ratio': round(vol / mavol180, 1) if mavol180 > 0 else 0,
@@ -498,6 +503,13 @@ class Vol180SimPortfolio:
             if c['close'] > c['top_line'] and c['vol'] > c['mavol180'] * MAVOL_MULTIPLIER:
                 vol_ratio = c.get('vol_ratio', 0)
                 dist_pct = abs(c.get('dist_pct', 0))
+
+                # ── 当日突破（CROSS 语义）: 昨日收盘未站上压力位 + 今日收盘突破 ──
+                # 公式 DRAWICON(CROSS(C,找顶线),...) — 只抓"今天当天刚突破"的标的，
+                # 排除突破后回踩/横盘（几天前突破、今日仍在压力位附近的票）。
+                prev_close = c.get('prev_close', 0)
+                if prev_close > 0 and prev_close > c['top_line'] * 1.001:
+                    continue   # 昨日已站上压力位 → 非当日突破（突破后回踩）
 
                 # ── 追高上限（双保险）: 已突破压力位超过板块阈值 → 放弃 ──
                 # (教学: "八个点以下才做" · 突破压力位>10%的追高不做)

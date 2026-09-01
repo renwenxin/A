@@ -711,6 +711,7 @@ class V3Backtest:
                     continue
 
                 close = float(df['close'].iloc[idx])
+                prev_close = float(df['close'].iloc[idx - 1]) if idx >= 1 else 0.0
                 vol = float(df['volume'].iloc[idx])
                 mavol180 = float(df['mavol180'].iloc[idx])
 
@@ -729,6 +730,11 @@ class V3Backtest:
                     continue
 
                 total_signals += 1
+
+                # V3 当日突破（CROSS 语义）: 昨日收盘未站上压力位 + 今日收盘突破。
+                # 只抓"当天刚突破"的标的，排除突破后回踩/横盘（与实盘口径一致）
+                if prev_close > 0 and prev_close > pressure * 1.001:
+                    continue
 
                 # V3 追高上限: 已突破压力位超过板块阈值 → 放弃（与实盘口径一致）
                 if dist_pct > self._chase_limit_pct(code):

@@ -78,18 +78,40 @@ def test_scan_buy_signals_skips_over_chase():
     p._state['holding'] = {}
     monkeypatch.setattr(p, '_get_market_state', lambda trade_date=None: {'is_bull': True, 'sh_close': 3000, 'sh_ma60': 2900})
     cands = [
-        {'code': '600002', 'close': 10.55, 'top_line': 10.0, 'dist_pct': 5.5,  # +5.5% 刚突破(避开死亡区间3-5)
-         'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
+        {'code': '600002', 'close': 10.55, 'top_line': 10.0, 'dist_pct': 5.5,  # +5.5% 当日刚突破(昨收9.9未站上)
+         'prev_close': 9.9, 'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
         {'code': '600003', 'close': 10.9, 'top_line': 10.0, 'dist_pct': 9.0,  # +9% 追高
-         'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
+         'prev_close': 9.8, 'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
         {'code': '600001', 'close': 9.5, 'top_line': 10.0, 'dist_pct': -5.0,  # -5% 蓄势(未突破,不放量不算信号)
-         'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
+         'prev_close': 9.6, 'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
     ]
     sigs = p._scan_buy_signals(cands, mode='v3')
     codes = {s['code'] for s in sigs}
-    assert '600002' in codes    # 刚突破保留
+    assert '600002' in codes    # 当日刚突破保留
     assert '600003' not in codes  # 追高排除
     assert '600001' not in codes  # 未突破(close<top_line)不触发
+
+
+def test_scan_buy_signals_excludes_pullback_after_breakout():
+    """当日突破(CROSS)语义: 排除突破后回踩/横盘的票（昨日已站上压力位）"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state['holding'] = {}
+    monkeypatch.setattr(p, '_get_market_state', lambda trade_date=None: {'is_bull': True, 'sh_close': 3000, 'sh_ma60': 2900})
+    cands = [
+        # 几天前突破(昨收10.2已站上顶线10.0)，今日横盘仍在上方2% → 排除（非当日突破）
+        {'code': '600010', 'close': 10.2, 'top_line': 10.0, 'dist_pct': 2.0,
+         'prev_close': 10.2, 'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
+        # 今日当天刚突破(昨收9.9未站上)，今日收盘站上 +2% → 保留
+        {'code': '600011', 'close': 10.2, 'top_line': 10.0, 'dist_pct': 2.0,
+         'prev_close': 9.9, 'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12},
+    ]
+    sigs = p._scan_buy_signals(cands, mode='v3')
+    codes = {s['code'] for s in sigs}
+    assert '600010' not in codes   # 突破回踩 → 排除
+    assert '600011' in codes       # 当日刚突破 → 保留
 
 
 def test_screen_candidates_gem_limit():
