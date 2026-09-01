@@ -857,9 +857,8 @@ class Vol180SimPortfolio:
         available_slots = max(0, cfg['max_positions'] - len(self._state['holding']) - len(self._state['ready']))
         max_new = min(cfg['max_new_per_day'], available_slots)
 
+        # 风控只影响执行买入(Step 3)，不影响信号生成——用户始终能看到今日标的
         for sig in buy_signals[:max_new]:
-            if not risk['can_open']:
-                break
             code = sig['code']
             if code in self._state['holding'] or code in self._state['ready']:
                 continue
@@ -905,6 +904,9 @@ class Vol180SimPortfolio:
             rd = self._state['ready'][code]
             if rd['buy_date'] <= td:
                 skip_reason = None
+                risk_now = self._state.get('last_risk') or {}
+                if not risk_now.get('can_open', True):
+                    skip_reason = '风控拦截: ' + '；'.join(risk_now.get('blocked_reasons', []))
                 try:
                     df_check = self._read_stock(code, up_to_date=td.replace('-', ''))
                     if df_check is not None and not df_check.empty:
