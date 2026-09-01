@@ -2,6 +2,8 @@
 import pandas as pd
 import numpy as np
 
+from ..data.float_share import DEFAULT_FLOAT_SHARE_HANDS
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 基础指标
@@ -92,7 +94,7 @@ def _cross(a: pd.Series, b: pd.Series) -> pd.Series:
 # SWL/SWS 操盘线（通达信 主图指标 第1-7行）
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def calc_swl_sws(df: pd.DataFrame) -> pd.DataFrame:
+def calc_swl_sws(df: pd.DataFrame, capital_hands: float = None) -> pd.DataFrame:
     """计算 SWL 操盘线和 SWS 生命线。
 
     通达信主图指标（主图指标.txt）:
@@ -103,6 +105,17 @@ def calc_swl_sws(df: pd.DataFrame) -> pd.DataFrame:
 
     SWL > SWS → 主力操盘线(红色/多头)
     SWL < SWS → 生命线(绿色/防守)
+
+    公式还原:
+      A = MAX(1, 100*SUM(VOL,5)/(3*CAPITAL))   ← 权重下限 1（至少完全跟随 EMA20）
+      SWS = DMA(EMA20, A) = A*EMA20 + (1-A)*SWS_prev
+      A>1（5日换手>3% 时常态）→ SWS 加速贴近 EMA20；换手越低越接近慢速跟随。
+      旧实现把 A 归一化到 (0,1] 且用固定 5.5e9 股近似 CAPITAL，与公式语义相反，
+      已按公式字面修正；CAPITAL 默认 5.5e7 手(≈55亿股)，可传真实流通股本。
+
+    Args:
+        df: 含 close/volume 的 DataFrame
+        capital_hands: 该股流通股本(手)；None 用默认 5.5e7 手
     """
     close = df['close']
     volume = df['volume']
@@ -113,28 +126,13 @@ def calc_swl_sws(df: pd.DataFrame) -> pd.DataFrame:
     df['swl'] = (ema10 * 7 + ema20 * 3) / 10.0
 
     # SWS = DMA(EMA(CLOSE,20), MAX(1, 100*(SUM(VOL,5)/(3*CAPITAL))))
-    # DMA(X, A): A 是加权系数，需归一化到 (0,1] 区间
-    # 通达信中 CAPITAL 单位为手(100股)，这里的 vol 是股，调整缩放
-    sum_vol5 = volume.rolling(5).sum()
-    n = len(df)
-    # 用5日成交额/总市值估算权重，归一化到合理范围
-    vol_factor = np.full(n, 0.01)
-    for i in range(n):
-        sv5 = sum_vol5.iloc[i]
-        if sv5 > 0:
-            # 成交量(股) / (流通股本估值的3倍 * 100) → 近似 DMA 权重
-            raw = 100.0 * sv5 / (3.0 * 5.5e9)  # 5.5B股 ≈ A股平均流通盘
-            vol_factor[i] = min(max(raw, 0.001), 0.95)  # 限制在 [0.001, 0.95]
-
-    sws = np.full(n, np.nan)
-    first_idx = ema20.first_valid_index()
-    if first_idx is not None:
-        fi = df.index.get_loc(first_idx)
-        sws[fi] = ema20.iloc[fi]
-        for i in range(fi + 1, n):
-            a = float(vol_factor[i])
-            sws[i] = ema20.iloc[i] * a + sws[i - 1] * (1.0 - a)
-    df['sws'] = sws
+    # 通达信 DMA 动态权重 A 的有效区间为 [0,1]（越界按边界处理）；
+    # MAX(1, x) 保证 A>=1 → DMA 取 A=1（X 全替换）→ SWS = EMA(CLOSE,20)。
+    # 即公式字面在通达信中的实际行为：生命线 = 20日指数均线（视频"生死线"）。
+    # （旧实现把 A 归一化到 (0,1] 做换手加权慢速 DMA，与公式语义相反且小盘股
+    #   高换手时 A 巨大导致溢出，已按通达信标准行为修正）
+    # 参数 capital_hands 保留以兼容调用方；按公式推导结果 SWS 不依赖 CAPITAL。
+    df['sws'] = ema20
 
     # 主力操盘线 = SWL > SWS
     df['swl_control'] = df['swl'] > df['sws']
@@ -258,11 +256,14 @@ def calc_main_capital(df: pd.DataFrame, index_df: pd.DataFrame | None = None) ->
 # 一键补全
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def enrich_all(df: pd.DataFrame) -> pd.DataFrame:
+def enrich_all(df: pd.DataFrame, capital_hands: float = None) -> pd.DataFrame:
     """一键补全所有技术指标。
 
     包含: 均线(5/10/20/60/89/250), MACD, 均线粘合, 量比, 涨跌幅, 振幅
           + SWL/SWS, 量能复合炮, 异动资金, 主力资金, KDJ, 吸筹
+
+    Args:
+        capital_hands: 该股流通股本(手)，用于 SWS 生命线按公式还原；None 用默认值
     """
     df = calc_ma(df, [5, 10, 20, 60, 89, 250])
     df = calc_macd(df)
@@ -270,7 +271,7 @@ def enrich_all(df: pd.DataFrame) -> pd.DataFrame:
     df = calc_volume_ratio(df)
     df = calc_daily_change(df)
     df = calc_amplitude(df)
-    df = calc_swl_sws(df)
+    df = calc_swl_sws(df, capital_hands=capital_hands)
     df = calc_volume_cannon(df)
     df = calc_yicha_momentum(df)
 
@@ -325,17 +326,25 @@ def calc_zigzag_find_top_line(df: pd.DataFrame) -> pd.DataFrame:
       - DRAWLINE 连接最近2个 NN 点并线性外推
 
     Args:
-        df: 含 OHLC + ma5/ma10 列的 DataFrame
+        df: 含 OHLC 列的 DataFrame（ma5/ma10 非必需，内部按公式计算 HA 均线）
 
     Returns:
-        添加了 'find_top_line' 列的 DataFrame
+        添加了 'find_top_line' / 'find_bottom_line' / '_nn' / '_uu' 列的 DataFrame
     """
     n = len(df)
     high = df['high'].values.astype(float)
     low = df['low'].values.astype(float)
     close = df['close'].values.astype(float)
-    ma5 = df['ma5'].values.astype(float)
-    ma10 = df['ma10'].values.astype(float)
+    open_ = df['open'].values.astype(float)
+
+    # ── G:=HA(C,5) / D:=HA(C,10) — Heikin-Ashi 收盘均线（公式原文） ──
+    # HA 收盘 = (O+H+L+C)/4，G/D 为其 5/10 日均线（普通 MA 是近似，非公式原意）
+    ha_close = (open_ + high + low + close) / 4.0
+    ma5 = np.convolve(ha_close, np.ones(5) / 5, mode='same').astype(float)
+    ma10 = np.convolve(ha_close, np.ones(10) / 10, mode='same').astype(float)
+    # 前 N-1 根卷积边界值（部分窗口）置 NaN，与 rolling 语义一致
+    ma5[:4] = np.nan
+    ma10[:9] = np.nan
 
     # ── 通达信内置函数 ──
 
@@ -663,7 +672,27 @@ def calc_zigzag_find_top_line(df: pd.DataFrame) -> pd.DataFrame:
             s60 = max(0, j - 60)
             find_top_line[j] = float(np.max(high[s60:j + 1]))
 
+    # ── 第155行: 找底线 = DRAWLINE(UU, L, REF(UU,1), REF(L,1), 1) ──
+    uu_idx = np.where(uu)[0]
+    find_bottom_line = np.full(n, np.nan)
+    for k in range(1, len(uu_idx)):
+        i1, i2 = uu_idx[k - 1], uu_idx[k]
+        l1, l2 = low[i1], low[i2]
+        if i2 <= i1:
+            continue
+        slope = (l2 - l1) / (i2 - i1)
+        for j in range(i2, n):
+            find_bottom_line[j] = l2 + slope * (j - i2)
+
+    # NaN 回退: 用60日最低
+    for j in range(n):
+        if np.isnan(find_bottom_line[j]):
+            s60 = max(0, j - 60)
+            find_bottom_line[j] = float(np.min(low[s60:j + 1]))
+
     df['find_top_line'] = find_top_line
+    df['find_bottom_line'] = find_bottom_line
     df['_nn'] = nn
+    df['_uu'] = uu
     df['_g2'] = g2
     return df

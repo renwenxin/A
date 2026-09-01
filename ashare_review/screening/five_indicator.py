@@ -54,12 +54,13 @@ def _filter_df(df: pd.DataFrame, trade_date: Optional[str]) -> pd.DataFrame:
     return f if len(f) >= 20 else df
 
 
-def _read_stock(tdx, code: str, trade_date=None) -> Optional[pd.DataFrame]:
+def _read_stock(tdx, code: str, trade_date=None,
+                capital_hands: float = None) -> Optional[pd.DataFrame]:
     mkt = _market(code)
     try:
         df = tdx.read_daily(code, mkt)
         if df.empty or len(df) < 60: return None
-        df = enrich_all(df)
+        df = enrich_all(df, capital_hands=capital_hands)
         if trade_date: df = _filter_df(df, trade_date)
         return df if len(df) >= 40 else None
     except Exception:
@@ -317,8 +318,19 @@ class StartBreakoutScreenerV2(StartBreakoutScreener):
             return float(df['high'].iloc[max(0, idx - lookback):idx + 1].max())
         return val
 
+    def _capital_hands(self, code: str) -> Optional[float]:
+        """该股流通股本(手)，用于 SWS 生命线按公式还原；无数据返回 None。"""
+        try:
+            from ..data.float_share import load_capital_hands_map
+            m = load_capital_hands_map()
+            v = m.get(str(code).zfill(6))
+            return float(v) if v and v > 0 else None
+        except Exception:
+            return None
+
     def _check_v2(self, code: str, info: dict, trade_date=None):
-        df = _read_stock(self.tdx, code, trade_date)
+        df = _read_stock(self.tdx, code, trade_date,
+                         capital_hands=self._capital_hands(code))
         if df is None: return None
         try:
             idx = len(df) - 1

@@ -139,6 +139,7 @@ def test_screener_excludes_real_high_chase():
     s._get_sector = lambda code: ''
     s._get_name = lambda code: ''
     s._count_limit_ups = lambda code: 15   # 主板活跃
+    s._capital_hands = lambda code: None   # 测试不接网络流通股本
     # 找顶线 mock 在股价上方 ~5.5%（DRAWLINE 外推虚高假象：看似蓄势，实则已突破真实前高）
     s._find_resistance_line = lambda df, idx, lookback=60: float(df['close'].iloc[idx]) * 1.055
 
@@ -147,7 +148,8 @@ def test_screener_excludes_real_high_chase():
         closes = [5.0] * 59 + [close_val]
         highs = [5.0] * 58 + [high_prev, close_val]
         df = make_df(closes, highs)
-        monkeypatch.setattr(fi_module, '_read_stock', lambda tdx, code, trade_date=None: df)
+        monkeypatch.setattr(fi_module, '_read_stock',
+                            lambda tdx, code, trade_date=None, **kw: df)
         info = {'name': '追高股', 'code': '600001', 'is_zt': False, 'board_type': '7%+',
                 'consecutive': 0, 'float_market_cap': 0}
         return s._check_v2('600001', info, '20260901')

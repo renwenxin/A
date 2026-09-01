@@ -238,7 +238,20 @@ class Vol180SimPortfolio:
             return None
         df = calc_ma(df, [5, 10])
         df['mavol180'] = df['volume'].rolling(MAVOL_PERIOD).mean()
+        # SWS 生命线按公式还原：A = MAX(1, 100*SUM(VOL,5)/(3*CAPITAL))
+        from ..analysis.indicators import calc_swl_sws
+        df = calc_swl_sws(df, capital_hands=self._capital_hands(code))
         return df
+
+    def _capital_hands(self, code: str) -> Optional[float]:
+        """该股流通股本(手)，用于 SWS；无数据返回 None（用默认值）。"""
+        try:
+            from ..data.float_share import load_capital_hands_map
+            m = load_capital_hands_map()
+            v = m.get(str(code).zfill(6))
+            return float(v) if v and v > 0 else None
+        except Exception:
+            return None
 
     def _read_sell_df(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
         """卖出检查用日线：读原始日线并按 up_to_date 过滤，不强制 MAVOL/最少 60 根。
