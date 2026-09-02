@@ -550,6 +550,31 @@ def api_v4_baseline():
     return jsonify(defaults)
 
 
+@app.route('/api/breakout_v3/predict')
+def api_breakout_v3_predict():
+    """明日突破预测: 基于 watch 蓄势池（压力位下方）预测次日放量突破。
+
+    特征评分（历史校准: 基准次日突破率15.3% → 贴压力位≤3%组合 34~38%）:
+      距压力位≤3% / 试盘摸高 / 多头排列 / 股性 / 量能。
+    先验证昨日预测（查 TDX 今日收盘是否站上当日压力位），再生成今日预测并落台账。
+    """
+    from ..tools.breakout_predict import BreakoutPredictor
+    try:
+        pred = BreakoutPredictor()
+        verified = pred.verify_pending()
+        top = pred.predict(top_n=10)
+        stats = pred.stats()
+        return jsonify({
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'verified_today': verified,
+            'predictions': top,
+            'stats': stats,
+        })
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/breakout_v3/simulation')
 def api_breakout_v3_simulation():
     """刷新每日状态 V3: 竞价确认 + N字反包 + 移动止盈。"""

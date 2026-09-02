@@ -213,6 +213,21 @@
     <span id="scan-status" class="section-note" style="margin:0;"></span>
 </div>
 
+<!-- ====== 0.5 明日突破预测（全宽） ====== -->
+<div class="screener-column" style="border:2px solid #ff6b6b;margin-bottom:14px;">
+    <div class="column-header" style="border-bottom-color:#ff6b6b;">
+        <h3 style="color:#e11d48;">🔥 明日突破预测（压力位下方蓄力）</h3>
+        <span class="column-badge" style="background:#ffe4e6;color:#be123c;" id="predict-count">-</span>
+    </div>
+    <p style="margin:0 0 6px;">
+        距找顶线≤3%贴线蓄势+试盘摸高+多头排列+股性好 → 预测<b>明日放量突破压力位</b>（校准: 次日突破率 34~38% vs 基准15.3%）
+        <span id="predict-stats" style="margin-left:8px;color:#9d174d;"></span>
+    </p>
+    <div id="predict-panel" style="min-height:40px;max-height:360px;overflow-y:auto;">
+        <div class="empty-hint">点击「运行扫描」或「刷新状态」加载...</div>
+    </div>
+</div>
+
 <!-- ====== 1. 观察池（全宽） ====== -->
 <div class="screener-column" style="border:2px solid #f0c040;margin-bottom:14px;">
     <div class="column-header" style="border-bottom-color:#f0c040;">
@@ -425,6 +440,49 @@ function renderAll(data) {
     renderHoldPanel(data.holdings || []);
     renderSummary(data.summary || {});
     loadFinished();
+    loadPredict();   // 明日突破预测（独立 API，不阻塞主面板）
+}
+
+// ── 明日突破预测 ──
+let _predicting = false;
+async function loadPredict() {
+    if (_predicting) return;
+    _predicting = true;
+    try {
+        const resp = await fetch('/api/breakout_v3/predict');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.error) return;
+        const items = data.predictions || [];
+        document.getElementById('predict-count').textContent = items.length + '只';
+        const el = document.getElementById('predict-panel');
+        if (items.length === 0) {
+            el.innerHTML = '<div style="text-align:center;padding:12px;color:#be123c;">今日无高概率突破候选 · 先运行扫描</div>';
+        } else {
+            let html = '';
+            items.forEach((s, i) => {
+                const probBadge = s.score >= 77 ? 'background:#dc2626;color:#fff;' : (s.score >= 70 ? 'background:#f97316;color:#fff;' : 'background:#f59e0b;color:#fff;');
+                html += '<div style="display:inline-block;background:#fff;border-radius:6px;padding:5px 9px;margin:2px 3px;border:1px solid #fecaca;vertical-align:top;min-width:220px;border-left:4px solid #dc2626;">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                html += '<span style="color:#be123c;font-weight:800;font-size:1.05em;">' + (i + 1) + '</span>';
+                html += '<a href="/stock/' + esc(s.code) + '" style="color:#dc2626;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+                html += '<span style="font-size:0.78em;color:#888;">' + esc(s.name) + '</span>';
+                html += '<span style="font-size:0.78em;font-weight:700;padding:1px 7px;border-radius:10px;' + probBadge + '">' + s.score + '分</span>';
+                html += '</div>';
+                html += '<div style="font-size:0.72em;color:#666;margin-top:2px;">';
+                html += '现价 ' + s.close + ' | 压力 ' + s.pressure + ' | <b style="color:#dc2626;">距 ' + (s.dist_pct || 0) + '%</b>';
+                html += '</div>';
+                html += '<div style="font-size:0.70em;color:#9d174d;margin-top:1px;">' + (s.reasons || []).join(' · ') + '</div>';
+                html += '</div>';
+            });
+            el.innerHTML = html;
+        }
+        const st = data.stats || {};
+        const el2 = document.getElementById('predict-stats');
+        if (el2) el2.textContent = '📊 已验证 ' + (st.total_verified || 0) + ' 次 · 命中 ' + (st.hit_rate || 0) + '%' +
+            (st.pending ? ' · 待验证 ' + st.pending : '');
+    } catch (e) { /* 预测失败不阻塞主面板 */ }
+    finally { _predicting = false; }
 }
 
 // ── 观察池 ──
