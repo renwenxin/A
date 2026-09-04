@@ -45,3 +45,37 @@ def test_pullback_metrics_dist_min():
     closes2 = [10.0] * 20 + [11.0]
     m2 = pullback_metrics(_mk_latest(closes2, volumes=[100] * 21))
     assert m2['dist_min_pct'] > 5.0
+
+
+def test_sector_zhongjun_requires_20yi_and_up():
+    """板块中军: 板块内存在 成交额≥20亿 且 当日涨幅≥5% 的票。"""
+    from ashare_review.tools.sim_portfolio import sector_has_zhongjun
+    members = ['600001', '600002']
+    rows = {
+        '600001': {'chg': 3.0, 'amount': 30_000_000_000},   # 涨幅不足
+        '600002': {'chg': 6.5, 'amount': 500_000_000},     # 金额不足(5亿<20亿)
+    }
+    assert sector_has_zhongjun(members, rows) is False
+    rows2 = {'600001': {'chg': 6.0, 'amount': 30_000_000_000}}
+    assert sector_has_zhongjun(members, rows2) is True
+
+
+def test_zhongjun_sector_of_code_industry_primary_concept_fallback():
+    """板块归属: 有行业用行业；行业缺失时用概念命中算中军。"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio, zhongjun_sector_of
+    imap = {'600001': '半导体', '600002': '半导体'}
+    cmap = {'AI算力': {'members': {'600003': 1, '600004': 1}},
+            '半导体': {'members': {'600001': 1, '600002': 1}}}
+    # spot: 600002 是半导体中军(≥20亿+大阳)
+    rows = {'600002': {'chg': 6.0, 'amount': 30_000_000_000}}
+    # 600001 有行业 → 用行业组判定 → True
+    assert zhongjun_sector_of('600001', imap, cmap, rows) is True
+    # 600003 无行业 → 概念 'AI算力' 无中军 → False
+    assert zhongjun_sector_of('600003', imap, cmap, rows) is False
+    # 600004 无行业 → 概念 'AI算力' 无中军（但若同概念 600003 放量也 false 保持）
+    rows2 = {'600003': {'chg': 6.0, 'amount': 30_000_000_000}}
+    assert zhongjun_sector_of('600004', imap, cmap, rows2) is True
+    # 数据缺失: spot 空 → None（放行）
+    assert zhongjun_sector_of('600001', imap, cmap, {}) is None

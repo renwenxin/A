@@ -63,6 +63,10 @@ PULLBACK_MA_PERIODS = [5, 10, 20]     # 回踩低吸：5/10/20 日线附近
 PULLBACK_BIAS_PCT = 3.0               # 乖离 < 3%
 PULLBACK_VOL_RATIO = 0.6              # 量 < 前5日均量 × 60%
 
+# ── 板块中军判定（V3 新增） ──
+ZHONGJUN_AMOUNT = 2_000_000_000       # 中军成交额阈值: 20 亿元（与 daily_pool 一致）
+ZHONGJUN_UP_PCT = 5.0                 # 趋势向上近似: 当日涨幅 ≥ 5%（大阳）
+
 
 def _today_str() -> str:
     return date.today().strftime('%Y-%m-%d')
@@ -132,6 +136,57 @@ def pullback_metrics(latest: dict) -> dict:
         'has_lower_shadow': has_lower_shadow,
         'has_bottom_fractal': has_bottom_fractal,
     }
+
+
+def sector_has_zhongjun(members: list, spot_rows: dict) -> bool:
+    """板块是否有中军: members 中任一票 当日涨幅≥5% 且 成交额≥20亿。"""
+    for code in members:
+        r = spot_rows.get(code)
+        if not r:
+            continue
+        try:
+            chg = float(r.get('chg', 0))
+            amount = float(r.get('amount', 0))
+        except (TypeError, ValueError):
+            continue
+        if chg >= ZHONGJUN_UP_PCT and amount >= ZHONGJUN_AMOUNT:
+            return True
+    return False
+
+
+def zhongjun_sector_of(code: str, industry_map: dict, concept_map: dict,
+                       spot_rows: dict):
+    """code 所属板块是否有中军。
+
+    板块归属规则: 有行业(industry_map) → 用该行业全体成员判定(主)；
+    无行业 → 用 code 命中的所有概念成员(concept_map)取并集判定(备)。
+    Returns: True=有中军 / False=明确无 / None=无 spot 数据(放行,不拦截)。
+    """
+    if not spot_rows:
+        return None
+    industry = industry_map.get(code, '')
+    if industry:
+        members = [c for c, v in industry_map.items() if v == industry and c != code]
+        if sector_has_zhongjun(members or [code], spot_rows):
+            return True
+        # 行业判定失败 → 再看概念(补位，行业可能只是粗分类)
+        found = False
+    else:
+        found = True   # 无行业 → 只走概念
+    concept_members = set()
+    for name, meta in concept_map.items():
+        m = (meta.get('members') or {}) if isinstance(meta, dict) else {}
+        if code in m:
+            concept_members.update(k for k in m.keys() if k != code)
+    if concept_members and sector_has_zhongjun(list(concept_members), spot_rows):
+        return True
+    if industry and not found and concept_members:
+        return False          # 行业与概念都无 → 明确无
+    if industry and not concept_members:
+        return False          # 仅行业维度且无中军
+    if not industry and concept_members:
+        return False
+    return None               # 无行业、无概念、无成员 → 数据不足，放行
 
 
 class Vol180SimPortfolio:
@@ -389,6 +444,95 @@ class Vol180SimPortfolio:
             return latest
         except Exception:
             return None
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 板块中军判定（V3）: 行业主 + 概念补位 + 按日磁盘缓存
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def _zhongjun_cache(self, trade_date: str, codes: list) -> dict:
+        """当日板块中军缓存(只算请求的 codes): {code: True/False}；无 spot 数据返回 {}。
+
+        Args:
+            trade_date: YYYY-MM-DD（磁盘缓存键）
+            codes: 本批候选代码（避免全市场概念扫描）
+        """
+        codes = [c for c in (codes or []) if c]
+        if not codes:
+            return {}
+        key = (trade_date or '').replace('-', '')
+        mem = getattr(self, '_zj_cache', None)
+        if mem is None:
+            mem = {}
+            self._zj_cache_date = key
+            self._zj_cache = mem
+        if getattr(self, '_zj_cache_date', None) != key:
+            mem.clear()
+            self._zj_cache_date = key
+        disk = os.path.join(DATA_DIR, 'cache', f'zhongjun_sector_{key}.json')
+        disk_cache = {}
+        if os.path.exists(disk):
+            try:
+                with open(disk, 'r', encoding='utf-8') as f:
+                    disk_cache = json.load(f)
+            except Exception:
+                disk_cache = {}
+        missing = [c for c in codes if c not in mem and c not in disk_cache]
+        if missing:
+            try:
+                from ..data.akshare_fetcher import AkshareFetcher
+                df = AkshareFetcher().get_spot_df()
+            except Exception:
+                df = None
+            if df is not None and not df.empty:
+                imap, cmap = self._load_industry_map(), self._load_concept_map()
+                rows = {}
+                for _, row in df.iterrows():
+                    try:
+                        c = str(row.get('代码', '')).zfill(6)
+                        rows[c] = {'chg': float(row.get('涨跌幅', 0) or 0),
+                                   'amount': float(row.get('成交额', 0) or 0)}
+                    except Exception:
+                        continue
+                for c in missing:
+                    disk_cache[c] = zhongjun_sector_of(c, imap, cmap, rows)
+                os.makedirs(os.path.dirname(disk), exist_ok=True)
+                try:
+                    with open(disk, 'w', encoding='utf-8') as f:
+                        json.dump(disk_cache, f, ensure_ascii=False)
+                except Exception:
+                    pass
+        out = {c: disk_cache.get(c) for c in codes if c in disk_cache}
+        mem.update(out)
+        return out
+
+    def _load_industry_map(self) -> dict:
+        if getattr(self, '_imap', None) is not None:
+            return self._imap
+        out = {}
+        p = os.path.join(DATA_DIR, 'industry_map.json')
+        if os.path.exists(p):
+            try:
+                with open(p, 'r', encoding='utf-8') as f:
+                    out = json.load(f)
+            except Exception:
+                pass
+        self._imap = out
+        return out
+
+    def _load_concept_map(self) -> dict:
+        if getattr(self, '_cmap', None) is not None:
+            return self._cmap
+        out = {}
+        p = os.path.join(DATA_DIR, 'concept_map.json')
+        if os.path.exists(p):
+            try:
+                with open(p, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                out = data.get('concepts', data) if isinstance(data, dict) else {}
+            except Exception:
+                pass
+        self._cmap = out
+        return out
 
     # ═══════════════════════════════════════════════════════════════════════════
     # 候选池: 年涨停>=10 + 主板 + 非ST（预计算，每周刷新一次）
