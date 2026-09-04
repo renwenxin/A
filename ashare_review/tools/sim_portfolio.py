@@ -53,6 +53,16 @@ PER_POSITION_PCT = 0.10        # 单票仓位 10%
 BUY_COMMISSION = 0.0003        # 买入佣金万3
 SELL_COST = 0.0008             # 卖出成本（佣金+印花税）
 
+# ── 斐波那契均线纪律（V3 新增） ──
+FIB_MA_PERIODS = [13, 34, 55, 89]     # 只做 13 日线上；破 34/55 谨慎；破 89 休息
+FIB_MA13 = 13
+FIB_MA34 = 34
+FIB_MA55 = 55
+FIB_MA89 = 89
+PULLBACK_MA_PERIODS = [5, 10, 20]     # 回踩低吸：5/10/20 日线附近
+PULLBACK_BIAS_PCT = 3.0               # 乖离 < 3%
+PULLBACK_VOL_RATIO = 0.6              # 量 < 前5日均量 × 60%
+
 
 def _today_str() -> str:
     return date.today().strftime('%Y-%m-%d')
@@ -62,6 +72,62 @@ def _date_from_str(s: str) -> date:
     if isinstance(s, date):
         return s
     return datetime.strptime(s[:10], '%Y-%m-%d').date()
+
+
+def fib_state(close, ma13, ma34, ma55, ma89):
+    """斐波那契均线状态（优先级从高到低，互斥）:
+    - rest:    close < MA89 → 休息(硬过滤)
+    - caution: close < MA34 或 close < MA55 (且 ≥ MA89) → 谨慎参与
+    - ok:      其余 → 可做
+    缺均线(None)一律返回 ok（不拦截，兼容旧测试/数据不足）。
+    """
+    if ma89 is not None and close < ma89:
+        return 'rest'
+    if ((ma34 is not None and close < ma34)
+            or (ma55 is not None and close < ma55)):
+        return 'caution'
+    return 'ok'
+
+
+def pullback_metrics(latest: dict) -> dict:
+    """从 _read_latest 输出计算回踩低吸指标（缺字段时返回空 dict = 不命中）。
+
+    Returns:
+        {dist_min_pct, vol_ratio_5, has_lower_shadow, has_bottom_fractal}
+    """
+    close = latest.get('close')
+    if close is None:
+        return {}
+    ma_vals = [latest.get(f'ma{p}') for p in PULLBACK_MA_PERIODS]
+    valid = [m for m in ma_vals if m]
+    dists = [abs(close / m - 1) * 100 for m in valid]
+    if not dists:
+        return {}
+    # 下影线: 最近一根 下影 ≥ 实体 × 0.5（含十字星/大长腿）
+    tail = latest.get('tail') or []
+    has_lower_shadow = False
+    has_bottom_fractal = False
+    if len(tail) >= 1:
+        bar = tail[-1]
+        body = abs(bar['c'] - bar['o'])
+        lower_shadow = min(bar['o'], bar['c']) - bar['l']
+        if body > 0:
+            has_lower_shadow = lower_shadow >= body * 0.5
+        else:
+            has_lower_shadow = lower_shadow > 0  # 十字星带下影
+    if len(tail) >= 3:
+        b1, b2, b3 = tail[-3], tail[-2], tail[-1]
+        has_bottom_fractal = (b2['l'] < b1['l'] and b2['l'] < b3['l']
+                              and b2['h'] < b1['h'] and b2['h'] < b3['h'])
+    vol = latest.get('vol')
+    vol_ma5 = latest.get('vol_ma5_prev') or 0
+    vol_ratio_5 = (vol / vol_ma5) if (vol is not None and vol_ma5 > 0) else None
+    return {
+        'dist_min_pct': round(min(dists), 2),
+        'vol_ratio_5': round(vol_ratio_5, 2) if vol_ratio_5 is not None else None,
+        'has_lower_shadow': has_lower_shadow,
+        'has_bottom_fractal': has_bottom_fractal,
+    }
 
 
 class Vol180SimPortfolio:
