@@ -36,12 +36,12 @@ def _mk_latest(closes, volumes, opens=None, highs=None, lows=None):
 def test_pullback_metrics_dist_min():
     """回踩指标: 距 5/10/20 均线最近者乖离。"""
     from ashare_review.tools.sim_portfolio import pullback_metrics
-    # 收盘 ≈ MA20(=10)，距 5/10 远 → dist_min ≈ 0.x%（<3 命中回踩）
+    # MA5=10.01 / MA10=10.005 / MA20=10.0 → 距最近均线(MA20) 0.5%（<3 命中回踩）
     closes = [10.0] * 20 + [10.05]
     latest = _mk_latest(closes, volumes=[100] * 21)
     m = pullback_metrics(latest)
     assert m['dist_min_pct'] < 3.0
-    # 收盘离所有均线 > 5% → 非回踩
+    # close=11.0，距所有均线 > 5% → 非回踩
     closes2 = [10.0] * 20 + [11.0]
     m2 = pullback_metrics(_mk_latest(closes2, volumes=[100] * 21))
     assert m2['dist_min_pct'] > 5.0

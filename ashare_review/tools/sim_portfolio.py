@@ -79,8 +79,12 @@ def fib_state(close, ma13, ma34, ma55, ma89):
     - rest:    close < MA89 → 休息(硬过滤)
     - caution: close < MA34 或 close < MA55 (且 ≥ MA89) → 谨慎参与
     - ok:      其余 → 可做
-    缺均线(None)一律返回 ok（不拦截，兼容旧测试/数据不足）。
+    语义: 缺失的均线不参与判定（该条规则视为不触发）；close 为 None 视为 ok。
+    ma13 保留为入参仅供调用方对齐签名，本状态分档不使用它
+    （13 日线作为买入硬门槛在 Task 4 处理）。
     """
+    if close is None:
+        return 'ok'
     if ma89 is not None and close < ma89:
         return 'rest'
     if ((ma34 is not None and close < ma34)

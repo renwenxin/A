@@ -7,31 +7,6 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def _mk_latest(closes, volumes, opens=None, highs=None, lows=None):
-    """构造 _read_latest 的输出结构（含新增字段）。"""
-    n = len(closes)
-    opens = opens or [closes[i] for i in range(n)]
-    highs = highs or [max(opens[i], closes[i]) * 1.01 for i in range(n)]
-    lows = lows or [min(opens[i], closes[i]) * 0.99 for i in range(n)]
-    vol_ma5_prev = sum(volumes[-6:-1]) / 5.0 if n >= 6 else 0
-    def _ma(p):
-        return sum(closes[-p:]) / p if n >= p else None
-    return {
-        'close': closes[-1],
-        'prev_close': closes[-2] if n >= 2 else closes[-1],
-        'vol': volumes[-1],
-        'mavol180': sum(volumes[-180:]) / min(len(volumes), 180),
-        'ma5': _ma(5), 'ma10': _ma(10), 'ma20': _ma(20),
-        'ma13': _ma(13), 'ma34': _ma(34), 'ma55': _ma(55), 'ma89': _ma(89),
-        'vol_ma5_prev': round(vol_ma5_prev, 0),
-        'tail': [
-            {'o': opens[-3], 'h': highs[-3], 'l': lows[-3], 'c': closes[-3]},
-            {'o': opens[-2], 'h': highs[-2], 'l': lows[-2], 'c': closes[-2]},
-            {'o': opens[-1], 'h': highs[-1], 'l': lows[-1], 'c': closes[-1]},
-        ] if n >= 3 else [],
-    }
-
-
 def test_fib_state_ok_caution_rest():
     """斐波那契状态分档：可做/谨慎/休息 按优先级互斥。"""
     from ashare_review.tools.sim_portfolio import fib_state
@@ -44,3 +19,16 @@ def test_fib_state_ok_caution_rest():
     assert fib_state(close=78, ma13=90, ma34=88, ma55=85, ma89=80) == 'rest'
     # 缺均线 → 不拦截(ok)
     assert fib_state(100, None, None, None, None) == 'ok'
+
+
+def test_fib_state_partial_none_per_rule():
+    """部分均线缺失 → 缺失的规则不触发，其余规则照常判定。"""
+    from ashare_review.tools.sim_portfolio import fib_state
+    # 仅 ma34 在场且被破 → caution
+    assert fib_state(close=5, ma13=None, ma34=6, ma55=None, ma89=None) == 'caution'
+    # 仅 ma89 在场且被破 → rest（最高优先级）
+    assert fib_state(close=5, ma13=None, ma34=None, ma55=None, ma89=6) == 'rest'
+    # 仅 ma34 在场但未破 → ok
+    assert fib_state(close=7, ma13=None, ma34=6, ma55=None, ma89=None) == 'ok'
+    # close=None → ok（与 pullback_metrics 的缺省健壮性一致）
+    assert fib_state(close=None, ma13=90, ma34=88, ma55=85, ma89=80) == 'ok'
