@@ -53,3 +53,37 @@ def test_read_latest_computes_fib_ma():
                   'vol_ma5_prev', 'tail'):
             assert k in latest, f'{k} 缺失'
     monkeypatch.undo()
+
+
+def test_screen_candidates_excludes_rest_below_ma89():
+    """破 89 日线 → 观察池剔除；谨慎档保留但带 fib_state=caution。"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state['holding'] = {}
+    pool = [
+        {'code': '600001', 'pressure': 10.0, 'limit_count': 12, 'name': '可做'},
+        {'code': '600002', 'pressure': 9.4, 'limit_count': 12, 'name': '谨慎'},
+        {'code': '600003', 'pressure': 8.2, 'limit_count': 12, 'name': '休息'},
+    ]
+    # close 分别 9.5(ok) / 8.6(caution, 破55) / 7.5(rest, 破89)，
+    # 相对各自压力位(10.0/9.4/8.2) 均在 -10% 内 → 不触发"距压力位过远"剔除
+    latest = {
+        '600001': {'close': 9.5, 'vol': 100, 'mavol180': 50,
+                   'ma13': 9.0, 'ma34': 8.8, 'ma55': 8.7, 'ma89': 8.0,
+                   'ma5': 9.4, 'ma10': 9.2, 'ma20': 9.1, 'vol_ma5_prev': 90, 'tail': []},
+        '600002': {'close': 8.6, 'vol': 100, 'mavol180': 50,
+                   'ma13': 9.0, 'ma34': 8.8, 'ma55': 8.7, 'ma89': 8.0,
+                   'ma5': 8.7, 'ma10': 8.7, 'ma20': 8.6, 'vol_ma5_prev': 90, 'tail': []},
+        '600003': {'close': 7.5, 'vol': 100, 'mavol180': 50,
+                   'ma13': 9.0, 'ma34': 8.8, 'ma55': 8.7, 'ma89': 8.0,
+                   'ma5': 8.0, 'ma10': 7.9, 'ma20': 7.8, 'vol_ma5_prev': 90, 'tail': []},
+    }
+    monkeypatch.setattr(p, '_get_eligible_pool', lambda: pool)
+    monkeypatch.setattr(p, '_read_latest', lambda code: latest.get(code))
+    cands = p.screen_candidates('2026-09-01')
+    by_code = {c['code']: c for c in cands}
+    assert '600001' in by_code and by_code['600001']['fib_state'] == 'ok'
+    assert '600002' in by_code and by_code['600002']['fib_state'] == 'caution'
+    assert '600003' not in by_code          # 破 89 → 休息剔除

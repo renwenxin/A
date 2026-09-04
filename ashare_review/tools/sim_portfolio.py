@@ -543,6 +543,26 @@ class Vol180SimPortfolio:
 
                 dist_pct = round((close - pressure) / pressure * 100, 1)
 
+                # ── 斐波那契均线纪律: 破 89 休息 → 硬剔除 ──
+                fs = fib_state(
+                    close,
+                    latest.get('ma13'), latest.get('ma34'),
+                    latest.get('ma55'), latest.get('ma89'),
+                )
+                if fs == 'rest':
+                    continue
+
+                fib_extra = {
+                    'fib_state': fs,
+                    # 回踩指标所需字段一次带全（watch/breakout 行共用，供 pullback_metrics 消费）
+                    'ma5': latest.get('ma5'), 'ma10': latest.get('ma10'),
+                    'ma20': latest.get('ma20'),
+                    'ma13': latest.get('ma13'), 'ma34': latest.get('ma34'),
+                    'ma55': latest.get('ma55'), 'ma89': latest.get('ma89'),
+                    'vol_ma5_prev': latest.get('vol_ma5_prev'),
+                    'tail': latest.get('tail') or [],
+                }
+
                 if dist_pct > 0:
                     # 追高上限: 已突破压力位超过板块阈值 → 放弃
                     # (教学: "八个点以下才做" · 突破压力位>10%的追高不做)
@@ -555,6 +575,7 @@ class Vol180SimPortfolio:
                         'vol': int(vol), 'mavol180': round(mavol180, 0),
                         'vol_ratio': round(vol / mavol180, 1) if mavol180 > 0 else 0,
                         'limit_count': limit_count, 'status': 'breakout',
+                        **fib_extra,
                     })
                     continue
 
@@ -568,6 +589,7 @@ class Vol180SimPortfolio:
                     'vol': int(vol), 'mavol180': round(mavol180, 0),
                     'vol_ratio': round(vol / mavol180, 1) if mavol180 > 0 else 0,
                     'limit_count': limit_count, 'status': 'watching',
+                    **fib_extra,
                 })
 
             except Exception:
