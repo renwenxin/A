@@ -87,3 +87,28 @@ def test_screen_candidates_excludes_rest_below_ma89():
     assert '600001' in by_code and by_code['600001']['fib_state'] == 'ok'
     assert '600002' in by_code and by_code['600002']['fib_state'] == 'caution'
     assert '600003' not in by_code          # 破 89 → 休息剔除
+
+
+def test_scan_buy_signals_respects_fib_discipline():
+    """买点: close<=MA13 不给信号；fib=rest 防御性跳过；caution 允许(带警示)。"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state['holding'] = {}
+    monkeypatch.setattr(p, '_get_market_state',
+                        lambda trade_date=None: {'is_bull': True, 'sh_close': 3000, 'sh_ma60': 2900})
+    def cand(code, close, ma13, fs):
+        return {'code': code, 'close': close, 'top_line': 10.0,
+                'dist_pct': 2.0, 'prev_close': 9.9,
+                'vol': 100, 'mavol180': 50, 'vol_ratio': 2.0, 'limit_count': 12,
+                'ma13': ma13, 'fib_state': fs}
+    sigs = p._scan_buy_signals([
+        cand('600001', 10.2, 9.8, 'ok'),       # close>MA13 → 允许
+        cand('600002', 10.2, 10.5, 'caution'),  # close<=MA13 → 拦截
+        cand('600003', 10.2, 9.0, 'rest'),      # 休息 → 防御拦截
+    ], mode='v3')
+    codes = {s['code'] for s in sigs}
+    assert '600001' in codes
+    assert '600002' not in codes
+    assert '600003' not in codes

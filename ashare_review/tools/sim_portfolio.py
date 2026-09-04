@@ -612,6 +612,13 @@ class Vol180SimPortfolio:
 
         buy_signals = []
         for c in candidates:
+            # ── 斐波那契纪律: 只做 13 日线上 · 休息票防御性拦截 ──
+            if c.get('fib_state') == 'rest':
+                continue
+            if (c.get('ma13') is not None
+                    and c.get('close') is not None
+                    and c['close'] <= c['ma13']):
+                continue
             if c['close'] > c['top_line'] and c['vol'] > c['mavol180'] * MAVOL_MULTIPLIER:
                 vol_ratio = c.get('vol_ratio', 0)
                 dist_pct = abs(c.get('dist_pct', 0))
