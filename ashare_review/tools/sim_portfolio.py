@@ -332,7 +332,7 @@ class Vol180SimPortfolio:
         return self._read_daily(code, up_to_date=up_to_date)
 
     def _read_latest(self, code: str) -> Optional[dict]:
-        """只读最近一根K线 + MAVOL180（日常扫描用，不读全文件）。"""
+        """只读最近一根K线 + MAVOL180 + 斐波那契均线 + 回踩指标（日常扫描用）。"""
         market = 'sh' if str(code).startswith('6') else 'sz'
         if str(code).startswith(('8', '4')):
             market = 'bj'
@@ -343,7 +343,6 @@ class Vol180SimPortfolio:
             fsize = os.path.getsize(fpath)
             if fsize < RECORD_SIZE * MAVOL_PERIOD:
                 return None
-            # 只读尾部 200 根K线（够算 MAVOL180）
             read_bytes = min(RECORD_SIZE * 200, fsize)
             with open(fpath, 'rb') as f:
                 f.seek(fsize - read_bytes)
@@ -351,22 +350,43 @@ class Vol180SimPortfolio:
             n = len(raw) // RECORD_SIZE
             if n < 2:
                 return None
-            # 解析最后200根
-            closes = []
-            volumes = []
+            closes, volumes = [], []
+            tail_bars = []  # 近 3 根 {o,h,l,c}
             for j in range(n):
                 offset = j * RECORD_SIZE
-                dt, op, hi, lo, cl_int, amt, vol, _ = struct.unpack('IIIIIfII', raw[offset:offset + RECORD_SIZE])
+                dt, op, hi, lo, cl_int, amt, vol, _ = struct.unpack(
+                    'IIIIIfII', raw[offset:offset + RECORD_SIZE])
                 closes.append(cl_int / 100.0)
                 volumes.append(float(vol))
-            # 最新一根 + 昨收（当日突破 CROSS 判定用）
-            import numpy as np
-            close = closes[-1]
-            vol = volumes[-1]
-            prev_close = closes[-2] if len(closes) >= 2 else 0
-            mavol180 = float(np.mean(volumes[-MAVOL_PERIOD:])) if len(volumes) >= MAVOL_PERIOD else 0
-            return {'close': round(close, 2), 'prev_close': round(prev_close, 2),
-                    'vol': int(vol), 'mavol180': round(mavol180, 0)}
+                if j >= n - 3:
+                    tail_bars.append({
+                        'o': op / 100.0, 'h': hi / 100.0,
+                        'l': lo / 100.0, 'c': cl_int / 100.0,
+                    })
+            closes_np = np.array(closes)
+            volumes_np = np.array(volumes)
+            close = float(closes_np[-1])
+            vol = float(volumes_np[-1])
+            prev_close = float(closes_np[-2]) if len(closes_np) >= 2 else close
+            mavol180 = float(np.mean(volumes_np[-MAVOL_PERIOD:])) \
+                if len(volumes_np) >= MAVOL_PERIOD else 0
+
+            def _ma(p):
+                return float(np.mean(closes_np[-p:])) if len(closes_np) >= p else None
+
+            vol_ma5_prev = float(np.mean(volumes_np[-6:-1])) \
+                if len(volumes_np) >= 6 else 0
+            latest = {
+                'close': round(close, 2),
+                'prev_close': round(prev_close, 2),
+                'vol': int(vol),
+                'mavol180': round(mavol180, 0),
+                'vol_ma5_prev': round(vol_ma5_prev, 0),
+                'tail': tail_bars,
+            }
+            for p in [5, 10, 20, 13, 34, 55, 89]:
+                latest[f'ma{p}'] = round(_ma(p), 3) if _ma(p) is not None else None
+            return latest
         except Exception:
             return None
 
