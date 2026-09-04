@@ -142,3 +142,156 @@ def test_pullback_signal_zhongjun_missing_data_allows():
     }
     sig = pullback_signal_pass(latest, zhongjun=None)   # None=数据缺失
     assert sig is not None and sig['zhongjun'] is None
+
+
+# ---------- 引擎接线: pullback_signal_pass dist=0 / _build_pullback_list / refresh ----------
+
+def _pullback_latest_row(code, close=10.05, vol=40):
+    """最新行情行: close 距 MA20 0.5%，缩量 40%，末根带下影线 → 三条件可命中。"""
+    return {
+        'code': code, 'name': '测' + code, 'close': close, 'vol': vol,
+        'top_line': 12.0, 'dist_pct': -16.0, 'vol_ratio': 0.4,
+        'limit_count': 15, 'fib_state': 'ok',
+        'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.0,   # 距 MA20 0.5%
+        'vol_ma5_prev': 100,
+        'tail': [
+            {'o': 10.2, 'h': 10.4, 'l': 10.0, 'c': 10.1},
+            {'o': 10.1, 'h': 10.2, 'l': 10.0, 'c': 10.05},
+            {'o': 10.06, 'h': 10.2, 'l': 9.8, 'c': 10.05},  # 下影线
+        ],
+    }
+
+
+def test_pullback_signal_dist_zero_allowed():
+    """评审跟进(Important): 收盘恰在均线上(dist_min_pct=0.0)是回踩，
+    不被旧的 falsy 守卫(not m.get('dist_min_pct'))误杀。"""
+    from ashare_review.tools.sim_portfolio import pullback_signal_pass
+    latest = {
+        'close': 10.0, 'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.0,  # 恰在 MA20 上 → 0%
+        'vol': 40, 'vol_ma5_prev': 100,
+        'tail': [
+            {'o': 10.2, 'h': 10.4, 'l': 10.0, 'c': 10.1},
+            {'o': 10.1, 'h': 10.2, 'l': 10.0, 'c': 10.05},
+            {'o': 10.06, 'h': 10.2, 'l': 9.8, 'c': 10.0},   # 下影 0.2 ≥ 实体 0.06×0.5
+        ],
+    }
+    sig = pullback_signal_pass(latest, zhongjun=True)
+    assert sig is not None
+    assert sig['metrics']['dist_min_pct'] == 0.0
+    assert sig['reasons'][0].startswith('回踩MA(乖离0.0%')
+
+
+def test_build_pullback_list_filters_and_sorts():
+    """引擎接线: 过滤 rest/无中军/不满足三条件；zhongjun=True 排前；字段透传。"""
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state['holding'] = {}
+    # zhongjun: 600001 True, 600002 False, 600003 None(数据缺失), 600004 True 但不回踩
+    p._zhongjun_cache = lambda trade_date, codes: {
+        '600001': True, '600002': False, '600003': None, '600004': True,
+    }
+    rows = [
+        _pullback_latest_row('600003'),                              # None 放行 → 命中
+        _pullback_latest_row('600001'),                              # True → 命中
+        _pullback_latest_row('600002'),                              # False → 排除
+        dict(_pullback_latest_row('600004'), fib_state='rest'),      # 休息 → 排除
+        dict(_pullback_latest_row('600005'), vol=90),                # 放量 → 排除
+        dict(_pullback_latest_row('600006'), close=11.0),            # 乖离>3% → 排除
+    ]
+    out = p._build_pullback_list(rows, '2026-09-04')
+    codes = [x['code'] for x in out]
+    assert codes[0] == '600001'          # True 排前
+    assert '600003' in codes             # None(数据缺失) 放行
+    assert '600002' not in codes
+    assert '600004' not in codes         # rest
+    assert '600005' not in codes         # 放量
+    assert '600006' not in codes         # 非回踩
+    first = out[0]
+    for k in ('code', 'name', 'close', 'ma5', 'ma10', 'ma20', 'fib_state',
+              'dist_min_pct', 'vol_ratio_5', 'zhongjun',
+              'has_lower_shadow', 'has_bottom_fractal', 'reasons'):
+        assert k in first
+    assert first['zhongjun'] is True and first['has_lower_shadow'] is True
+
+
+def _empty_state():
+    """refresh_daily_status 所需的最小 state（离线、确定性，不依赖磁盘状态文件）。"""
+    return {
+        'watch': {}, 'ready': {}, 'holding': {}, 'finished': {},
+        'pending_sell': {}, 'pullback': [],
+        'last_risk': {'breaker_tripped': False},
+        'cash': 1_000_000.0, 'initial_capital': 1_000_000.0,
+        'portfolio_history': [], 'last_update': '', 'cache_date': '',
+        'total_trades': 0, 'total_wins': 0,
+        'max_positions': 10, 'per_position_pct': 0.10,
+    }
+
+
+def _fake_latest(code, rest=False):
+    """_read_latest 假输出：refresh 需要 close/vol/mavol180/fib均线/缩量均量/tail。
+
+    rest=True 时 ma89 抬高到 close 之上 → fib_state=rest。
+    """
+    row = _pullback_latest_row(code)
+    row.update({
+        'prev_close': 10.0,
+        'mavol180': 300.0,
+        'ma13': 9.9, 'ma34': 9.8, 'ma55': 9.7,
+        'ma89': 11.0 if rest else 9.6,      # rest: close 10.05 < 11.0
+    })
+    return row
+
+
+def _patch_refresh_io(p, latest_map):
+    """monkeypatch refresh_daily_status 的 IO 侧：行情/市场/中军/持久化全部离线。"""
+    p._read_latest = lambda code: latest_map.get(code)
+    p._get_market_state = lambda trade_date=None: {'is_bull': True, 'sh_close': 3000, 'sh_ma60': 2900}
+    p._zhongjun_cache = lambda trade_date, codes: {c: True for c in (codes or [])}
+    p._save = lambda: None
+
+
+def test_refresh_daily_status_merges_fib_and_rebuilds_pullback():
+    """引擎接线: refresh Step1 用最新行并入 fib/ma 字段、rest 行剔除、回踩列表重建（离线）。"""
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state = _empty_state()
+    p._state['watch'] = {
+        # 旧 fib_state=caution → 按最新价重算为 ok；top_line 10.2 → dist -1.5% 保留
+        '600001': {'code': '600001', 'name': '测600001', 'top_line': 10.2,
+                   'close': 10.5, 'fib_state': 'caution'},
+        # 旧 fib_state=ok → 最新价破 MA89(rest) → 剔除
+        '600002': {'code': '600002', 'name': '测600002', 'top_line': 10.5,
+                   'close': 10.4, 'fib_state': 'ok'},
+    }
+    _patch_refresh_io(p, {
+        '600001': _fake_latest('600001', rest=False),
+        '600002': _fake_latest('600002', rest=True),
+    })
+    p.refresh_daily_status('2026-09-04')
+    # rest 行剔除；命中行保留且 fib/均线字段来自最新行（非旧 seed）
+    assert '600002' not in p._state['watch']
+    assert '600001' in p._state['watch']
+    w = p._state['watch']['600001']
+    assert w['fib_state'] == 'ok'
+    assert w['ma20'] == 10.0 and w['ma89'] == 9.6
+    # pullback 重建: 三条件命中 + 中军 True
+    pb = p._state['pullback']
+    assert pb and pb[0]['code'] == '600001'
+    assert pb[0]['zhongjun'] is True
+    assert pb[0]['fib_state'] == 'ok'
+
+
+def test_refresh_daily_status_clears_pullback_when_watch_empties():
+    """引擎接线(评审 Minor#4): rest 剔除把观察池清空 → 清掉旧的回踩列表。"""
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state = _empty_state()
+    p._state['watch'] = {
+        '600002': {'code': '600002', 'name': '测600002', 'top_line': 10.5,
+                   'close': 10.4, 'fib_state': 'ok'},
+    }
+    p._state['pullback'] = [{'code': '600002', 'stale': True}]   # 旧信号，观察池清空应被清掉
+    _patch_refresh_io(p, {'600002': _fake_latest('600002', rest=True)})
+    p.refresh_daily_status('2026-09-04')
+    assert p._state['watch'] == {}
+    assert p._state['pullback'] == []

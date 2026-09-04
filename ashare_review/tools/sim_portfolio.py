@@ -141,13 +141,13 @@ def pullback_metrics(latest: dict) -> dict:
 def pullback_signal_pass(latest: dict, zhongjun) -> Optional[dict]:
     """回踩低吸三条件 AND:
     1. 板块中军(zhongjun=True 命中; None=数据缺失不拦截; False=拦截)
-    2. 回踩: dist_min_pct < 3%
+    2. 回踩: 0 <= dist_min_pct < 3%（含恰好回踩到均线）
     3. 缩量企稳: vol_ratio_5 < 0.6 且 (下影线 or 底分型)
     """
     if zhongjun is False:
         return None
     m = pullback_metrics(latest)
-    if not m or not m.get('dist_min_pct') or m['dist_min_pct'] >= PULLBACK_BIAS_PCT:
+    if not m or m.get('dist_min_pct') is None or m['dist_min_pct'] >= PULLBACK_BIAS_PCT:
         return None
     vr = m.get('vol_ratio_5')
     if vr is None or vr >= PULLBACK_VOL_RATIO:
@@ -1512,10 +1512,12 @@ class Vol180SimPortfolio:
         # 保持 ready 池不变，不重新选股（与 run_daily 的核心区别）
         new_buys = 0
 
-        # ── 重算回踩低吸（基于刷新后的观察池行） ──
+        # ── 重算回踩低吸（基于刷新后的观察池行；观察池被清空则清掉旧信号） ──
         if self._state['watch']:
             self._state['pullback'] = self._build_pullback_list(
                 list(self._state['watch'].values()), td)
+        else:
+            self._state['pullback'] = []
 
         # ── Step 3: 自动执行到期买入 ──
         auto_buys = 0
