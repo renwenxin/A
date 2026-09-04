@@ -104,9 +104,7 @@ def test_zhongjun_cache_zero_amount_snapshot_treats_as_missing():
 
 def test_pullback_signal_all_three_conditions():
     """回踩低吸: 三条件 AND（回踩+缩量企稳+中军）命中。"""
-    import pytest
-    monkeypatch = pytest.MonkeyPatch()
-    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio, pullback_signal_pass
+    from ashare_review.tools.sim_portfolio import pullback_signal_pass
     latest = {
         'close': 10.05,
         'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.0,   # 距 MA20 0.5%
@@ -128,8 +126,6 @@ def test_pullback_signal_all_three_conditions():
 
 def test_pullback_signal_zhongjun_missing_data_allows():
     """中军数据缺失(spot 空) → 不拦截（与 daily_pool 对无行业数据放行一致）。"""
-    import pytest
-    monkeypatch = pytest.MonkeyPatch()
     from ashare_review.tools.sim_portfolio import pullback_signal_pass
     latest = {
         'close': 10.05, 'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.0,
@@ -295,3 +291,49 @@ def test_refresh_daily_status_clears_pullback_when_watch_empties():
     p.refresh_daily_status('2026-09-04')
     assert p._state['watch'] == {}
     assert p._state['pullback'] == []
+
+
+def test_run_daily_rebuilds_watch_and_pullback():
+    """引擎接线(评审 Minor): run_daily 观察池行透传 fib/ma/tail 字段；
+    pullback 由 watch_list + already_broken 重建（含已突破行，离线）。
+
+    run_daily 从 screen_candidates 取行: watching → 观察池；breakout → already_broken，
+    pullback = _build_pullback_list(watch_list + already_broken)。
+    """
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state = _empty_state()
+    # screen_candidates 假输出:
+    #   600001 观察中 + 回踩三条件命中(watching)
+    #   600002 已突破(close 10.05 > top 9.9) 但同样回踩命中(breakout) → 应进 pullback 不进观察池
+    #   600005 观察中但放量(vol=90) → 三条件不命中
+    cand_600001 = dict(_fake_latest('600001'), status='watching')
+    cand_600002 = dict(_fake_latest('600002'), top_line=9.9, dist_pct=1.5,
+                       status='breakout')
+    cand_600005 = dict(_fake_latest('600005'), vol=90, status='watching')
+    cands = [cand_600001, cand_600002, cand_600005]
+    p.screen_candidates = lambda trade_date: cands
+    p._scan_buy_signals = lambda candidates, mode='v1': []     # 本测试只验接线，不测买点
+    p._get_name = lambda code: {'600001': '测600001', '600002': '测600002',
+                                '600005': '测600005'}.get(code, code)
+    _patch_refresh_io(p, {})     # _get_market_state(bull) / _zhongjun_cache(全True) / _save
+    p.run_daily('2026-09-04')    # 周五交易日，不走周末提前返回
+
+    # 观察池重建: 只有 watching 行，且 fib/ma/tail 等候选字段原样透传
+    assert set(p._state['watch']) == {'600001', '600005'}
+    w = p._state['watch']['600001']
+    assert w['update_date'] == '2026-09-04'
+    for k in ('code', 'close', 'prev_close', 'top_line', 'dist_pct', 'vol',
+              'mavol180', 'vol_ratio', 'limit_count', 'fib_state',
+              'ma5', 'ma10', 'ma20', 'ma13', 'ma34', 'ma55', 'ma89',
+              'vol_ma5_prev', 'tail'):
+        assert w[k] == cand_600001[k], f'watch 透传失败: {k}'
+
+    # pullback 重建: watching 命中 + already_broken 命中都进列表；放量行排除
+    pb = p._state['pullback']
+    assert pb, 'pullback 应被重建（有回踩命中候选）'
+    pb_codes = {x['code'] for x in pb}
+    assert pb_codes == {'600001', '600002'}
+    assert '600002' in pb_codes          # already_broken 行也参与回踩扫描
+    assert all(x['zhongjun'] is True for x in pb)
+    assert all(x['fib_state'] == 'ok' for x in pb)

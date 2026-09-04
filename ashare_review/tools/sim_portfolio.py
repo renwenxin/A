@@ -1103,7 +1103,8 @@ class Vol180SimPortfolio:
                 'reasons': sig['reasons'],
             })
         out.sort(key=lambda x: (x.get('zhongjun') is not True,
-                                 x.get('dist_min_pct') or 99))
+                                 99 if x.get('dist_min_pct') is None
+                                 else x.get('dist_min_pct')))
         return out
 
     def run_daily(self, trade_date: str = None, mode: str = 'v1',
