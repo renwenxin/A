@@ -337,3 +337,45 @@ def test_run_daily_rebuilds_watch_and_pullback():
     assert '600002' in pb_codes          # already_broken 行也参与回踩扫描
     assert all(x['zhongjun'] is True for x in pb)
     assert all(x['fib_state'] == 'ok' for x in pb)
+
+
+def test_run_daily_ready_row_carries_fib_state():
+    """买入信号入库: ready 行透传 fib_state + fib_ma13/34/55/89（页面买卡警示可渲染）。
+
+    评审跟进: run_daily 里 _scan_buy_signals 返回的买入信号会写入 ready 行
+    （sim_portfolio ready dict 存 fib_state/fib_ma13/34/55/89），供页面买卡渲染警示。
+    现有 run_daily 接线测试 stub _scan_buy_signals=[]，从未走到 ready 写入分支。
+    """
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    p = Vol180SimPortfolio()
+    p._state = _empty_state()
+    # 一条 fib_state='caution' 的买入信号（caution 档允许出信号，见 Task 4 测试）
+    sig = {
+        'code': '600001', 'name': '谨慎股', 'close': 10.2, 'top_line': 10.0,
+        'dist_pct': 2.0, 'prev_close': 9.9, 'vol': 100, 'mavol180': 50,
+        'vol_ratio': 2.0, 'limit_count': 12,
+        'fib_state': 'caution',
+        'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.2,
+        'ma13': 10.1, 'ma34': 10.6, 'ma55': 10.8, 'ma89': 9.0,
+    }
+    p._scan_buy_signals = lambda candidates, mode='v1': [dict(sig)]
+    # screen_candidates 可返回空（ready 由 _scan_buy_signals 信号构建）
+    p.screen_candidates = lambda trade_date: []
+    p._get_name = lambda code: {'600001': '谨慎股'}.get(code, code)
+    _patch_refresh_io(p, {})     # _get_market_state(bull) / _zhongjun_cache / _read_latest / _save
+    p.run_daily('2026-09-04')    # 周五交易日；buy_date=下一交易日(09-07) → 不当日自动买入
+
+    # ready 行保留（未自动买入），fib 字段从信号透传
+    ready = p._state['ready']
+    assert '600001' in ready
+    assert '600001' not in p._state['holding']
+    row = ready['600001']
+    assert row.get('fib_state') == 'caution'
+    assert row.get('fib_ma13') == 10.1
+    assert row.get('fib_ma34') == 10.6
+    assert row.get('fib_ma55') == 10.8
+    assert row.get('fib_ma89') == 9.0
+    # get_summary 透传 → sim_buy_today 可见（页面买卡警示键）
+    summary = p.get_summary()
+    buy = [b for b in summary.get('sim_buy_today', []) if b.get('code') == '600001']
+    assert buy and buy[0].get('fib_state') == 'caution'
