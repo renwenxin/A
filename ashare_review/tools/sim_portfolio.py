@@ -138,6 +138,31 @@ def pullback_metrics(latest: dict) -> dict:
     }
 
 
+def pullback_signal_pass(latest: dict, zhongjun) -> Optional[dict]:
+    """回踩低吸三条件 AND:
+    1. 板块中军(zhongjun=True 命中; None=数据缺失不拦截; False=拦截)
+    2. 回踩: dist_min_pct < 3%
+    3. 缩量企稳: vol_ratio_5 < 0.6 且 (下影线 or 底分型)
+    """
+    if zhongjun is False:
+        return None
+    m = pullback_metrics(latest)
+    if not m or not m.get('dist_min_pct') or m['dist_min_pct'] >= PULLBACK_BIAS_PCT:
+        return None
+    vr = m.get('vol_ratio_5')
+    if vr is None or vr >= PULLBACK_VOL_RATIO:
+        return None
+    if not (m.get('has_lower_shadow') or m.get('has_bottom_fractal')):
+        return None
+    reasons = [f"回踩MA(乖离{m['dist_min_pct']}%)"]
+    if m.get('has_lower_shadow'):
+        reasons.append('下影线企稳')
+    if m.get('has_bottom_fractal'):
+        reasons.append('底分型')
+    reasons.append(f"缩量{vr:.0%}")
+    return {'zhongjun': zhongjun, 'reasons': reasons, 'metrics': m}
+
+
 def sector_has_zhongjun(members: list, spot_rows: dict) -> bool:
     """板块是否有中军: members 中任一票 当日涨幅≥5% 且 成交额≥20亿。"""
     for code in members:
@@ -205,6 +230,7 @@ class Vol180SimPortfolio:
                 state.setdefault('portfolio_history', [])
                 state.setdefault('max_positions', MAX_POSITIONS)
                 state.setdefault('per_position_pct', PER_POSITION_PCT)
+                state.setdefault('pullback', [])
                 return state
             except Exception:
                 pass
@@ -214,6 +240,7 @@ class Vol180SimPortfolio:
             'pending_sell': {},
             'holding': {},
             'finished': {},
+            'pullback': [],
             'last_update': '',
             'cache_date': '',
             'total_trades': 0,
@@ -1047,6 +1074,38 @@ class Vol180SimPortfolio:
     # 对外 API
     # ═══════════════════════════════════════════════════════════════════════════
 
+    def _build_pullback_list(self, cand_rows: list, trade_date: str) -> list:
+        """候选行 → 回踩低吸信号（三条件 AND）。中军 True/None=放行(标注)，False=拦截。"""
+        codes = [c['code'] for c in cand_rows]
+        zj = self._zhongjun_cache(trade_date, codes) if codes else {}
+        out = []
+        for c in cand_rows:
+            code = c['code']
+            if c.get('fib_state') == 'rest':
+                continue
+            zhongjun = zj.get(code) if zj else None
+            if zhongjun is False:
+                continue
+            sig = pullback_signal_pass(c, zhongjun)
+            if sig is None:
+                continue
+            out.append({
+                'code': code,
+                'name': c.get('name') or self._get_name(code),
+                'close': c.get('close'),
+                'ma5': c.get('ma5'), 'ma10': c.get('ma10'), 'ma20': c.get('ma20'),
+                'fib_state': c.get('fib_state', 'ok'),
+                'dist_min_pct': sig['metrics'].get('dist_min_pct'),
+                'vol_ratio_5': sig['metrics'].get('vol_ratio_5'),
+                'zhongjun': zhongjun,           # True / None(数据缺失)
+                'has_lower_shadow': sig['metrics'].get('has_lower_shadow'),
+                'has_bottom_fractal': sig['metrics'].get('has_bottom_fractal'),
+                'reasons': sig['reasons'],
+            })
+        out.sort(key=lambda x: (x.get('zhongjun') is not True,
+                                 x.get('dist_min_pct') or 99))
+        return out
+
     def run_daily(self, trade_date: str = None, mode: str = 'v1',
                   force_rebuild_pool: bool = False) -> dict:
         """每日运行: 执行挂单卖出 → 刷新观察池 → 检测买入信号 → 检查卖出。
@@ -1126,14 +1185,14 @@ class Vol180SimPortfolio:
         self._state['ready'] = {}  # ← 清空过期买入信号，防止旧数据残留
         for c in watch_list:
             code = c['code']
-            name = self._get_name(code)
-            self._state['watch'][code] = {
-                'code': code, 'name': name,
-                'close': c['close'], 'top_line': c['top_line'],
-                'dist_pct': c['dist_pct'], 'vol_ratio': c['vol_ratio'],
-                'limit_count': c.get('limit_count', 0),
-                'update_date': td,
-            }
+            entry = dict(c)  # 透传 close/top_line/dist_pct/vol_ratio/limit_count/fib_* /ma*/tail
+            entry['name'] = self._get_name(code)
+            entry['update_date'] = td
+            self._state['watch'][code] = entry
+
+        # ── 回踩低吸信号（独立于高位突破，只扫本候选池） ──
+        self._state['pullback'] = self._build_pullback_list(
+            watch_list + already_broken, td)
 
         # ── Step 2: 检测买入信号（按评分 + 仓位限制 + 风控） ──
         buy_signals = self._scan_buy_signals(already_broken + watch_list, mode=mode)
@@ -1411,7 +1470,7 @@ class Vol180SimPortfolio:
                     del self._state['holding'][code]
                 sells_executed += 1
 
-        # ── Step 1: 刷新观察池价格 ──
+        # ── Step 1: 刷新观察池价格 + fib 字段 ──
         updated_watch = {}
         for code, w in self._state['watch'].items():
             latest = self._read_latest(code)
@@ -1427,18 +1486,36 @@ class Vol180SimPortfolio:
 
             dist_pct = round((close - top_line) / top_line * 100, 1)
             vol_ratio = round(vol / mavol180, 1) if mavol180 > 0 else 0
+            fs = fib_state(close,
+                           latest.get('ma13'), latest.get('ma34'),
+                           latest.get('ma55'), latest.get('ma89'))
             updated_watch[code] = {
                 **w, 'close': round(close, 2), 'dist_pct': dist_pct,
                 'vol_ratio': vol_ratio, 'vol': int(vol),
                 'mavol180': round(mavol180, 0), 'update_date': td,
+                # fib / 回踩指标字段并入（供 fib_state/回踩复用，避免二次读盘）
+                'fib_state': fs,
+                'ma5': latest.get('ma5'), 'ma10': latest.get('ma10'),
+                'ma20': latest.get('ma20'),
+                'ma13': latest.get('ma13'), 'ma34': latest.get('ma34'),
+                'ma55': latest.get('ma55'), 'ma89': latest.get('ma89'),
+                'vol_ma5_prev': latest.get('vol_ma5_prev'),
+                'tail': latest.get('tail') or [],
             }
 
+        # 破89(休息) → 剔除出观察池（refresh 不重选股，只做纪律剔除）
         self._state['watch'] = {
             code: w for code, w in updated_watch.items()
             if w.get('dist_pct', -999) >= -PRESSURE_DIST_PCT
+            and w.get('fib_state') != 'rest'
         }
         # 保持 ready 池不变，不重新选股（与 run_daily 的核心区别）
         new_buys = 0
+
+        # ── 重算回踩低吸（基于刷新后的观察池行） ──
+        if self._state['watch']:
+            self._state['pullback'] = self._build_pullback_list(
+                list(self._state['watch'].values()), td)
 
         # ── Step 3: 自动执行到期买入 ──
         auto_buys = 0
@@ -1693,6 +1770,7 @@ class Vol180SimPortfolio:
             'date': today,
             'last_update': self._state.get('last_update', ''),
             'watch_list': watch,
+            'pullback_list': list(self._state.get('pullback', [])),
             'sim_buy_today': buy_today,
             'sim_sell_today': sell_today,
             'pending_sells': [

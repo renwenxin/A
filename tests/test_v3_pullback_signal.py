@@ -100,3 +100,45 @@ def test_zhongjun_cache_zero_amount_snapshot_treats_as_missing():
     finally:
         AkshareFetcher.get_spot_df = orig
     assert out == {}          # 无判定结果 → 调用方按 None(数据缺失) 放行
+
+
+def test_pullback_signal_all_three_conditions():
+    """回踩低吸: 三条件 AND（回踩+缩量企稳+中军）命中。"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio, pullback_signal_pass
+    latest = {
+        'close': 10.05,
+        'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.0,   # 距 MA20 0.5%
+        'vol': 40, 'vol_ma5_prev': 100,             # 量=前5日均量40%
+        'tail': [
+            {'o': 10.2, 'h': 10.4, 'l': 10.0, 'c': 10.1},
+            {'o': 10.1, 'h': 10.2, 'l': 10.0, 'c': 10.05},
+            {'o': 10.06, 'h': 10.2, 'l': 9.8, 'c': 10.05},  # 下影 0.26≥实体0.01*0.5
+        ],
+    }
+    sig = pullback_signal_pass(latest, zhongjun=True)
+    assert sig is not None and sig['zhongjun'] is True
+    # 无中军 → 不命中
+    assert pullback_signal_pass(latest, zhongjun=False) is None
+    # 放量 → 不命中
+    latest2 = dict(latest, vol=90)
+    assert pullback_signal_pass(latest2, zhongjun=True) is None
+
+
+def test_pullback_signal_zhongjun_missing_data_allows():
+    """中军数据缺失(spot 空) → 不拦截（与 daily_pool 对无行业数据放行一致）。"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    from ashare_review.tools.sim_portfolio import pullback_signal_pass
+    latest = {
+        'close': 10.05, 'ma5': 10.4, 'ma10': 10.3, 'ma20': 10.0,
+        'vol': 40, 'vol_ma5_prev': 100,
+        'tail': [
+            {'o': 10.2, 'h': 10.4, 'l': 10.0, 'c': 10.1},
+            {'o': 10.1, 'h': 10.2, 'l': 10.0, 'c': 10.05},
+            {'o': 10.06, 'h': 10.2, 'l': 9.8, 'c': 10.05},
+        ],
+    }
+    sig = pullback_signal_pass(latest, zhongjun=None)   # None=数据缺失
+    assert sig is not None and sig['zhongjun'] is None
