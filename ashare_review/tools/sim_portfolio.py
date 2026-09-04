@@ -1191,9 +1191,8 @@ class Vol180SimPortfolio:
             entry['update_date'] = td
             self._state['watch'][code] = entry
 
-        # ── 回踩低吸信号（独立于高位突破，只扫本候选池） ──
-        self._state['pullback'] = self._build_pullback_list(
-            watch_list + already_broken, td)
+        # ── 回踩低吸信号（独立于高位突破，只扫观察池；与 refresh 口径一致） ──
+        self._state['pullback'] = self._build_pullback_list(watch_list, td)
 
         # ── Step 2: 检测买入信号（按评分 + 仓位限制 + 风控） ──
         buy_signals = self._scan_buy_signals(already_broken + watch_list, mode=mode)

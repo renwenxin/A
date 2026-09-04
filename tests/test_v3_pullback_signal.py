@@ -294,18 +294,21 @@ def test_refresh_daily_status_clears_pullback_when_watch_empties():
 
 
 def test_run_daily_rebuilds_watch_and_pullback():
-    """引擎接线(评审 Minor): run_daily 观察池行透传 fib/ma/tail 字段；
-    pullback 由 watch_list + already_broken 重建（含已突破行，离线）。
+    """引擎接线: run_daily 观察池行透传 fib/ma/tail 字段；
+    pullback 只由观察池(watching)重建 —— 与 refresh 口径一致，已突破行不进回踩。
 
-    run_daily 从 screen_candidates 取行: watching → 观察池；breakout → already_broken，
-    pullback = _build_pullback_list(watch_list + already_broken)。
+    产品决策(统一只扫观察池): run_daily 曾扫 watch_list + already_broken，
+    与 refresh_daily_status 只扫观察池口径不一致 → 面板闪变。现统一只扫 watch_list:
+      watching 行(600001) 三条件命中 → 进 pullback
+      breakout 行(600002) 不进观察池、不进 pullback（只供 _scan_buy_signals 出买入信号）
+      watching 行(600005) 放量 → 三条件不命中 → 不进 pullback
     """
     from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
     p = Vol180SimPortfolio()
     p._state = _empty_state()
     # screen_candidates 假输出:
-    #   600001 观察中 + 回踩三条件命中(watching)
-    #   600002 已突破(close 10.05 > top 9.9) 但同样回踩命中(breakout) → 应进 pullback 不进观察池
+    #   600001 观察中 + 回踩三条件命中(watching) → 唯一应进 pullback 的行
+    #   600002 已突破(close 10.05 > top 9.9) 且同形态回踩命中(breakout) → 只供买点，不进回踩
     #   600005 观察中但放量(vol=90) → 三条件不命中
     cand_600001 = dict(_fake_latest('600001'), status='watching')
     cand_600002 = dict(_fake_latest('600002'), top_line=9.9, dist_pct=1.5,
@@ -319,8 +322,9 @@ def test_run_daily_rebuilds_watch_and_pullback():
     _patch_refresh_io(p, {})     # _get_market_state(bull) / _zhongjun_cache(全True) / _save
     p.run_daily('2026-09-04')    # 周五交易日，不走周末提前返回
 
-    # 观察池重建: 只有 watching 行，且 fib/ma/tail 等候选字段原样透传
+    # 观察池重建: 只有 watching 行（breakout 行不落 watch），fib/ma/tail 原样透传
     assert set(p._state['watch']) == {'600001', '600005'}
+    assert '600002' not in p._state['watch']     # breakout 行只喂买点信号，不入观察池
     w = p._state['watch']['600001']
     assert w['update_date'] == '2026-09-04'
     for k in ('code', 'close', 'prev_close', 'top_line', 'dist_pct', 'vol',
@@ -329,12 +333,14 @@ def test_run_daily_rebuilds_watch_and_pullback():
               'vol_ma5_prev', 'tail'):
         assert w[k] == cand_600001[k], f'watch 透传失败: {k}'
 
-    # pullback 重建: watching 命中 + already_broken 命中都进列表；放量行排除
+    # pullback 重建: 只含观察池命中行 —— 与 refresh_daily_status 口径一致；
+    # already_broken(600002) 不再参与回踩扫描；放量行(600005) 排除
     pb = p._state['pullback']
     assert pb, 'pullback 应被重建（有回踩命中候选）'
     pb_codes = {x['code'] for x in pb}
-    assert pb_codes == {'600001', '600002'}
-    assert '600002' in pb_codes          # already_broken 行也参与回踩扫描
+    assert pb_codes == {'600001'}
+    assert '600002' not in pb_codes          # 统一只扫观察池：已突破行不进 pullback
+    assert '600005' not in pb_codes          # 放量 → 三条件不命中
     assert all(x['zhongjun'] is True for x in pb)
     assert all(x['fib_state'] == 'ok' for x in pb)
 
