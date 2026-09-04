@@ -13,6 +13,8 @@
     <div style="text-align:center;">
         💡 <strong>买在分歧卖在一致</strong> &nbsp;|&nbsp;
         放量+新高+板块 → 竞价确认 → 回踩均线买 &nbsp;|&nbsp;
+        <span style="color:#0369a1;">只做13日线上 · 破34/55谨慎 · 破89休息</span> &nbsp;|&nbsp;
+        <span style="color:#0ea5e9;">回踩低吸：板块中军+回踩5/10/20线+缩量企稳</span> &nbsp;|&nbsp;
         <span style="color:#f87171;">弱于预期核按钮</span> ·
         <span style="color:#fbbf24;">开板放量减仓</span> ·
         <span style="color:#f87171;">尾盘不封出清</span> ·
@@ -41,6 +43,14 @@
                 ✅ 距 zigzag 找顶线 ≤ 10%<br>
                 ✅ SWL 控盘确认<br>
                 ✅ 量比 ≥ 1.2x<br><br>
+                <strong style="color:#0369a1;">斐波那契均线纪律（日线 13/34/55/89）：</strong><br>
+                ✅ 只做K线在13日线上的图形（买入信号要求收盘&gt;MA13）<br>
+                ⚠️ 破位34/55日线 → 谨慎参与 · 🔴 破位89日线 → 直接休息（自动剔除）<br><br>
+                <strong style="color:#0ea5e9;">回踩低吸三条件（板块有中军 + 个股回踩 + 缩量企稳）：</strong><br>
+                ✅ 板块有中军：板块内有成交额&gt;20亿且趋势向上的票<br>
+                ✅ 个股在回踩：股价在5日/10日/20日线附近（乖离&lt;3%）<br>
+                ✅ 缩量企稳：成交量&lt;前5日均量60%，且出现下影线/底分型<br>
+                三条同时满足 → 就上车，不再纠结第四条；错了止损就是。<br>
                 <strong>加分项：</strong><br>
                 ⭐ 60日/89日线粘合<br>
                 ⭐ 流通市值 20-80亿<br>
@@ -242,6 +252,21 @@
     </div>
 </div>
 
+<!-- ====== 1.5 回踩低吸（三条件确认，只扫 V3 候选池） ====== -->
+<div class="screener-column" style="border:2px solid #0ea5e9;margin-bottom:14px;">
+    <div class="column-header" style="border-bottom-color:#0ea5e9;">
+        <h3 style="color:#0284c7;">🔻 回踩低吸（板块中军+回踩5/10/20日线+缩量企稳）</h3>
+        <span class="column-badge" style="background:#e0f2fe;color:#075985;" id="pullback-count">-</span>
+    </div>
+    <p style="margin:0 0 6px;">
+        启动后回踩企稳的再上车点 · 三条件同时满足才上车，错了止损就是 ·
+        <span style="color:#0284c7;">只做13日线上 · 破34/55谨慎 · 破89休息</span>
+    </p>
+    <div id="pullback-panel" style="min-height:40px;max-height:300px;overflow-y:auto;">
+        <div class="empty-hint">点击「运行扫描」加载...</div>
+    </div>
+</div>
+
 <!-- ====== 2. 明日开盘买入 + 今日模拟卖出（两栏） ====== -->
 <div class="screener-panel">
 
@@ -434,6 +459,7 @@ async function loadSimPanels() {
 }
 
 function renderAll(data) {
+    renderPullback(data.pullback_list || []);
     renderWatchPool(data.watch_list || []);
     renderBuyPanel(data.sim_buy_today || []);
     renderSellPanel(data.sim_sell_today || []);
@@ -508,7 +534,41 @@ function renderWatchPool(items) {
         html += '压力线 ' + (s.top_line || 0) + ' | 现价 ' + (s.close || 0);
         html += ' | <span style="font-weight:600;color:' + distColor + ';">距 ' + (dist > 0 ? '+' : '') + dist + '%</span>';
         html += '</div>';
+        const fib = s.fib_state;
+        const fibTag = fib === 'rest' ? '<span style="font-size:0.7em;background:#ef4444;color:#fff;padding:0 4px;border-radius:3px;">休息</span>'
+                     : fib === 'caution' ? '<span style="font-size:0.7em;background:#f59e0b;color:#fff;padding:0 4px;border-radius:3px;">谨慎</span>'
+                     : '';
+        if (fibTag) html += '<div style="margin-top:1px;">' + fibTag + '</div>';
         html += '<div style="font-size:0.72em;color:#999;">涨停' + (s.limit_count || 0) + '次 | 量比 ' + (s.vol_ratio || 0) + 'x</div>';
+        html += '</div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 回踩低吸（三条件确认） ──
+function renderPullback(items) {
+    document.getElementById('pullback-count').textContent = items.length + '只';
+    const el = document.getElementById('pullback-panel');
+    if (items.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:14px;color:#94a3b8;">今日无回踩低吸信号（三条件未同时满足）</div>';
+        return;
+    }
+    let html = '';
+    items.forEach(s => {
+        const zjTag = s.zhongjun === true
+            ? '<span style="font-size:0.7em;background:#0369a1;color:#fff;padding:1px 6px;border-radius:3px;">中军✔</span>'
+            : '<span style="font-size:0.7em;background:#e2e8f0;color:#475569;padding:1px 6px;border-radius:3px;">中军数据缺失</span>';
+        const fibTag = s.fib_state === 'caution'
+            ? '<span style="font-size:0.7em;background:#f59e0b;color:#fff;padding:1px 5px;border-radius:3px;">谨慎</span>' : '';
+        html += '<div style="display:inline-block;background:#f0f9ff;border-radius:8px;padding:8px 12px;margin:3px;border:1px solid #7dd3fc;vertical-align:top;min-width:230px;border-left:4px solid #0284c7;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<a href="/stock/' + esc(s.code) + '" style="color:#0284c7;font-weight:700;text-decoration:none;">' + esc(s.code) + '</a>';
+        html += '<span style="font-size:0.8em;color:#475569;">' + esc(s.name) + '</span>' + zjTag + fibTag;
+        html += '</div>';
+        html += '<div style="font-size:0.75em;color:#334155;margin-top:3px;">';
+        html += '现价 ' + (s.close || 0) + ' | 回踩乖离 ' + (s.dist_min_pct || 0) + '% | 量比前5日均 ' + (s.vol_ratio_5 || 0) + '';
+        html += '</div>';
+        html += '<div style="font-size:0.72em;color:#0284c7;margin-top:2px;">' + (s.reasons || []).join(' · ') + '</div>';
         html += '</div>';
     });
     el.innerHTML = html;
@@ -535,6 +595,9 @@ function renderBuyPanel(items) {
         html += ' | 量比 <strong style="color:' + ((s.vol_ratio || 0) >= 2 ? '#e94560' : '#f59e0b') + ';">' + (s.vol_ratio || 0) + 'x</strong>';
         html += '</div>';
         html += '<div style="margin-top:4px;font-size:0.78em;color:#16a34a;font-weight:500;">';
+        if (s.fib_state === 'caution') {
+            html += '<div style="font-size:0.72em;color:#b45309;margin-top:2px;">⚠️ 破34/55日线 · 谨慎参与</div>';
+        }
         html += '📅 次日开盘买入 | 🎯 连板持有/断板卖出/最多3天';
         html += ' <button onclick="recordBuy(\'' + (s.code || '') + '\',' + (s.buy_price || s.close || 0) + ')" style="font-size:0.9em;padding:2px 10px;cursor:pointer;background:#16a34a;color:#fff;border:none;border-radius:4px;">✅ 记录明日买入</button>';
         html += ' <button onclick="deleteEntry(\'' + (s.code || '') + '\')" style="font-size:0.8em;padding:1px 6px;cursor:pointer;background:#e5e7eb;color:#999;border:none;border-radius:3px;" title="取消">✕</button>';
