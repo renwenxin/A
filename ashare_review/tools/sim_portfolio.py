@@ -158,8 +158,8 @@ def zhongjun_sector_of(code: str, industry_map: dict, concept_map: dict,
                        spot_rows: dict):
     """code 所属板块是否有中军。
 
-    板块归属规则: 有行业(industry_map) → 用该行业全体成员判定(主)；
-    无行业 → 用 code 命中的所有概念成员(concept_map)取并集判定(备)。
+    板块归属规则: 行业(industry_map)为主 —— 行业组内有中军即 True；
+    行业缺失 或 行业组无中军 → 用 code 命中的所有概念成员(concept_map)并集补位判定。
     Returns: True=有中军 / False=明确无 / None=无 spot 数据(放行,不拦截)。
     """
     if not spot_rows:
@@ -169,10 +169,7 @@ def zhongjun_sector_of(code: str, industry_map: dict, concept_map: dict,
         members = [c for c, v in industry_map.items() if v == industry and c != code]
         if sector_has_zhongjun(members or [code], spot_rows):
             return True
-        # 行业判定失败 → 再看概念(补位，行业可能只是粗分类)
-        found = False
-    else:
-        found = True   # 无行业 → 只走概念
+    # 概念补位：无行业 或 行业组无中军时，用 code 命中的所有概念成员并集再判一次
     concept_members = set()
     for name, meta in concept_map.items():
         m = (meta.get('members') or {}) if isinstance(meta, dict) else {}
@@ -180,13 +177,7 @@ def zhongjun_sector_of(code: str, industry_map: dict, concept_map: dict,
             concept_members.update(k for k in m.keys() if k != code)
     if concept_members and sector_has_zhongjun(list(concept_members), spot_rows):
         return True
-    if industry and not found and concept_members:
-        return False          # 行业与概念都无 → 明确无
-    if industry and not concept_members:
-        return False          # 仅行业维度且无中军
-    if not industry and concept_members:
-        return False
-    return None               # 无行业、无概念、无成员 → 数据不足，放行
+    return False if (industry or concept_members) else None
 
 
 class Vol180SimPortfolio:
@@ -493,14 +484,16 @@ class Vol180SimPortfolio:
                                    'amount': float(row.get('成交额', 0) or 0)}
                     except Exception:
                         continue
-                for c in missing:
-                    disk_cache[c] = zhongjun_sector_of(c, imap, cmap, rows)
-                os.makedirs(os.path.dirname(disk), exist_ok=True)
-                try:
-                    with open(disk, 'w', encoding='utf-8') as f:
-                        json.dump(disk_cache, f, ensure_ascii=False)
-                except Exception:
-                    pass
+                # 降级快照(竞价/TDX回退)成交额恒为0 → 视同数据缺失，不判 False、不写盘
+                if rows and any(r['amount'] > 0 for r in rows.values()):
+                    for c in missing:
+                        disk_cache[c] = zhongjun_sector_of(c, imap, cmap, rows)
+                    os.makedirs(os.path.dirname(disk), exist_ok=True)
+                    try:
+                        with open(disk, 'w', encoding='utf-8') as f:
+                            json.dump(disk_cache, f, ensure_ascii=False)
+                    except Exception:
+                        pass
         out = {c: disk_cache.get(c) for c in codes if c in disk_cache}
         mem.update(out)
         return out

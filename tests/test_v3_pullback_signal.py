@@ -79,3 +79,24 @@ def test_zhongjun_sector_of_code_industry_primary_concept_fallback():
     assert zhongjun_sector_of('600004', imap, cmap, rows2) is True
     # 数据缺失: spot 空 → None（放行）
     assert zhongjun_sector_of('600001', imap, cmap, {}) is None
+
+
+def test_zhongjun_cache_zero_amount_snapshot_treats_as_missing():
+    """降级快照(成交额全0) → 视同数据缺失，不判 False、不写盘（fail-open）。"""
+    import pandas as pd
+    from ashare_review.tools.sim_portfolio import Vol180SimPortfolio
+    from ashare_review.data.akshare_fetcher import AkshareFetcher
+
+    p = Vol180SimPortfolio()
+    p._imap = {'600001': '半导体'}
+    p._cmap = {'半导体': {'members': {'600001': 1}}}
+    fake = pd.DataFrame([
+        {'代码': '600001', '涨跌幅': 6.0, '成交额': 0},   # 回退快照: 成交额全 0
+    ])
+    orig = AkshareFetcher.get_spot_df
+    AkshareFetcher.get_spot_df = lambda self: fake
+    try:
+        out = p._zhongjun_cache('2099-01-01', ['600001'])
+    finally:
+        AkshareFetcher.get_spot_df = orig
+    assert out == {}          # 无判定结果 → 调用方按 None(数据缺失) 放行
