@@ -557,7 +557,8 @@ function renderPullback(items) {
     items.forEach(s => {
         const zjTag = s.zhongjun === true
             ? '<span style="font-size:0.7em;background:#0369a1;color:#fff;padding:1px 6px;border-radius:3px;">中军✔</span>'
-            : '<span style="font-size:0.7em;background:#e2e8f0;color:#475569;padding:1px 6px;border-radius:3px;">中军数据缺失</span>';
+            : (s.zhongjun === false ? ''
+               : '<span style="font-size:0.7em;background:#e2e8f0;color:#475569;padding:1px 6px;border-radius:3px;">中军数据缺失</span>');
         const fibTag = s.fib_state === 'caution'
             ? '<span style="font-size:0.7em;background:#f59e0b;color:#fff;padding:1px 5px;border-radius:3px;">谨慎</span>' : '';
         html += '<div style="display:inline-block;background:#f0f9ff;border-radius:8px;padding:8px 12px;margin:3px;border:1px solid #7dd3fc;vertical-align:top;min-width:230px;border-left:4px solid #0284c7;">';
@@ -568,7 +569,7 @@ function renderPullback(items) {
         html += '<div style="font-size:0.75em;color:#334155;margin-top:3px;">';
         html += '现价 ' + (s.close || 0) + ' | 回踩乖离 ' + (s.dist_min_pct || 0) + '% | 量比前5日均 ' + (s.vol_ratio_5 || 0) + '';
         html += '</div>';
-        html += '<div style="font-size:0.72em;color:#0284c7;margin-top:2px;">' + (s.reasons || []).join(' · ') + '</div>';
+        html += '<div style="font-size:0.72em;color:#0284c7;margin-top:2px;">' + (s.reasons || []).map(esc).join(' · ') + '</div>';
         html += '</div>';
     });
     el.innerHTML = html;

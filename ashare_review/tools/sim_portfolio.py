@@ -1261,6 +1261,9 @@ class Vol180SimPortfolio:
                 'vol_ratio': sig['vol_ratio'],
                 'score': sig.get('score', 60),
                 'limit_count': sig.get('limit_count', 0),
+                'fib_state': sig.get('fib_state', 'ok'),
+                'fib_ma13': sig.get('ma13'), 'fib_ma34': sig.get('ma34'),
+                'fib_ma55': sig.get('ma55'), 'fib_ma89': sig.get('ma89'),
                 'suggested_size_pct': risk['suggested_size_pct'],  # 信号日判定的缩放仓位（随 ready 跨日持久化，以信号日为准）
                 'mode': mode,
                 'market_bull': is_bull,
