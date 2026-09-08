@@ -2,7 +2,7 @@
 import json, os, sqlite3
 from typing import Dict, List, Optional
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 _SCHEMA = '''
 CREATE TABLE IF NOT EXISTS pool_rows (

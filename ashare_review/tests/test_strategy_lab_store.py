@@ -69,3 +69,26 @@ def test_dates_and_pending_counts(store):
     assert store.recorded_dates() == ['2026-09-08']
     s = store.pending_status()
     assert s['2026-09-08']['gap_pending'] == 1 and s['2026-09-08']['ret_pending'] == 1
+
+
+def test_data_dir_points_to_ashare_review_data():
+    """默认 DB 目录必须是 ashare_review/data（两层 dirname），不能漂到项目根 data/。
+
+    源文件位于 ashare_review/strategy_lab/store.py：
+      1 层 dirname = ashare_review/strategy_lab
+      2 层 dirname = ashare_review            ← 正确（再拼 data = ashare_review/data）
+      3 层 dirname = 项目根                   ← 回归 bug（data/strategy_lab.db 落在根目录）
+    """
+    import ashare_review.strategy_lab.store as m
+    expect = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(m.__file__))), 'data')
+    assert os.path.abspath(m._DATA_DIR) == os.path.abspath(expect)
+
+
+def test_default_db_path_joins_data_dir(monkeypatch, tmp_path):
+    """不传 db_path 时，用模块 _DATA_DIR 拼 strategy_lab.db（monkeypatch 避免建真实库）。"""
+    import ashare_review.strategy_lab.store as m
+    monkeypatch.setattr(m, '_DATA_DIR', str(tmp_path))
+    s = m.LabStore()
+    assert s.db_path == str(tmp_path / 'strategy_lab.db')
+
