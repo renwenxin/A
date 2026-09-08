@@ -7,6 +7,18 @@ import pytest
 from ashare_review.strategy_lab.store import LabStore
 
 
+def _row(**over):
+    base = {
+        'trade_date': '2026-09-08', 'strategy': 'one2', 'rank': 1,
+        'code': '600001', 'name': 'A', 'sector': '电子', 'regime': '强势趋势',
+        'amount_yi': 1.0, 'vol_ratio': 1.0, 'seal_ratio': None,
+        'gap_pct': None, 'open_px': 1, 'high_px': 1, 'low_px': 1,
+        'close_px': 10.0, 'next_return': None, 'extra': '{}',
+    }
+    base.update(over)
+    return base
+
+
 @pytest.fixture()
 def store(tmp_path):
     return LabStore(db_path=str(tmp_path / 'lab.db'))
@@ -91,4 +103,36 @@ def test_default_db_path_joins_data_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(m, '_DATA_DIR', str(tmp_path))
     s = m.LabStore()
     assert s.db_path == str(tmp_path / 'strategy_lab.db')
+
+
+def test_empty_store_returns_empty_state(store):
+    """空表: pending_status 返回 {}、recorded_dates 返回 []"""
+    assert store.pending_status() == {}
+    assert store.recorded_dates() == []
+
+
+def test_backfill_missing_row_is_silent(store):
+    """backfill 对不存在行静默返回（不抛异常，不建行）"""
+    store.backfill('2026-09-08', code='600001', strategy='one2',
+                   gap_pct=2.5, next_return=3.0)
+    assert store.rows('2026-09-08') == []
+    assert store.pending_status() == {}
+
+
+def test_upsert_does_not_overwrite_backfilled_gap_or_return(store):
+    """upsert 不覆盖已回填的 gap_pct/next_return（回填专用字段保护）。
+
+    回归点（minor-1）：record 重跑时 collectors 默认 gap_pct=None，
+    upsert 若把 gap_pct 也纳入 DO UPDATE SET，会把已回填的竞价涨幅抹成 None。
+    """
+    store.upsert_row(_row())
+    store.backfill('2026-09-08', code='600001', strategy='one2',
+                   gap_pct=2.5, next_return=3.0)
+    # 重跑 record：默认行 gap_pct=None / next_return=None，快照字段有变化
+    store.upsert_row(_row(close_px=10.6, rank=2))
+    r = store.rows('2026-09-08')[0]
+    assert r['gap_pct'] == 2.5          # 不被 None 抹掉
+    assert r['next_return'] == 3.0      # 不被 None 抹掉
+    assert r['close_px'] == 10.6        # 普通快照列仍被覆盖
+    assert r['rank'] == 2
 
