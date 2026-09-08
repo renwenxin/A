@@ -147,7 +147,7 @@ Expected: FAIL — ModuleNotFoundError: ashare_review.strategy_lab
 import json, os, sqlite3
 from typing import Dict, List, Optional
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 _SCHEMA = '''
 CREATE TABLE IF NOT EXISTS pool_rows (
@@ -360,7 +360,7 @@ from ..analysis.strategy_regime import market_state
 from ..analysis.strategy_regime import regime as regime_mod
 from ..utils.calendar import TradingCalendar
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 _LAB_DIR = os.path.join(_DATA_DIR, 'strategy_lab')
 _STATE_CACHE = os.path.join(_LAB_DIR, 'market_state.csv')
 
@@ -979,7 +979,7 @@ git commit -m "feat(report): 一进二精选 Top8→Top10（复盘页与实验�
 """
 import json, os
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 _IND_FILE = os.path.join(_DATA_DIR, 'industry_map.json')
 
 _industry_map = None
@@ -1385,7 +1385,7 @@ from .store import LabStore
 from .regime import get_regime_for
 from .collectors import collect_breakout_v3, collect_one2, collect_boll_v9
 
-_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 _DB_PATH = os.path.join(_DATA_DIR, 'strategy_lab.db')
 
 
