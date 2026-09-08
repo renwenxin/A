@@ -37,20 +37,25 @@ def state_df():
     }])
 
 
-def test_get_regime_for_returns_tag(monkeypatch, state_df):
+def test_get_regime_for_returns_tag(monkeypatch, tmp_path, state_df):
     fake_state = _FakeStateModule(state_df)
     fake_regime = _FakeRegimeModule()
     monkeypatch.setattr(lab_regime, 'market_state', fake_state)
     monkeypatch.setattr(lab_regime, 'regime_mod', fake_regime)
+    # 隔离缓存文件到 tmp_path：若开发机已有 data/strategy_lab/market_state.csv
+    # 会走真实快路径，覆盖路径不确定；指向空 tmp 文件保证走 mock 的 load_state。
+    monkeypatch.setattr(lab_regime, '_STATE_CACHE', str(tmp_path / 'market_state.csv'))
     tag = lab_regime.get_regime_for('2026-09-08')
     assert tag == '强势趋势'
 
 
-def test_get_regime_for_returns_empty_when_date_missing(monkeypatch, state_df):
+def test_get_regime_for_returns_empty_when_date_missing(monkeypatch, tmp_path, state_df):
     fake_state = _FakeStateModule(state_df)
     fake_regime = _FakeRegimeModule()
     monkeypatch.setattr(lab_regime, 'market_state', fake_state)
     monkeypatch.setattr(lab_regime, 'regime_mod', fake_regime)
+    # 同上：隔离 _STATE_CACHE，避免真实缓存文件干扰 mock 路径
+    monkeypatch.setattr(lab_regime, '_STATE_CACHE', str(tmp_path / 'market_state.csv'))
     assert lab_regime.get_regime_for('2020-01-01') == ''
 
 

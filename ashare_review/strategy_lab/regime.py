@@ -10,6 +10,7 @@ strategy_regime 的 market_state.csv 是回测固定窗口缓存（截至 2026-0
 """
 import os
 from datetime import date
+from typing import Optional
 
 import pandas as pd
 
@@ -41,14 +42,14 @@ def get_regime_for(trade_date: str) -> str:
     return str(val) if val is not None and not pd.isna(val) else ''
 
 
-def _parse_date(d_str: str):
+def _parse_date(d_str: str) -> Optional[date]:
     try:
         return date.fromisoformat(str(d_str))
     except Exception:
         return None
 
 
-def _load_state_through(target: date) -> pd.DataFrame:
+def _load_state_through(target: date) -> Optional[pd.DataFrame]:
     """读/建缓存 state_df（含 regime 列），保证缓存覆盖到 target。
 
     两条路径：
@@ -61,6 +62,10 @@ def _load_state_through(target: date) -> pd.DataFrame:
     跨天（缓存落后于 target）永远读旧文件，get_regime_for 恒返回 ''。
     起点固定为 _START 而非"缓存已有最新"：compute_regime 需要 MA60 与前 20 日
     动量（regime.py:25-27 pct_change(20)），从缓存截断起点重建会丢前视窗口。
+
+    异常契约：TDX 数据目录不可达、全市场扫描或写盘失败等任何异常都在此降级，
+    返回 None —— 由 get_regime_for 统一转为 ''（数据不可达契约），不让一次
+    重建失败把整日记录流程（record_today 会调用本函数）一起挂掉。
     """
     os.makedirs(_LAB_DIR, exist_ok=True)
     df = None
@@ -73,5 +78,13 @@ def _load_state_through(target: date) -> pd.DataFrame:
         except Exception:
             df = None
     if df is None:
-        df = market_state.load_state(_START, target, cache_path=_STATE_CACHE, rebuild=True)
+        # 重建分支：TDX 不可达 / 全市场扫描失败 / 写盘失败均在此吞掉并降级为空。
+        try:
+            df = market_state.load_state(_START, target, cache_path=_STATE_CACHE, rebuild=True)
+        except Exception:
+            return None
+    # 末尾统一 compute_regime：真实 load_state 内部已算过一回 regime 列
+    # （market_state.py:38 在返回前 compute_regime），此处再算一遍幂等无害——
+    # 目的是让"快路径(读 CSV 无 regime 列)"与"重建路径"两个出口输出结构一致，
+    # 调用方拿到的 df 一定带 regime 列，无需区分来源。
     return regime_mod.compute_regime(df)
