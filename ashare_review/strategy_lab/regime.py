@@ -51,9 +51,16 @@ def _parse_date(d_str: str):
 def _load_state_through(target: date) -> pd.DataFrame:
     """读/建缓存 state_df（含 regime 列），保证缓存覆盖到 target。
 
-    缓存文件存在且最后日期 >= target → 直接读 + compute_regime；
-    否则以 end=target 重建整段（复用 strategy_regime 的 market_state.load_state
-    语义，cache_path 指向 lab 自己的文件）。
+    两条路径：
+    1. 缓存文件存在且最后日期 >= target → 直接读 CSV（快路径，同日二次调用秒回）；
+    2. 否则 → market_state.load_state(_START, target, cache_path, rebuild=True)
+       从 _START 全量重建并覆盖写盘。
+
+    必须传 rebuild=True：真实 load_state（market_state.py:23-38）在 cache_path
+    存在且非 rebuild 时会直接读旧 CSV 返回、无视 start/end —— 不传 rebuild 则
+    跨天（缓存落后于 target）永远读旧文件，get_regime_for 恒返回 ''。
+    起点固定为 _START 而非"缓存已有最新"：compute_regime 需要 MA60 与前 20 日
+    动量（regime.py:25-27 pct_change(20)），从缓存截断起点重建会丢前视窗口。
     """
     os.makedirs(_LAB_DIR, exist_ok=True)
     df = None
@@ -66,14 +73,5 @@ def _load_state_through(target: date) -> pd.DataFrame:
         except Exception:
             df = None
     if df is None:
-        start = _START
-        if os.path.exists(_STATE_CACHE):
-            try:
-                cached = pd.read_csv(_STATE_CACHE)
-                cached['date'] = pd.to_datetime(cached['date']).dt.date
-                if not cached.empty:
-                    start = max(_START, cached['date'].max())
-            except Exception:
-                start = _START
-        df = market_state.load_state(start, target, cache_path=_STATE_CACHE)
+        df = market_state.load_state(_START, target, cache_path=_STATE_CACHE, rebuild=True)
     return regime_mod.compute_regime(df)
