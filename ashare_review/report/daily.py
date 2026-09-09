@@ -1426,7 +1426,7 @@ class DailyReport:
                 })
 
         picks.sort(key=lambda x: x['score'], reverse=True)
-        return picks[:8]  # 返回Top 8备选标的
+        return picks[:10]  # 返回Top 10备选标的（复盘页与策略实验室共用）
 
     # ==================================================================
     # 涨停复制候选标的（龙哥涨停双响炮+N字反包体系）
