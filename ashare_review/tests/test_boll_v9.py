@@ -8,7 +8,7 @@ import pytest
 
 from ashare_review.analysis.boll_v9 import (
     calc_boll, tdx_rsi, tdx_mfi, upnday, tdx_count_ref,
-    tdx_cross, build_signal_row, scan_universe,
+    tdx_cross, build_signal_row, scan_universe, _read_index,
 )
 
 
@@ -77,3 +77,49 @@ def test_build_signal_row_tail(df=None):
         assert k in row
     assert isinstance(row['score'], float)
     assert row['xg'] in (True, False)
+
+
+def test_signal_row_works_with_misaligned_index_dates():
+    """fix-3 回归：index_df 与 df 日期不完全重叠（错位/停牌）时不崩溃且输出正常。
+
+    指数只覆盖个股后半段（模拟上市早于指数采样、停牌错位）→ 缺失日对齐为 NaN，
+    zn=za>=zb 对 NaN 为 False，不抛错、不把未来数据算进去。
+    """
+    df = _mk(n=260, seed=7)
+    # 指数日期从个股中间开始（前 40 根对齐不到），长度与个股不同
+    idx = _mk(n=220, seed=3).rename(columns={'close': 'idx_close',
+                                             'high': 'idx_high',
+                                             'low': 'idx_low'})
+    idx['trade_date'] = pd.date_range('2026-03-01', periods=220).strftime('%Y-%m-%d')
+    row = build_signal_row(df, index_df=idx, capital_hands=5.5e7)
+    for k in ('score', 'yca', 'ycb', 'xg'):
+        assert k in row
+    assert isinstance(row['score'], float)
+    assert row['xg'] in (True, False)
+
+
+def test_read_index_truncates_by_trade_date():
+    """fix-3 回归：_read_index 按 trade_date 截断指数，历史回扫不掺未来数据。"""
+    class _FakeTdx:
+        def read_daily(self, code, market):
+            df = _mk(n=120, seed=3)
+            return df.rename(columns={'close': 'idx_close', 'high': 'idx_high',
+                                      'low': 'idx_low'})
+
+    idx = _read_index(_FakeTdx(), trade_date='2026-03-01')
+    assert idx is not None
+    max_date = idx['trade_date'].astype(str).str[:10].max()
+    assert max_date <= '2026-03-01'
+    # 无 trade_date → 不截断、原样返回
+    idx_all = _read_index(_FakeTdx())
+    assert idx_all is not None
+    assert len(idx_all) == len(idx_all)
+
+
+def test_read_index_failure_returns_none():
+    """指数读取异常 → None（调用方中性化，不崩溃）"""
+    class _BrokenTdx:
+        def read_daily(self, code, market):
+            raise RuntimeError('no data dir')
+
+    assert _read_index(_BrokenTdx(), trade_date='2026-03-01') is None

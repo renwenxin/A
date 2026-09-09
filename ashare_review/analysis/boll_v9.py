@@ -182,8 +182,23 @@ def build_signal_row(df: pd.DataFrame, index_df: pd.DataFrame = None,
         idx_close = idx['idx_close'] if 'idx_close' in idx else idx['close']
         idx_high = idx['idx_high'] if 'idx_high' in idx else idx['high']
         idx_low = idx['idx_low'] if 'idx_low' in idx else idx['low']
-        zb = _fund_pos(idx_high, idx_low, idx_close)
-        zb = pd.Series(zb.values[-n:], index=df.index)   # 与个股行对齐（尾部）
+        if 'trade_date' in idx.columns and 'trade_date' in df.columns:
+            # 按 trade_date 精确对齐（防停牌/上市日差异造成位置错位 → 未来数据污染）
+            idx_dates = pd.to_datetime(idx['trade_date'])
+            df_dates = pd.to_datetime(df['trade_date'])
+            idx_by_date = idx.set_index(idx_dates)
+            # 每只个股行取同日期指数值；查不到（指数无该日）→ NaN → zn=za>=zb 判 False
+            def _align(col: pd.Series) -> pd.Series:
+                aligned = idx_by_date[col.name].reindex(df_dates).reset_index(drop=True)
+                return pd.Series(aligned.astype(float).values, index=df.index)
+            ic_al = _align(idx_close)
+            ih_al = _align(idx_high)
+            il_al = _align(idx_low)
+            zb = _fund_pos(ih_al, il_al, ic_al)
+        else:
+            # 退化：无日期信息 → 尾部位置对齐（仅测试/构造数据用）
+            zb = _fund_pos(idx_high, idx_low, idx_close)
+            zb = pd.Series(zb.values[-n:], index=df.index)
     else:
         zb = za.copy()   # 无指数数据时退化为中性（资金不弱化）
 
@@ -197,8 +212,10 @@ def build_signal_row(df: pd.DataFrame, index_df: pd.DataFrame = None,
     zf = df['low'].rolling(19).min()
     zg = pd.Series(ze).rolling(13).max()
     zh = pd.Series(np.where(df['close'].rolling(34).mean() > 0, 1.0, 0.0), index=df.index)
-    zi = pd.Series(ze).where(df['low'] <= zf, 0.0)
-    zi = _tdx_sma((zi + zg * 2) / 2.0, 3, 1) / 618.0 * zh
+    # ZI:=EMA(IF(LOW<=ZF,(ZE+ZG*2)/2,0),3)/618*ZH — IF 作用于表达式整体：
+    # 不吸筹（LOW>ZF）时输入必须是 0，不能把 (0+2*ZG)/2=ZG 送进 EMA
+    zi_raw = (pd.Series(ze).astype(float) + zg * 2) / 2.0
+    zi = _tdx_sma(zi_raw.where(df['low'] <= zf, 0.0), 3, 1) / 618.0 * zh
     zj = pd.Series(np.where(zi > 190, 150.0, zi), index=df.index)
     zk = pd.Series(zj).rolling(20).mean()
     zl = zj > zk * 0.85
@@ -232,7 +249,8 @@ def build_signal_row(df: pd.DataFrame, index_df: pd.DataFrame = None,
     # YAJ = EMA(WINNER(C)*70, 180)*10 —— WINNER 用量加权成本近似
     win_s = pd.Series([_winner_approx(close, vol, float(p)) for p in close], index=df.index)
     yaj = (win_s * 70).ewm(span=180, adjust=False).mean() * 10.0
-    llv27 = close.rolling(27).min()
+    # YAK 的 LLV 取 LOW 的 27 日最低（公式: (CLOSE-LLV(LOW,27))/(HHV(HIGH,27)-LLV(LOW,27))）
+    llv27 = df['low'].rolling(27).min()
     hhv27 = df['high'].rolling(27).max()
     kdj_raw = ((close - llv27) / (hhv27 - llv27).replace(0, np.nan) * 100)
     yak = 3 * _tdx_sma(kdj_raw, 5, 1) - 2 * _tdx_sma(_tdx_sma(kdj_raw, 5, 1), 3, 1)
@@ -305,15 +323,8 @@ def scan_universe(trade_date: str = None, tdx=None, top_n: int = None,
     tdx = tdx or TdxReader()
     industry_map = industry_map or {}
 
-    # 上证指数（INDEX 参照系）
-    index_df = None
-    try:
-        idx = tdx.read_daily(INDEX_CODE, INDEX_MKT)
-        if idx is not None and not idx.empty:
-            index_df = idx.rename(columns={'close': 'idx_close', 'high': 'idx_high',
-                                           'low': 'idx_low'})
-    except Exception:
-        index_df = None
+    # 上证指数（INDEX 参照系）— 按 trade_date 截断，历史回扫不掺未来数据
+    index_df = _read_index(tdx, trade_date)
 
     out = []
     for code, mkt in tdx.list_stocks():
@@ -343,6 +354,25 @@ def scan_universe(trade_date: str = None, tdx=None, top_n: int = None,
             continue
     out.sort(key=lambda x: -x['score'])
     return out if top_n is None else out[:top_n]
+
+
+def _read_index(tdx, trade_date: str = None):
+    """读上证指数日线并重命名为 idx_close/idx_high/idx_low。
+
+    历史回扫（trade_date 给定）时先按日期截断，避免把 trade_date 之后的指数
+    数据（未来函数）喂进 build_signal_row。读不到/异常返回 None（调用方中性化）。
+    """
+    try:
+        idx = tdx.read_daily(INDEX_CODE, INDEX_MKT)
+        if idx is None or idx.empty:
+            return None
+        index_df = idx.rename(columns={'close': 'idx_close', 'high': 'idx_high',
+                                       'low': 'idx_low'})
+        if trade_date:
+            index_df = index_df[index_df['trade_date'].astype(str).str[:10] <= str(trade_date)]
+        return index_df.reset_index(drop=True)
+    except Exception:
+        return None
 
 
 def _name_of(tdx, code: str) -> str:
