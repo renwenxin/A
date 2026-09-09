@@ -106,6 +106,30 @@ def _winner_approx(close: pd.Series, volume: pd.Series, price: float,
     return float(win)
 
 
+# ═══════════════ 从公式段抽出的可测单元 ═══════════════
+
+def _calc_absorption_zi(df: pd.DataFrame, ze, zg, zh) -> pd.Series:
+    """吸筹 ZI 段（公式第 16 节）: EMA(IF(LOW<=ZF,(ZE+ZG*2)/2,0),3)/618*ZH。
+
+    从 build_signal_row 抽出的可测单元：ZF:=LLV(LOW,19) 在本函数内由 df['low'] 计算；
+    不吸筹（LOW>ZF）时输入必须是 0——不能把 (0+2*ZG)/2=ZG 送进 EMA（fix-1 回归点）。
+    """
+    zf = df['low'].rolling(19).min()
+    zi_raw = (pd.Series(ze).astype(float) + pd.Series(zg).astype(float) * 2) / 2.0
+    return _tdx_sma(zi_raw.where(df['low'] <= zf, 0.0), 3, 1) / 618.0 * pd.Series(zh).astype(float)
+
+
+def _calc_kdj_like(df: pd.DataFrame) -> pd.Series:
+    """YAK 分子分母的 27 日随机位置（公式第 18 节）:
+    (CLOSE-LLV(LOW,27))/(HHV(HIGH,27)-LLV(LOW,27))*100。
+
+    从 build_signal_row 抽出的可测单元：LLV 取 LOW 的 27 日最低（不是 CLOSE 的 LLV，fix-2 回归点）。
+    """
+    llv27 = df['low'].rolling(27).min()
+    hhv27 = df['high'].rolling(27).max()
+    return (df['close'] - llv27) / (hhv27 - llv27).replace(0, np.nan) * 100
+
+
 # ═══════════════ 主扫描行（单只股票 + 指数） ═══════════════
 
 def build_signal_row(df: pd.DataFrame, index_df: pd.DataFrame = None,
@@ -209,13 +233,11 @@ def build_signal_row(df: pd.DataFrame, index_df: pd.DataFrame = None,
     # ZE:=EMA(IF(CLOSE*13,ZD*10,ZD/10),3) — np.where 输出需包成 Series 才能喂 _tdx_sma
     ze = _tdx_sma(pd.Series(np.where(close * 13 > 0, zd * 10, zd / 10),
                             index=df.index).astype(float), 3, 1)
-    zf = df['low'].rolling(19).min()
     zg = pd.Series(ze).rolling(13).max()
+    # ZH:=IF(MA(CLOSE,34),1,0)
     zh = pd.Series(np.where(df['close'].rolling(34).mean() > 0, 1.0, 0.0), index=df.index)
-    # ZI:=EMA(IF(LOW<=ZF,(ZE+ZG*2)/2,0),3)/618*ZH — IF 作用于表达式整体：
-    # 不吸筹（LOW>ZF）时输入必须是 0，不能把 (0+2*ZG)/2=ZG 送进 EMA
-    zi_raw = (pd.Series(ze).astype(float) + zg * 2) / 2.0
-    zi = _tdx_sma(zi_raw.where(df['low'] <= zf, 0.0), 3, 1) / 618.0 * zh
+    # ZI 段（含 ZF:=LLV(LOW,19) 门控 /618）封装在 _calc_absorption_zi（fix-1 回归点）
+    zi = _calc_absorption_zi(df, ze, zg, zh)
     zj = pd.Series(np.where(zi > 190, 150.0, zi), index=df.index)
     zk = pd.Series(zj).rolling(20).mean()
     zl = zj > zk * 0.85
@@ -250,9 +272,8 @@ def build_signal_row(df: pd.DataFrame, index_df: pd.DataFrame = None,
     win_s = pd.Series([_winner_approx(close, vol, float(p)) for p in close], index=df.index)
     yaj = (win_s * 70).ewm(span=180, adjust=False).mean() * 10.0
     # YAK 的 LLV 取 LOW 的 27 日最低（公式: (CLOSE-LLV(LOW,27))/(HHV(HIGH,27)-LLV(LOW,27))）
-    llv27 = df['low'].rolling(27).min()
-    hhv27 = df['high'].rolling(27).max()
-    kdj_raw = ((close - llv27) / (hhv27 - llv27).replace(0, np.nan) * 100)
+    # 27 日随机位置封装在 _calc_kdj_like（fix-2 回归点）
+    kdj_raw = _calc_kdj_like(df)
     yak = 3 * _tdx_sma(kdj_raw, 5, 1) - 2 * _tdx_sma(_tdx_sma(kdj_raw, 5, 1), 3, 1)
     yal = pd.Series(yak).rolling(180).mean()
 
@@ -319,7 +340,6 @@ def scan_universe(trade_date: str = None, tdx=None, top_n: int = None,
     返回 list[dict]: {code,name,sector,score,close,dist_to_lb,rsi,mfi}，按 score 降序。
     """
     from ..data.tdx_reader import TdxReader
-    from .indicators import enrich_all as _unused  # noqa: 保持 enrich 依赖可见性
     tdx = tdx or TdxReader()
     industry_map = industry_map or {}
 
@@ -375,18 +395,30 @@ def _read_index(tdx, trade_date: str = None):
         return None
 
 
+# 股票名称映射（data/stock_name_map.json）— 模块级懒加载，避免每只股票重复读盘
+_name_map = None
+
+
+def _load_name_map() -> dict:
+    global _name_map
+    if _name_map is None:
+        try:
+            import os, json
+            p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             'data', 'stock_name_map.json')
+            if os.path.exists(p):
+                with open(p, encoding='utf-8') as f:
+                    _name_map = json.load(f)
+            else:
+                _name_map = {}
+        except Exception:
+            _name_map = {}
+    return _name_map
+
+
 def _name_of(tdx, code: str) -> str:
-    try:
-        import os
-        p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                         'data', 'stock_name_map.json')
-        import json
-        if os.path.exists(p):
-            m = json.load(open(p, encoding='utf-8'))
-            nm = str(m.get(code, '') or '')
-            if nm and not nm.isdigit():
-                return nm
-    except Exception:
-        pass
+    nm = str(_load_name_map().get(code, '') or '')
+    if nm and not nm.isdigit():
+        return nm
     # 兜底：TDX 名称在 list_stocks 不返回 → 用涨停池等外部补名在 collector 层做
     return code
