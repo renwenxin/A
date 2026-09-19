@@ -8,7 +8,7 @@ VOL180 突破战法 — 模拟持仓管理器
 状态机:
   WATCH → BUY_SIGNAL → HOLDING → FINISHED
 """
-import json, os, sys, struct, threading
+import json, math, os, sys, struct, threading
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -110,11 +110,15 @@ def float_mcap_yi(hands, close):
     """流通市值(亿) = 流通股本(手) × 100股/手 × 收盘价 / 1e8。
 
     数据缺失（无股本/无价格）返回 None —— 调用方按“市值未知”放行，不拦截。
+    非有限值(NaN/inf)同样视为未知 → None，保证契约不漏脏值给调用方。
     """
     try:
         if not hands or not close or hands <= 0 or close <= 0:
             return None
-        return round(float(hands) * 100.0 * float(close) / 1e8, 2)
+        v = float(hands) * 100.0 * float(close) / 1e8
+        if not math.isfinite(v):
+            return None
+        return round(v, 2)
     except (TypeError, ValueError):
         return None
 
@@ -738,8 +742,14 @@ class Vol180SimPortfolio:
                 if fs == 'rest':
                     continue
 
+                # ── 小票硬过滤（只做小票）：市值未知放行并标注 ──
+                mcap_yi = float_mcap_yi(self._capital_hands(code), close)
+                if mcap_yi is not None and mcap_yi > SMALL_CAP_MAX_YI:
+                    continue
+
                 fib_extra = {
                     'fib_state': fs,
+                    'float_mcap_yi': mcap_yi,
                     # 回踩指标所需字段一次带全（watch/breakout 行共用，供 pullback_metrics 消费）
                     'ma5': latest.get('ma5'), 'ma10': latest.get('ma10'),
                     'ma20': latest.get('ma20'),
