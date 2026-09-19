@@ -1434,6 +1434,10 @@ def export_xlsx(results: dict, output_path: str):
         # 合并相似原因
         if '止损' in reason:
             reason = '止损-8%'
+        elif '破趋势线' in reason:
+            # 破趋势线价格随趋势线浮动（如 破趋势线9.50）→ 归并到单一桶，
+            # 否则每笔各成一行（笔数=1）会把统计表打散
+            reason = '破趋势线'
         elif '断板' in reason or '涨停后断板' in reason:
             reason = '涨停后断板离场'
         elif '到期' in reason:
