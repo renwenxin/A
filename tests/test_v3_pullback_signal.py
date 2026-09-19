@@ -243,6 +243,10 @@ def _patch_refresh_io(p, latest_map):
     p._read_latest = lambda code: latest_map.get(code)
     p._get_market_state = lambda trade_date=None: {'is_bull': True, 'sh_close': 3000, 'sh_ma60': 2900}
     p._zhongjun_cache = lambda trade_date, codes: {c: True for c in (codes or [])}
+    # 情绪闸门/流通股本缓存依赖本机实盘数据 → 固定，保证结果确定
+    p._emotion_gate = lambda: {'block': False, 'best': False, 'raise_bar': False,
+                               'regime': '震荡观望', 'emotion': '温和'}
+    p._capital_hands = lambda code: None
     p._save = lambda: None
 
 

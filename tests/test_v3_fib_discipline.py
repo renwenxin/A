@@ -82,6 +82,8 @@ def test_screen_candidates_excludes_rest_below_ma89():
     }
     monkeypatch.setattr(p, '_get_eligible_pool', lambda: pool)
     monkeypatch.setattr(p, '_read_latest', lambda code: latest.get(code))
+    # 流通股本缓存是机器相关的 → 置 None（市值未知放行），结果只由 fib 纪律决定
+    monkeypatch.setattr(p, '_capital_hands', lambda code: None)
     cands = p.screen_candidates('2026-09-01')
     by_code = {c['code']: c for c in cands}
     assert '600001' in by_code and by_code['600001']['fib_state'] == 'ok'
@@ -98,6 +100,10 @@ def test_scan_buy_signals_respects_fib_discipline():
     p._state['holding'] = {}
     monkeypatch.setattr(p, '_get_market_state',
                         lambda trade_date=None: {'is_bull': True, 'sh_close': 3000, 'sh_ma60': 2900})
+    # 情绪闸门依赖本机实盘 regime 数据 → 固定为"不拦、不加分、不提门槛"
+    monkeypatch.setattr(p, '_emotion_gate',
+                        lambda: {'block': False, 'best': False, 'raise_bar': False,
+                                 'regime': '震荡观望', 'emotion': '温和'})
     def cand(code, close, ma13, fs):
         return {'code': code, 'close': close, 'top_line': 10.0,
                 'dist_pct': 2.0, 'prev_close': 9.9,

@@ -977,15 +977,18 @@ class Vol180SimPortfolio:
             return None
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # 卖出检查 V3: N字反包 + 移动止盈 + -6%止损
+    # 卖出检查 V3: 趋势线持股 + 破趋势止损 + -8% 底线 + N字反包
     # ═══════════════════════════════════════════════════════════════════════════
 
     def _check_sell_v3(self, code: str, position: dict, today: str) -> Optional[dict]:
-        """V3 卖出规则:
-        0. -6% 硬止损（保留 V2）
-        1. 移动止盈: 从买入以来最高收盘价回落 > 5% → 卖出
-        2. N字反包: 涨停后断板 → 等一天看反包，放量收阳→继续持有
-        3. 持仓 ≥ 5 天兜底 → 到期卖出
+        """V3 卖出规则（趋势线持股）:
+        1. 破趋势线 → 无条件卖出（主止损）
+        2. -8% 绝对底线 → 卖出
+        3. 今日涨停 → 继续持有（趋势线上移到当日最低）
+        4. N字反包: 涨停后断板 → 等一天看反包，放量收阳→继续持有
+        5. 持有 ≥ 20 交易日兜底 → 到期卖出
+        6. 趋势线只升不降：收阳且收盘 > 趋势线 → 上移到当日最低
+        （已取消移动止盈）
         """
         td_fmt = today.replace('-', '')
         buy_date = position.get('buy_date', '')
@@ -1000,7 +1003,7 @@ class Vol180SimPortfolio:
         idx = len(df) - 1
         close = float(df['close'].iloc[idx])
 
-        # 更新最高收盘价（移动止盈基准）
+        # 跟踪最高收盘价（仅面板展示用，退出规则不再消费）
         highest = position.get('highest_close', buy_price)
         highest = max(highest, close)
         position['highest_close'] = round(highest, 2)
@@ -1014,28 +1017,23 @@ class Vol180SimPortfolio:
         except Exception:
             trading_days = 3
 
-        HOLD_MAX = 5  # V3: 最大持有 5 天（比 V2 宽松，给趋势空间）
+        # ── 1) 破趋势线 → 无条件走（主止损） ──
+        trend_line = float(position.get('trend_line') or 0)
+        if trend_line > 0 and close < trend_line:
+            return {
+                'sell_price': round(close, 2),
+                'sell_reason': f'破趋势线{trend_line:.2f}',
+                'is_zt': False,
+                'days_held': trading_days,
+            }
 
-        # ── V3 硬止损（读风控配置，默认 -6%，与 V2 相同） ──
-        from ..risk.evaluate import stop_loss_pct
-        stop = stop_loss_pct(self._risk.get('vol180')) / 100.0
+        # ── 2) -8% 绝对底线 ──
         if buy_price > 0:
             loss_pct = (close - buy_price) / buy_price
-            if loss_pct <= stop:
+            if loss_pct <= V3_STOP_LOSS_PCT / 100.0:
                 return {
                     'sell_price': round(close, 2),
-                    'sell_reason': f'止损{abs(stop*100):.0f}%',
-                    'is_zt': False,
-                    'days_held': trading_days,
-                }
-
-        # ── V3 移动止盈: 从最高回落 > 5% ──
-        if highest > buy_price * 1.03:  # 至少盈利 3% 后才启用移动止盈
-            pullback = (close - highest) / highest
-            if pullback <= -0.05:
-                return {
-                    'sell_price': round(close, 2),
-                    'sell_reason': f'移动止盈-5%(最高{highest:.2f}→现{close:.2f})',
+                    'sell_reason': f'止损{abs(V3_STOP_LOSS_PCT):.0f}%',
                     'is_zt': False,
                     'days_held': trading_days,
                 }
@@ -1049,10 +1047,11 @@ class Vol180SimPortfolio:
         else:
             is_zt_today = False
 
-        # ── 今日涨停 → 继续持有 ──
+        # ── 今日涨停 → 继续持有，趋势线上移到当日最低 ──
         if is_zt_today:
             position['had_zt'] = True
-            position['awaiting_reversal'] = False  # 涨停了，清除反包等待
+            position['awaiting_reversal'] = False
+            position['trend_line'] = round(max(trend_line, float(df['low'].iloc[idx])), 2)
             return None
 
         # ── N字反包: 有过涨停，今日断板 ──
@@ -1088,8 +1087,8 @@ class Vol180SimPortfolio:
                         'days_held': trading_days,
                     }
 
-        # ── 始终没涨停 + 持有 ≥ 5 天兜底 ──
-        if trading_days >= HOLD_MAX:
+        # ── 兜底：持有 ≥ V3_MAX_HOLD_DAYS ──
+        if trading_days >= V3_MAX_HOLD_DAYS:
             return {
                 'sell_price': round(close, 2),
                 'sell_reason': f'持有{trading_days}天到期',
@@ -1097,16 +1096,11 @@ class Vol180SimPortfolio:
                 'days_held': trading_days,
             }
 
-        # ── 移动止盈也适用于没涨停的情况 ──
-        if highest > buy_price * 1.05:  # 浮盈 5%+ 才启用
-            pullback = (close - highest) / highest
-            if pullback <= -0.05:
-                return {
-                    'sell_price': round(close, 2),
-                    'sell_reason': f'移动止盈-5%(最高{highest:.2f})',
-                    'is_zt': False,
-                    'days_held': trading_days,
-                }
+        # ── 趋势线只升不降：收阳且收盘 > 趋势线 → 上移到当日最低 ──
+        today_open = float(df['open'].iloc[idx]) if idx >= 0 else close
+        today_low = float(df['low'].iloc[idx]) if idx >= 0 else close
+        if close > today_open and close > trend_line and today_low > trend_line:
+            position['trend_line'] = round(today_low, 2)
 
         return None
 
@@ -1407,6 +1401,11 @@ class Vol180SimPortfolio:
 
                 self._state['cash'] = self._state.get('cash', INITIAL_CAPITAL) - buy_cost
 
+                try:
+                    entry_low = float(df_buy['low'].iloc[-1])
+                except Exception:
+                    entry_low = buy_price_actual
+                ma13 = (self._read_latest(code) or {}).get('ma13')
                 self._state['holding'][code] = {
                     **rd,
                     'status': 'holding',
@@ -1416,6 +1415,8 @@ class Vol180SimPortfolio:
                     'had_zt': False,
                     'highest_close': buy_price_actual,
                     'awaiting_reversal': False,
+                    'entry_low': round(entry_low, 2),
+                    'trend_line': round(max(entry_low, ma13 or entry_low), 2),
                 }
                 del self._state['ready'][code]
                 auto_buys += 1
@@ -1649,6 +1650,11 @@ class Vol180SimPortfolio:
                     continue
 
                 self._state['cash'] = self._state.get('cash', INITIAL_CAPITAL) - buy_cost
+                try:
+                    entry_low = float(df_buy['low'].iloc[-1])
+                except Exception:
+                    entry_low = buy_price_actual
+                ma13 = (self._read_latest(code) or {}).get('ma13')
                 self._state['holding'][code] = {
                     **rd, 'status': 'holding',
                     'buy_date': td,
@@ -1657,6 +1663,8 @@ class Vol180SimPortfolio:
                     'had_zt': False,
                     'highest_close': buy_price_actual,
                     'awaiting_reversal': False,
+                    'entry_low': round(entry_low, 2),
+                    'trend_line': round(max(entry_low, ma13 or entry_low), 2),
                 }
                 del self._state['ready'][code]
                 auto_buys += 1
@@ -1770,7 +1778,7 @@ class Vol180SimPortfolio:
                     'days_held': sell_sig.get('days_held', 0),
                 })
 
-        # ── 持仓（实时浮盈 + V3 移动止盈/反包状态） ──
+        # ── 持仓（实时浮盈 + V3 趋势线/N字反包状态） ──
         holdings = []
         for code, pos in self._state['holding'].items():
             _ensure_name(pos, code)
