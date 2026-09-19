@@ -7,14 +7,15 @@ V4 VOL180 突破战法 — 市场情绪增强版回测
       2. 涨停家数 < 60 → 不买入（冰点过滤）
       3. 涨停家数 > 140 → 提高评分门槛（过热分化）
       4. 连板高度 >= 5 → 额外加分
-卖出: 与 V3 完全相同
-      -6% 硬止损 · 移动止盈(回落>5%) · N字反包等待 · 5天兜底
+卖出: 与 V3 完全相同（趋势线持股，与 sim_portfolio.py 口径一致）
+      - 破趋势线 → 卖 · -8% 绝对底线 → 卖 · 涨停持有(趋势线上移) · 20交易日硬兜底 · N字反包
+      （已取消移动止盈）
 
 输出: xlsx 文件（交易明细 / 统计汇总 / 按卖出原因 / 按月统计 / 市场分析）
 """
 
 # ... (imports same as V3) ...
-import sys, os, json, struct, time as _time
+import sys, os, json, struct, math, time as _time
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
@@ -38,7 +39,10 @@ from openpyxl.utils import get_column_letter
 FEE = 0.0015
 SLIPPAGE = 0.002
 TOTAL_COST = FEE + SLIPPAGE
-MAX_HOLD_DAYS = 5  # V3
+MAX_HOLD_DAYS = 5  # 旧路径兜底（保留兼容；V3 卖出走 V3_MAX_HOLD_DAYS）
+V3_STOP_LOSS_PCT = -8.0   # V3 绝对止损底线(%)（与 sim_portfolio.py 一致）
+V3_MAX_HOLD_DAYS = 20     # V3 最长持有(交易日)硬兜底（与 sim_portfolio.py 一致）
+TREND_LINE_MA = 13        # 趋势线用 MA13（与"只做13日线上"闭环）
 MIN_LIMIT_UP_COUNT = 10
 PRESSURE_DIST_PCT = 10.0
 MAVOL_PERIOD = 180
@@ -110,6 +114,26 @@ def _auto_width(ws, min_width: int = 8, max_width: int = 22):
                 length = sum(2 if ord(c) > 127 else 1 for c in val)
                 max_len = max(max_len, length)
         ws.column_dimensions[col_letter].width = max(min_width, min(max_len + 3, max_width))
+
+
+def _trend_ma_at(df: pd.DataFrame, idx: int, period: int = TREND_LINE_MA) -> float:
+    """取 idx 处的 period 日均线（趋势线用）。
+
+    帧内已有 ma{period} 列就直接读；否则现算（rolling 只用到 idx 及之前的数据，
+    等价于 sim_portfolio 按日截断后算 MA13，无未来函数）。
+    无效值（None / NaN / ≤0 / 越界）统一返回 NaN，由调用方回退到 entry_low。
+    """
+    col = f'ma{period}'
+    try:
+        if col in df.columns:
+            val = float(df[col].iloc[idx])
+        else:
+            val = float(df['close'].rolling(period).mean().iloc[idx])
+    except Exception:
+        return float('nan')
+    if not math.isfinite(val) or val <= 0:
+        return float('nan')
+    return val
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -395,7 +419,15 @@ class V3Backtest:
 
     def _check_sell_v3(self, code: str, hold: dict, check_date: date,
                        df_full: pd.DataFrame) -> Optional[dict]:
-        """V3 卖出规则（与 sim_portfolio.py _check_sell_v3 完全一致）。"""
+        """V3 卖出规则（与 sim_portfolio.py _check_sell_v3 完全一致）:
+        1. 破趋势线 → 无条件卖出（主止损）
+        2. -8% 绝对底线 → 卖出
+        3. 今日涨停 → 继续持有（趋势线上移到当日最低）
+        4. 持有 ≥ 20 交易日兜底（硬上限，连板/反包中的持仓同样到期卖出）
+        5. N字反包: 涨停后断板 → 等一天看反包，放量收阳→继续持有
+        6. 趋势线只升不降：收阳且收盘 > 趋势线 → 上移到当日最低
+        （已取消移动止盈）
+        """
         buy_date = hold['buy_date']
         buy_price = hold['buy_price']
         had_zt = hold.get('had_zt', False)
@@ -412,7 +444,7 @@ class V3Backtest:
         idx = len(df) - 1
         close = float(df['close'].iloc[idx])
 
-        # 更新最高收盘价
+        # 跟踪最高收盘价（仅面板展示用，退出规则不再消费）
         highest = max(highest, close)
         hold['highest_close'] = round(highest, 2)
 
@@ -422,23 +454,22 @@ class V3Backtest:
         except Exception:
             trading_days = 3
 
-        # ── -6% 硬止损 ──
+        # ── 1) 破趋势线 → 无条件走（主止损） ──
+        trend_line = float(hold.get('trend_line') or 0)
+        if trend_line > 0 and close < trend_line:
+            return {
+                'sell_price': round(close, 2),
+                'sell_reason': f'破趋势线{trend_line:.2f}',
+                'days_held': trading_days,
+            }
+
+        # ── 2) -8% 绝对底线 ──
         if buy_price > 0:
             loss_pct = (close - buy_price) / buy_price
-            if loss_pct <= -0.06:
+            if loss_pct <= V3_STOP_LOSS_PCT / 100.0:
                 return {
                     'sell_price': round(close, 2),
-                    'sell_reason': '止损-6%',
-                    'days_held': trading_days,
-                }
-
-        # ── 移动止盈: 从最高回落 > 5%（需先盈利 3%+） ──
-        if highest > buy_price * 1.03:
-            pullback = (close - highest) / highest
-            if pullback <= -0.05:
-                return {
-                    'sell_price': round(close, 2),
-                    'sell_reason': f'移动止盈-5%(高{highest:.2f}→{close:.2f})',
+                    'sell_reason': f'止损{abs(V3_STOP_LOSS_PCT):.0f}%',
                     'days_held': trading_days,
                 }
 
@@ -450,11 +481,20 @@ class V3Backtest:
         else:
             is_zt_today = False
 
-        # ── 今日涨停 → 继续持有 ──
+        # ── 今日涨停 → 继续持有，趋势线上移到当日最低 ──
         if is_zt_today:
             hold['had_zt'] = True
             hold['awaiting_reversal'] = False
+            hold['trend_line'] = round(max(trend_line, float(df['low'].iloc[idx])), 2)
             return None
+
+        # ── 兜底：持有 ≥ V3_MAX_HOLD_DAYS（含连板/反包中的持仓，防死拿） ──
+        if trading_days >= V3_MAX_HOLD_DAYS:
+            return {
+                'sell_price': round(close, 2),
+                'sell_reason': f'持有{trading_days}天到期',
+                'days_held': trading_days,
+            }
 
         # ── N字反包 ──
         if had_zt:
@@ -481,23 +521,11 @@ class V3Backtest:
                         'days_held': trading_days,
                     }
 
-        # ── 始终没涨停 + 持有 ≥ 5 天兜底 ──
-        if trading_days >= MAX_HOLD_DAYS:
-            return {
-                'sell_price': round(close, 2),
-                'sell_reason': f'持有{trading_days}天到期',
-                'days_held': trading_days,
-            }
-
-        # ── 没涨停但浮盈 5%+，也启用移动止盈 ──
-        if highest > buy_price * 1.05:
-            pullback = (close - highest) / highest
-            if pullback <= -0.05:
-                return {
-                    'sell_price': round(close, 2),
-                    'sell_reason': f'移动止盈-5%(高{highest:.2f})',
-                    'days_held': trading_days,
-                }
+        # ── 趋势线只升不降：收阳且收盘 > 趋势线 → 上移到当日最低 ──
+        today_open = float(df['open'].iloc[idx]) if idx >= 0 else close
+        today_low = float(df['low'].iloc[idx]) if idx >= 0 else close
+        if close > today_open and close > trend_line and today_low > trend_line:
+            hold['trend_line'] = round(today_low, 2)
 
         return None
 
@@ -853,6 +881,16 @@ class V3Backtest:
 
                 cash -= buy_cost
 
+                # V3 建仓: 入场日最低价 + 趋势线 = max(entry_low, MA13)（与实盘一致）
+                try:
+                    entry_low = float(stock_data[code]['low'].iloc[next_idx])
+                except Exception:
+                    entry_low = buy_open
+                if not math.isfinite(entry_low) or entry_low <= 0:
+                    entry_low = buy_open
+                ma13 = _trend_ma_at(stock_data[code], next_idx)
+                trend_line = max(entry_low, ma13) if math.isfinite(ma13) else entry_low
+
                 holdings[code] = {
                     'code': code,
                     'buy_date': next_td,
@@ -867,6 +905,8 @@ class V3Backtest:
                     'had_zt': False,
                     'highest_close': buy_open,
                     'awaiting_reversal': False,
+                    'entry_low': round(entry_low, 2),
+                    'trend_line': round(trend_line, 2),
                     'score': c['score'],
                 }
 
@@ -1393,9 +1433,7 @@ def export_xlsx(results: dict, output_path: str):
         reason = t['exit_reason']
         # 合并相似原因
         if '止损' in reason:
-            reason = '止损-6%'
-        elif '移动止盈' in reason:
-            reason = '移动止盈'
+            reason = '止损-8%'
         elif '断板' in reason or '涨停后断板' in reason:
             reason = '涨停后断板离场'
         elif '到期' in reason:
