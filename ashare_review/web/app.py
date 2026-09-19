@@ -577,7 +577,7 @@ def api_breakout_v3_predict():
 
 @app.route('/api/breakout_v3/simulation')
 def api_breakout_v3_simulation():
-    """刷新每日状态 V3: 竞价确认 + N字反包 + 移动止盈。"""
+    """刷新每日状态 V3: 竞价确认 + N字反包 + 趋势线止损（-8%底线/20日兜底）。"""
     from ..tools.sim_portfolio import Vol180SimPortfolio
     cache_key = 'breakout_v3_sim'
     cached = cache_get(cache_key)
