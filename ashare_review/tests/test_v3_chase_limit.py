@@ -41,6 +41,7 @@ def _portfolio_with_fake_io(monkeypatch, pool, latest_map):
     p._state['holding'] = {}
     monkeypatch.setattr(p, '_get_eligible_pool', lambda: pool)
     monkeypatch.setattr(p, '_read_latest', lambda code: latest_map.get(code))
+    monkeypatch.setattr(p, '_capital_hands', lambda code: None)
     return p
 
 

@@ -401,11 +401,11 @@ class Vol180SimPortfolio:
             return None
 
     def _read_stock(self, code: str, up_to_date: str = None) -> Optional[pd.DataFrame]:
-        """买入检测用日线：至少 60 根，并计算 MA5/MA10/MAVOL180。"""
+        """买入检测用日线：至少 60 根，并计算 MA5/MA10/MA13/MAVOL180。"""
         df = self._read_daily(code, up_to_date=up_to_date, min_len=60)
         if df is None:
             return None
-        df = calc_ma(df, [5, 10])
+        df = calc_ma(df, [5, 10, 13])
         df['mavol180'] = df['volume'].rolling(MAVOL_PERIOD).mean()
         # SWS 生命线按公式还原：A = MAX(1, 100*SUM(VOL,5)/(3*CAPITAL))
         from ..analysis.indicators import calc_swl_sws
@@ -985,8 +985,8 @@ class Vol180SimPortfolio:
         1. 破趋势线 → 无条件卖出（主止损）
         2. -8% 绝对底线 → 卖出
         3. 今日涨停 → 继续持有（趋势线上移到当日最低）
-        4. N字反包: 涨停后断板 → 等一天看反包，放量收阳→继续持有
-        5. 持有 ≥ 20 交易日兜底 → 到期卖出
+        4. 持有 ≥ 20 交易日兜底（硬上限，连板/反包中的持仓同样到期卖出）
+        5. N字反包: 涨停后断板 → 等一天看反包，放量收阳→继续持有
         6. 趋势线只升不降：收阳且收盘 > 趋势线 → 上移到当日最低
         （已取消移动止盈）
         """
@@ -1054,6 +1054,15 @@ class Vol180SimPortfolio:
             position['trend_line'] = round(max(trend_line, float(df['low'].iloc[idx])), 2)
             return None
 
+        # ── 兜底：持有 ≥ V3_MAX_HOLD_DAYS（含连板/反包中的持仓，防死拿） ──
+        if trading_days >= V3_MAX_HOLD_DAYS:
+            return {
+                'sell_price': round(close, 2),
+                'sell_reason': f'持有{trading_days}天到期',
+                'is_zt': False,
+                'days_held': trading_days,
+            }
+
         # ── N字反包: 有过涨停，今日断板 ──
         if had_zt:
             awaiting = position.get('awaiting_reversal', False)
@@ -1086,15 +1095,6 @@ class Vol180SimPortfolio:
                         'is_zt': False,
                         'days_held': trading_days,
                     }
-
-        # ── 兜底：持有 ≥ V3_MAX_HOLD_DAYS ──
-        if trading_days >= V3_MAX_HOLD_DAYS:
-            return {
-                'sell_price': round(close, 2),
-                'sell_reason': f'持有{trading_days}天到期',
-                'is_zt': False,
-                'days_held': trading_days,
-            }
 
         # ── 趋势线只升不降：收阳且收盘 > 趋势线 → 上移到当日最低 ──
         today_open = float(df['open'].iloc[idx]) if idx >= 0 else close
@@ -1405,7 +1405,12 @@ class Vol180SimPortfolio:
                     entry_low = float(df_buy['low'].iloc[-1])
                 except Exception:
                     entry_low = buy_price_actual
-                ma13 = (self._read_latest(code) or {}).get('ma13')
+                try:
+                    ma13 = float(df_buy['ma13'].iloc[-1])
+                    if not math.isfinite(ma13) or ma13 <= 0:
+                        ma13 = None
+                except Exception:
+                    ma13 = None
                 self._state['holding'][code] = {
                     **rd,
                     'status': 'holding',
@@ -1654,7 +1659,12 @@ class Vol180SimPortfolio:
                     entry_low = float(df_buy['low'].iloc[-1])
                 except Exception:
                     entry_low = buy_price_actual
-                ma13 = (self._read_latest(code) or {}).get('ma13')
+                try:
+                    ma13 = float(df_buy['ma13'].iloc[-1])
+                    if not math.isfinite(ma13) or ma13 <= 0:
+                        ma13 = None
+                except Exception:
+                    ma13 = None
                 self._state['holding'][code] = {
                     **rd, 'status': 'holding',
                     'buy_date': td,

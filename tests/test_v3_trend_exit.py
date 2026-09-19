@@ -56,3 +56,14 @@ def test_trend_line_only_rises_on_hold():
     pos = _pos(trend_line=9.5)
     assert p._check_sell_v3('600001', pos, '2026-09-02') is None
     assert pos['trend_line'] == 10.2
+
+
+def test_twenty_day_cap_applies_to_zt_positions():
+    """连板票同样受 20 日兜底（防死拿）：had_zt 且已持有 20 交易日 → 到期卖出。"""
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    p = _p(monkeypatch, _df(close=11.0, low=10.9))
+    pos = _pos(had_zt=True, awaiting_reversal=True, trend_line=9.5,
+               reversal_day_close=10.5, reversal_day_vol=100, buy_date='2026-08-04')
+    sig = p._check_sell_v3('600001', pos, '2026-09-02')
+    assert sig and '到期' in sig['sell_reason']
