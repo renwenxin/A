@@ -793,6 +793,32 @@ class Vol180SimPortfolio:
 
         return candidates
 
+    def _emotion_gate(self) -> dict:
+        """情绪周期闸门（对齐五打法一）。
+
+        - block:     regime=退潮下跌 或 emotion∈{极冰点,冰点} → 禁开仓
+        - best:      regime=强势趋势 或 emotion∈{活跃,火爆} → 信号评分 +5
+        - raise_bar: emotion∈{低迷,温和}（冰点后的修复期）→ 评分门槛提到 75
+        取不到数据时一律不拦（fail-open）。
+        """
+        try:
+            from ..analysis.strategy_regime import live_diagnosis as _ld
+            d = _ld.get_regime_diagnosis() or {}
+        except Exception:
+            d = {}
+        regime = d.get('regime') or ''
+        emotion = d.get('emotion') or ''
+        if regime == '退潮下跌' or emotion in ('极冰点', '冰点'):
+            return {'block': True, 'best': False, 'raise_bar': False,
+                    'regime': regime, 'emotion': emotion}
+        return {
+            'block': False,
+            'best': (regime == '强势趋势') or (emotion in ('活跃', '火爆')),
+            'raise_bar': emotion in ('低迷', '温和'),
+            'regime': regime,
+            'emotion': emotion,
+        }
+
     def _scan_buy_signals(self, candidates: List[dict], mode: str = 'v1') -> List[dict]:
         """从候选池中检测今日触发买入信号的股票。
 
@@ -803,6 +829,10 @@ class Vol180SimPortfolio:
           量比 >= 5x 过度放量 → 跳过
         V3: 熊市（上证<MA60）时评分门槛 ≥ 75
         """
+        gate = self._emotion_gate()
+        if gate.get('block'):
+            return []          # 退潮/冰点：禁开仓（观察池仍展示）
+
         market = self._get_market_state()
         is_bull = market.get('is_bull', True)
 
@@ -847,8 +877,16 @@ class Vol180SimPortfolio:
                 score += 10
                 score = min(score, 100)
 
-                # ── V3: 熊市过滤 ──
-                if mode == 'v3' and not is_bull and score < 75:
+                # ── 小票加分（20-80亿） ──
+                mcap = c.get('float_mcap_yi')
+                if mcap is not None and SMALL_CAP_BONUS_LO <= mcap <= SMALL_CAP_BONUS_HI:
+                    score = min(score + SMALL_CAP_BONUS, 100)
+                # ── 情绪最佳档加分 ──
+                if gate.get('best'):
+                    score = min(score + 5, 100)
+
+                # ── V3: 熊市或情绪修复档 → 门槛 75 ──
+                if mode == 'v3' and (not is_bull or gate.get('raise_bar')) and score < 75:
                     continue
 
                 c['score'] = score
@@ -1156,6 +1194,9 @@ class Vol180SimPortfolio:
         # ── Step 0: 市场环境 ──
         market = self._get_market_state(td)
         is_bull = market.get('is_bull', True)
+
+        # 情绪闸门快照（供页面顶部展示）
+        self._state['emotion_gate'] = self._emotion_gate()
 
         # ── Step 0b: 强制重建候选池 ──
         if force_rebuild_pool:
@@ -1808,6 +1849,7 @@ class Vol180SimPortfolio:
             'last_update': self._state.get('last_update', ''),
             'watch_list': watch,
             'pullback_list': list(self._state.get('pullback', [])),
+            'emotion_gate': self._state.get('emotion_gate', {}),
             'sim_buy_today': buy_today,
             'sim_sell_today': sell_today,
             'pending_sells': [
