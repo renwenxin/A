@@ -67,6 +67,15 @@ PULLBACK_VOL_RATIO = 0.6              # 量 < 前5日均量 × 60%
 ZHONGJUN_AMOUNT = 2_000_000_000       # 中军成交额阈值: 20 亿元（与 daily_pool 一致）
 ZHONGJUN_UP_PCT = 5.0                 # 趋势向上近似: 当日涨幅 ≥ 5%（大阳）
 
+# ── 小票过滤 / 趋势线持股（对齐逻辑哥五打法一 2026-09-19） ──
+SMALL_CAP_MAX_YI = 100.0      # 流通市值上限(亿)：超过不入候选
+SMALL_CAP_BONUS_LO = 20.0     # 小票加分区间下沿(亿)
+SMALL_CAP_BONUS_HI = 80.0     # 小票加分区间上沿(亿)
+SMALL_CAP_BONUS = 8           # 小票加分
+V3_STOP_LOSS_PCT = -8.0       # V3 绝对止损底线(%)（原 -6%，仅 V3 生效，不影响 V1/V2）
+V3_MAX_HOLD_DAYS = 20         # V3 最长持有(交易日)兜底（原 5）
+TREND_LINE_MA = 13            # 趋势线用 MA13（与“只做13日线上”闭环）
+
 
 def _today_str() -> str:
     return date.today().strftime('%Y-%m-%d')
@@ -95,6 +104,19 @@ def fib_state(close, ma13, ma34, ma55, ma89):
             or (ma55 is not None and close < ma55)):
         return 'caution'
     return 'ok'
+
+
+def float_mcap_yi(hands, close):
+    """流通市值(亿) = 流通股本(手) × 100股/手 × 收盘价 / 1e8。
+
+    数据缺失（无股本/无价格）返回 None —— 调用方按“市值未知”放行，不拦截。
+    """
+    try:
+        if not hands or not close or hands <= 0 or close <= 0:
+            return None
+        return round(float(hands) * 100.0 * float(close) / 1e8, 2)
+    except (TypeError, ValueError):
+        return None
 
 
 def pullback_metrics(latest: dict) -> dict:
