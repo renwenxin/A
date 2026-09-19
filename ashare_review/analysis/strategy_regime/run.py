@@ -4,7 +4,7 @@
   1. 构建/加载 每日市场状态（上证/国证2000/广度/缠论趋势）
   2. 行情分类 regime（强势趋势/题材轮动/冰点超跌/震荡观望/弱市回调/退潮下跌）
   3. 三个战法历史回测:
-     - 启动突破 V3: 复用 analysis/v3_backtest.py（VOL180 突破 + 竞价确认 + N字反包 + 移动止盈）
+     - 启动突破 V3: 复用 analysis/v3_backtest.py（VOL180 突破 + 竞价确认 + N字反包 + 趋势线止损，移动止盈已取消）
      - 1进2 接力:   strategy_regime/one_two_backtest.py（复刻复盘《今日一进二精选》）
      - 冰点抄底:    strategy_regime/ice_backtest.py（冰点检测 + 缠论反转确认 + 超跌企稳）
   4. 每笔交易打上入场日行情标签 → 战法×行情矩阵

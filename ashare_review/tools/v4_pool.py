@@ -192,16 +192,19 @@ class V4PoolMonitor:
             item = {**it}
             bp = item.get('buy_price', 0)
             est = item.get('sell_price_today', 0) or bp
-            highest = item.get('highest_close', 0) or bp
             reason = item.get('exit_reason', '')
-            if '止损' in reason and bp > 0:
-                center = bp * 0.94          # -6% 硬止损
+            if '破趋势线' in reason:
+                # 主止损：收盘跌破趋势线，卖出价≈当日收盘
+                center = est or bp
+                if center > 0:
+                    low, high = center * 0.99, center * 1.01
+                else:
+                    low, high = est * 0.98, est * 1.02
+                item['sell_range_basis'] = '收盘跌破趋势线'
+            elif '止损' in reason and bp > 0:
+                center = bp * 0.92          # -8% 绝对底线止损
                 low, high = center * 0.99, center * 1.01
-                item['sell_range_basis'] = '止损-6%附近'
-            elif '移动止盈' in reason and highest > 0:
-                center = highest * 0.95     # 从最高回落5%触发
-                low, high = center * 0.99, center * 1.01
-                item['sell_range_basis'] = '最高回落5%触发'
+                item['sell_range_basis'] = '止损-8%附近'
             else:
                 low, high = est * 0.98, est * 1.02
                 item['sell_range_basis'] = '开盘/收盘附近'
