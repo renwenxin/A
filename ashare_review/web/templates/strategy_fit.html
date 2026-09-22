@@ -19,7 +19,8 @@
     只覆盖你现在专精的两套：<b>启动突破 V3</b> 与 <b>一进二接力</b>。
     <b>统一到一个口径 —— 广度口径（斩龙 v1）</b>：涨停/跌停家数 + 炸板率 + 最高连板 + 指数 vs MA20 → 6 个状态。
     原「本工程 regime」口径（缠论趋势 + 小盘相对强弱 + 情绪温度）已<b>降级为跨口径校验轴</b>：
-    它没有自己的表、没有自己的灯、没有自己的"今日结论"，只能在符号相反时把该格标成「🟣 不稳」。
+    它没有自己的表、没有自己的灯、没有自己的"今日结论"，只能在该格「广度口径笔均」与
+    「按该格 regime 构成加权的本工程各档笔均」符号相反时，把该格标成「🟣 不稳」。
     四个稳健性轴（<b>跨版本 / 跨阈值 / 跨时点 / 跨口径</b>）任一翻转 → 不稳。
 </div>
 
@@ -105,7 +106,8 @@
         {% if d.current and d.current.regime %}
         <div style="color:var(--faint);font-size:var(--fs-12);margin-top:10px;">
             本工程 regime 口径今日判「{{ d.current.regime }}」（上证缠论趋势 + 小盘相对强弱 + 情绪温度）——
-            这一条<b>不单独给结论</b>，只用于第 ③ 节对同一格做跨口径校验（符号相反 → 不稳）。
+            这一条<b>不单独给结论</b>，只用于第 ③ 节对同一格做跨口径校验（该格广度笔均 vs
+            按该格 regime 构成加权的本工程各档笔均，符号相反 → 不稳）。
         </div>
         {% endif %}
     </div>
@@ -139,8 +141,8 @@
         <th rowspan="2">广度状态</th><th rowspan="2">天数</th>
         <th colspan="9">启动突破 V3</th><th colspan="9">一进二接力</th>
     </tr><tr>
-        <th>灯</th><th>交易</th><th>胜率</th><th>笔均</th><th>盈亏比</th><th>跨版本<br><small>为正/版本</small></th><th>跨阈值<br><small>35·40·45</small></th><th>跨时点<br><small>T-1 / 同日</small></th><th>跨口径<br><small>广度 / regime</small></th>
-        <th>灯</th><th>交易</th><th>胜率</th><th>笔均</th><th>盈亏比</th><th>跨版本<br><small>为正/版本</small></th><th>跨阈值<br><small>35·40·45</small></th><th>跨时点<br><small>T-1 / 同日</small></th><th>跨口径<br><small>广度 / regime</small></th>
+        <th>灯</th><th>交易</th><th>胜率</th><th>笔均</th><th>盈亏比</th><th>跨版本<br><small>为正/版本</small></th><th>跨阈值<br><small>35·40·45</small></th><th>跨时点<br><small>T-1 / 同日</small></th><th>跨口径<br><small>广度 vs 本工程各档</small></th>
+        <th>灯</th><th>交易</th><th>胜率</th><th>笔均</th><th>盈亏比</th><th>跨版本<br><small>为正/版本</small></th><th>跨阈值<br><small>35·40·45</small></th><th>跨时点<br><small>T-1 / 同日</small></th><th>跨口径<br><small>广度 vs 本工程各档</small></th>
     </tr></thead>
     <tbody>
     {% for st in f.states %}
@@ -154,7 +156,7 @@
     </tbody>
 </table></div>
 <div class="tips" style="margin-top:10px;">
-    <div class="tips-row"><span>🎯</span><span><b>四个稳健性轴全过才敢用</b>：跨版本（{{ d.n_variants }} 个回测实现）/ 跨阈值（炸板率 35·40·45）/ 跨时点（T-1 广度 vs 同日广度）/ 跨口径（广度 vs 本工程 regime 加权）。
+    <div class="tips-row"><span>🎯</span><span><b>四个稳健性轴全过才敢用</b>：跨版本（{{ d.n_variants }} 个回测实现）/ 跨阈值（炸板率 35·40·45）/ 跨时点（T-1 广度 vs 同日广度）/ 跨口径（该格广度口径笔均 vs 按该格 regime 构成加权的本工程各档笔均，是两个口径各自的独立统计）。
         任一轴符号翻转 → 该格判「🟣 不稳」；<b>没有"两边各给一个结论"这回事，本表只有一套灯。</b></span></div>
     <div class="tips-row"><span>🕐</span><span><b>as-of 约定</b>：斩龙原文规定「交易日 T 的状态用 T-1 的广度判定」，主列照此；「同日」列是 T 日收盘广度的变体。两者都在买入前可得，但结论可能差很多 —— 所以差异被记成一个稳健性轴，而不是挑好看的那个写上去。</span></div>
 </div>
@@ -176,8 +178,12 @@
 
 <div class="card"><div class="card-body" style="font-size:var(--fs-13);line-height:1.9;">
     本工程 regime 口径<b>只在这里出现</b>：它的唯一作用是对第 ② 节同一格做符号校验 ——
-    把该格成交按本工程 regime 再分桶、取子桶笔均的 n 加权平均，与广度口径笔均比符号；
-    <b>符号相反 → 那一格在第 ② 节直接判「不稳」</b>，同向或样本不足则不改变结论。
+    一边是该格的<b>广度口径笔均</b>（这一格自己的成交），另一边是<b>按该格 regime 构成加权的
+    「本工程口径各档笔均」</b>：先在本工程口径里按 regime 算出各档笔均 avg_regime[r]（用<b>全样本</b>，
+    与某一格无关），再用这一格里落在各 regime 的笔数 n<sub>st,r</sub> 去加权，即
+    Σ n<sub>st,r</sub>·avg_regime[r] / Σ n<sub>st,r</sub>。
+    <b>两边符号相反 → 说明两个口径对同一批成交所处的环境判断不一致，那一格在第 ② 节直接判「不稳」</b>；
+    同向或任一侧无数据（None）则不改变结论。
     <div style="margin-top:6px;">
         本轮：<b>跨口径反向 {{ ns.cross_n }} 格</b>{% if ns.cross_bad %}（{{ ns.cross_bad|join('、') }}）{% endif %}；
         <b>跨时点反向 {{ ns.conv_n }} 格</b>{% if ns.conv_bad %}（{{ ns.conv_bad|join('、') }}）{% endif %}。
@@ -185,10 +191,10 @@
 </div></div>
 
 <div class="grid-2" style="margin-top:var(--sp-4);">
-    <div class="card"><div class="card-header">跨口径校验明细（广度笔均 vs 本工程 regime 加权笔均）</div><div class="card-body">
+    <div class="card"><div class="card-header">跨口径校验明细（该格广度笔均 vs 按该格 regime 构成加权的本工程各档笔均）</div><div class="card-body">
         <div class="table-wrap"><table>
             <thead><tr><th>广度状态</th><th colspan="3">启动突破 V3</th><th colspan="3">一进二接力</th></tr>
-            <tr><th></th><th>广度</th><th>regime 加权</th><th>结果</th><th>广度</th><th>regime 加权</th><th>结果</th></tr></thead>
+            <tr><th></th><th>广度笔均</th><th>本工程各档加权</th><th>结果</th><th>广度笔均</th><th>本工程各档加权</th><th>结果</th></tr></thead>
             <tbody>
             {% for st in f.states %}
                 {% set a = (f.cross.get('启动突破V3') or {}).get(st) or {} %}
@@ -205,10 +211,12 @@
             </tbody>
         </table></div>
         <div style="color:var(--faint);font-size:var(--fs-12);margin-top:6px;">
-            「regime 加权」= 把该格成交按本工程 regime 再分桶后、子桶笔均的 n 加权平均。
-            它与广度笔均来自<b>同一批成交</b>，所以在当前数据上必然同值（同向）；
-            这一列的定位是<b>结构性校验位</b>：一旦两边对同一格的分桶口径出现分歧（例如换用别的 regime 版本、
-            或按买入日而非信号日归组），它会立刻给出相反符号，把该格顶成「不稳」。
+            明细第 1 列 = 该格的<b>广度口径笔均</b>；第 2 列 = <b>按该格 regime 构成加权的「本工程口径各档笔均」</b>
+            （括号里是参与加权的 regime 档数，即该格里出现且本工程口径有统计的档位）。
+            两边是<b>两个口径各自的独立统计</b> —— 不是把同一格成交换个方式分桶；后者恒等于广度笔均、永远同向。
+            所以这里可以真的出现「❌ 相反」：某格广度笔均为正，但它的成交大多落在本工程口径评分为负的档位上，
+            即<b>两个口径对同一批成交所处的环境判断不一致</b> → 该格判「🟣 不稳」。
+            任一侧无数据 → 记「—」，按样本不足处理，不算翻转。
         </div>
     </div></div>
 
@@ -275,7 +283,8 @@
         <div style="margin-left:14px;">· <b>跨版本</b>：同一批交易用 {{ d.n_variants }} 个不同版本的回测结果各算一遍 → 方向一致才算数。</div>
         <div style="margin-left:14px;">· <b>跨阈值</b>：把炸板率阈值在 35/40/45 移动 → 看笔均是否翻号（阈值型状态对参数敏感）。</div>
         <div style="margin-left:14px;">· <b>跨时点口径</b>：广度状态有两种挂法 —— 斩龙的「T-1 广度」和「T 日收盘广度」；两种都合法、都在买入前可得，符号相反就说明这一格本身不稳。</div>
-        <div style="margin-left:14px;">· <b>跨口径</b>：把同一格成交按本工程 regime 再分桶、取子桶笔均的 n 加权平均，与广度口径笔均比符号。
+        <div style="margin-left:14px;">· <b>跨口径</b>：该格的<b>广度口径笔均</b> vs <b>按该格 regime 构成加权的「本工程口径各档笔均」</b>
+            （avg_regime[r] 在全样本上按 regime 算，与该格无关）—— 符号相反即两个口径对同一批成交的环境判断不一致。
             本工程 regime 口径<b>只在这一步出现</b>，它不产生自己的灯。</div>
         <div style="margin-left:14px;">· <b>任一轴明确翻转 → 判「🟣 不稳」</b>；某轴样本不足（None）不算翻转，不改变结论。</div>
     </div>
@@ -294,7 +303,8 @@
         阈值写在 <code>ashare_review/analysis/strategy_fit.py</code> 顶部常量，可自行调整。
     </div>
     <div><b>第 5 步 · 本工程 regime 怎么用</b>：它<b>不并排、不给第二套结论</b>。
-        它只在第 ③ 节作为证据出现：与广度口径同向 → 不改变结论；反向 → 该格判「不稳」。
+        它只在第 ③ 节作为证据出现：把它的<b>各档笔均</b>（全样本、按 regime 分组）按该格的 regime 构成加权，
+        与广度口径笔均比符号 —— 同向 → 不改变结论；反向 → 该格判「不稳」。
         这样"分歧"不再是一个需要人来权衡的结论，而是一个会直接让格子变灰的校验位。</div>
     <div><b>第 6 步 · 口径风险自查（写在这里，避免被数字误导）</b>：
         · 我的广度是 TDX 自算（涨停家数系统性高约 6 家、炸板率偏高），与斩龙用的东财口径不完全可比 → 阈值型状态会漂；

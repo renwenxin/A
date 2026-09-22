@@ -6,8 +6,16 @@
 
 原「本工程分类器」口径（上证缠论趋势 + 国证2000 相对强弱 + 情绪温度，见 load()）**降级为
 跨口径校验轴**：它没有自己的矩阵表、没有自己的灯、没有自己的"今日结论"；唯一作用是
-对同一格（战法 × 广度状态）把该格成交按本工程 regime 再分桶、取子桶笔均的 n 加权平均，
-与广度口径笔均比符号 —— 符号相反 → 该格判「不稳」；同向或样本不足 → 不改变结论。
+对同一格（战法 × 广度状态）比较**两个互相独立的期望**：
+  · 广度口径笔均 = 这一格自己的笔均；
+  · regime 口径期望 = 按这一格的 regime 构成，去加权**本工程 regime 口径自己的各档笔均**
+    avg_regime[r]（在**全样本**上按 regime 分组算出，与这一格无关）。
+符号相反 → 该格判「不稳」；同向或任一侧无数据 → 不改变结论。
+
+⚠️ 注意这里是**两个口径的独立统计**相比，而不是"把同一格成交再分桶"：
+后者是同一批成交的两种分桶，n 加权平均恒等于原笔均，符号永远相同（数学上恒等）。
+现在的写法可以真的翻号 —— 例如某个广度状态自身笔均为正，但它的成交大多落在
+regime 口径里评分为负的档位上。
 
 判定顺序（`_verdict_unified`，第一条命中即返回）：
   1 样本不足 → 2 跨版本不一致 → 3 跨时点口径相反 → 4 跨阈值翻转 → 5 跨口径相反
@@ -226,7 +234,8 @@ def _verdict_unified(v, stab, sens, conv, cross):
       stab  跨版本一致性 {n_ver, n_pos, n_neg, avg_min, avg_max}
       sens  跨阈值敏感性 {sign_stable, avg_min, avg_max}
       conv  跨时点口径 {stable, t1, same}（T-1 广度 vs 同日广度；stable=False 即符号相反）
-      cross 跨口径校验 {ok, breadth_avg, regime_avg, n_regimes}（广度 vs 本工程 regime 加权）
+      cross 跨口径校验 {ok, breadth_avg, regime_avg, n_regimes}
+            （该格广度口径笔均 vs 按该格 regime 构成加权的「本工程口径各档笔均」）
 
     顺序（第一条命中即返回，per-轴翻转为最高优先级）：
       n<MIN_N_ANY → 跨版本 → 跨时点 → 跨阈值 → 跨口径 → avg<=0 → 首选 → 可用 → 谨慎
@@ -252,9 +261,9 @@ def _verdict_unified(v, stab, sens, conv, cross):
     if _flipped(sens.get('sign_stable')):
         return dict(level='不稳', reason='跨阈值符号翻转：炸板率 35/40/45%% 下笔均 %+.2f%%~%+.2f%%' % (
             sens.get('avg_min') or 0, sens.get('avg_max') or 0))
-    # 轴 4：跨口径（广度口径 vs 本工程 regime 加权笔均）——只做校验，不再单独成表
+    # 轴 4：跨口径（该格广度口径笔均 vs 按该格 regime 构成加权的本工程口径各档笔均）——只做校验，不再单独成表
     if _flipped(cross.get('ok')):
-        return dict(level='不稳', reason='跨口径符号相反：广度口径 %+.2f%% / 本工程 regime 加权 %+.2f%%（%d 个 regime 桶）' % (
+        return dict(level='不稳', reason='跨口径符号相反：广度口径 %+.2f%% / 本工程口径各档加权 %+.2f%%（%d 个 regime 档）' % (
             cross.get('breadth_avg') or 0, cross.get('regime_avg') or 0, cross.get('n_regimes') or 0))
     if avg is not None and avg <= 0:
         if n >= MIN_N_STATS:
@@ -374,7 +383,12 @@ def _matrix_for_states(states_by_date, book_path):
 
 
 def _load_trades(book_path):
-    """把工作簿里两套战法的逐笔一次性读进来（含 signal_date / net_ret / regime），供多次分组复用"""
+    """把工作簿里两套战法的逐笔一次性读进来（含 signal_date / net_ret / regime），供多次分组复用
+
+    过滤条件与 `_stats_from` **保持一致**（regime 非空 + buy_price/sell_price 均 >0），
+    这样「广度口径矩阵」与「本工程 regime 口径矩阵」永远建立在同一批成交上，
+    跨口径比较才是有意义的（否则两边样本不同，比较的是两批成交而不是两种口径）。
+    """
     try:
         bk = pd.ExcelFile(book_path)
     except Exception:
@@ -387,44 +401,92 @@ def _load_trades(book_path):
         if 'regime' not in t.columns or 'net_ret' not in t.columns:
             continue
         t = t[t['regime'].notna()]
-        t = t[t['buy_price'].fillna(0) > 0]
+        for c in ('buy_price', 'sell_price'):
+            if c in t.columns:
+                t = t[t[c].fillna(0) > 0]
         key = t['signal_date'].astype(str) if 'signal_date' in t.columns else t['buy_date'].astype(str)
         out[label] = pd.DataFrame({'key': key.values, 'ret': t['net_ret'].astype(float).values,
                                    'regime': t['regime'].astype(str).values})
     return out
 
 
-def _cross_caliber(trades, states_by_date, m_main):
+def _regime_matrix_from_trades(trades):
+    """本工程 regime 口径矩阵：{label: {regime: {n, win, avg, pf}}}（按**逐笔自带的 regime** 分组）。
+
+    等价于 `_stats_from(pd.ExcelFile(newest))`，只是复用已载入的逐笔，不再解析一次工作簿。
+    这个矩阵是跨口径校验里 `avg_regime[r]` 的唯一来源 —— 它是**全样本**上每档 regime 的
+    笔均，与某一格（战法 × 广度状态）无关，因此可以给出独立的期望符号。
+    """
+    out = {}
+    for label, t in (trades or {}).items():
+        rows = {}
+        for st in STATES:
+            r = t['ret'][t['regime'] == st]
+            n = len(r)
+            if n == 0:
+                rows[st] = dict(n=0, win=None, avg=None, pf=None)
+                continue
+            w, l = r[r > 0], r[r <= 0]
+            rows[st] = dict(n=n, win=round((r > 0).mean() * 100, 1), avg=round(r.mean(), 2),
+                            pf=round(w.mean() / abs(l.mean()), 2) if len(w) and len(l) else None)
+        out[label] = rows
+    return out
+
+
+def _cross_caliber(trades, states_by_date, m_main, m_regime):
     """跨口径校验（唯一的用途：让本工程 regime 口径能判「不稳」，而不是自成一套表）。
 
-    对每一格（战法 × 广度状态）：取该格成交（与广度矩阵同一批、同 key 口径），
-    按逐笔自带的 regime 列再分桶 → 各 regime 子桶笔均 → 取 n 加权平均（= 该格在本工程
-    口径下的加权笔均），再与广度口径笔均比符号。
+    对每一格（战法 × 广度状态）比较两个**独立**的期望：
+
+      breadth_avg = 该格的广度口径笔均（`m_main` 里的 avg，即这一格自己的笔均）；
+      regime_avg  = 按该格的 regime 构成加权**本工程 regime 口径自己的各档笔均**：
+                    Σ_r n_{st,r} · avg_regime[r] / Σ_r n_{st,r}
+                    其中 n_{st,r} = 该格成交里 regime == r 的笔数，
+                    avg_regime[r] = `m_regime`（全样本按 regime 分组统计）里第 r 档的笔均。
+                    只统计 **avg_regime[r] 非空且 n_{st,r} > 0** 的档位（也算进分母）。
+
+    这是关键区别：avg_regime[r] 来自 regime 口径在**全样本**上的独立统计，不是把这一格自己的
+    成交再分桶（那种做法的 n 加权平均恒等于 breadth_avg，符号永远一致、永远测不出问题）。
+    所以这里的符号可以真的相反 —— 例如某广度状态自身笔均为正，但它的成交大多落在
+    regime 口径评分为负的档位上。
+
+    参数：
+      trades          {label: DataFrame[key, ret, regime]}（与广度矩阵同一批成交）
+      states_by_date  {key: 广度状态}
+      m_main          广度口径矩阵 {label: {state: {n, win, avg, pf}}}
+      m_regime        本工程 regime 口径矩阵 {label: {regime: {n, win, avg, pf}}}
 
     返回 {label: {st: {ok, breadth_avg, regime_avg, n_regimes}}}
-      ok = (breadth_avg>0) == (regime_avg>0)；两边任一无样本 → None（样本不足，不算翻转）
+      ok = (breadth_avg>0) == (regime_avg>0)；两边任一无数据 → None（样本不足，不算翻转）
+      n_regimes = 实际参与加权的 regime 档位数
     """
     out = {}
     for label, t in (trades or {}).items():
         x = t.assign(_st=[states_by_date.get(k) for k in t['key']])
+        reg = (m_regime or {}).get(label, {}) or {}
         out[label] = {}
         for s in BSTATES:
+            breadth_avg = (m_main.get(label, {}).get(s) or {}).get('avg')
             g = x[x._st == s]
             if not len(g):
-                out[label][s] = dict(ok=None, breadth_avg=None, regime_avg=None, n_regimes=0)
+                out[label][s] = dict(ok=None, breadth_avg=breadth_avg, regime_avg=None, n_regimes=0)
                 continue
-            sub_avg, sub_n = [], []
-            for _, sg in g.groupby('regime'):
-                sub_avg.append(float(sg['ret'].mean()))
-                sub_n.append(len(sg))
-            tot = sum(sub_n)
-            regime_avg = round(sum(a * b for a, b in zip(sub_avg, sub_n)) / tot, 2) if tot else None
-            breadth_avg = (m_main.get(label, {}).get(s) or {}).get('avg')
+            num = den = 0.0
+            n_reg = 0
+            for r, sg in g.groupby('regime'):
+                a = (reg.get(r) or {}).get('avg')
+                if a is None or pd.isna(a):
+                    continue
+                k = len(sg)
+                num += float(a) * k
+                den += k
+                n_reg += 1
+            regime_avg = round(num / den, 2) if den else None
             ok = None
             if breadth_avg is not None and regime_avg is not None:
                 ok = bool((breadth_avg > 0) == (regime_avg > 0))
             out[label][s] = dict(ok=ok, breadth_avg=breadth_avg, regime_avg=regime_avg,
-                                 n_regimes=len(sub_n))
+                                 n_regimes=n_reg)
     return out
 
 
@@ -479,6 +541,9 @@ def breadth_data(force=False):
     trades_main = _load_trades(newest)
     m_main = _matrix_from_trades(trades_main, asof)
     m_same = _matrix_from_trades(trades_main, same)
+    # 本工程 regime 口径矩阵（跨口径校验要用的 avg_regime[r]）：从同一批逐笔重算一次，
+    # 等价于 _stats_from(pd.ExcelFile(newest))，但不再解析一次工作簿
+    m_regime = _regime_matrix_from_trades(trades_main)
 
     # 跨版本一致性（同一套广度状态；每个工作簿只解析一次）
     stab = {}
@@ -539,7 +604,8 @@ def breadth_data(force=False):
             conv[label][st] = dict(stable=bool((a['avg'] > 0) == (s2['avg'] > 0)),
                                    t1=a['avg'], same=s2['avg'])
     # 跨口径校验（本工程 regime 只在这里出现，只用于判「不稳」）
-    cross = _cross_caliber(trades_main, asof, m_main)
+    # 期望侧用的是 regime 口径**全样本**各档笔均 m_regime，不是把这一格自己的成交再分桶
+    cross = _cross_caliber(trades_main, asof, m_main, m_regime)
 
     # 统一判定：广度口径单轴 + 四个稳健性轴（任一轴翻转 → 不稳）
     verd = {label: {st: _verdict_unified(m_main[label].get(st, {}), stab[label][st],
@@ -590,6 +656,7 @@ def breadth_data(force=False):
     return dict(
         fit=dict(
             states=BSTATES, days=days, matrix=m_main, matrix_same_day=m_same,
+            matrix_regime=m_regime,
             verdicts=verd, stability=stab, sens=sens_out, conv=conv, cross=cross,
             generated=gen, last_date=str(last['date']),
             last_row=dict(zt=int(last['zt']), dt=int(last['dt']), zb_rate=float(last['zb_rate']),
