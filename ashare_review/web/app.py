@@ -1718,6 +1718,136 @@ def stock_detail(code):
         return render_template('stock_detail.html', code=code, error=str(e))
 
 
+def _json_native(o):
+    """numpy 标量 / NaN → 原生 JSON 可序列化类型"""
+    import numpy as _np
+    if isinstance(o, dict):
+        return {k: _json_native(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_json_native(v) for v in o]
+    if isinstance(o, _np.integer):
+        return int(o)
+    if isinstance(o, _np.floating):
+        f_ = float(o)
+        return None if f_ != f_ else f_
+    if isinstance(o, _np.bool_):
+        return bool(o)
+    if isinstance(o, float) and o != o:
+        return None
+    return o
+
+
+def _build_f10_ctx(code: str, f10: dict) -> dict:
+    """构建 analyze_stock 所需的 ctx（涨跌幅/连板/热门板块/所属题材）。
+
+    全部为 best-effort：任一数据源失败只影响对应字段，不阻断 F10 返回。
+    ctx 契约: {change_pct: float, limit_info: {consecutive, seal_pressure}|None,
+               hot_boards: [{name, zt_count}], board_names: [str]}
+    """
+    ctx = {'change_pct': 0.0, 'limit_info': None, 'hot_boards': [], 'board_names': []}
+
+    # ── 涨跌幅（TDX 日线，收盘口径） ──
+    try:
+        from ..utils.board import market_of as _market_of   # 板别单一入口（含北交所 92 段）
+        df = tdx.read_daily(code, _market_of(code))
+        if df is not None and len(df) >= 2:
+            c1 = float(df['close'].iloc[-1]); c0 = float(df['close'].iloc[-2])
+            if c0 > 0:
+                ctx['change_pct'] = round((c1 - c0) / c0 * 100, 2)
+    except Exception:
+        pass
+
+    # ── 涨停池: 连板数 / 封单压力 / 热门板块 ──
+    try:
+        pool = ak_fetcher.get_limit_up_pool() or []
+        boards = {}
+        for lu in pool:
+            ind = getattr(lu, 'board_type', '') or ''
+            if ind and ind != '一字板':
+                boards[ind] = boards.get(ind, 0) + 1
+            if lu.code == code:
+                consecutive = getattr(lu, 'consecutive', 0) or 0
+                seal = 0.0
+                try:
+                    seal_amt = float(getattr(lu, 'seal_amount', 0) or 0)
+                    fmc = float(getattr(lu, 'float_market_cap', 0) or 0)
+                    if fmc > 0 and seal_amt > 0:
+                        seal = round(seal_amt / fmc * 100, 2)
+                except Exception:
+                    seal = 0.0
+                ctx['limit_info'] = {'consecutive': consecutive, 'seal_pressure': seal}
+        ctx['hot_boards'] = [{'name': k, 'zt_count': v}
+                             for k, v in sorted(boards.items(), key=lambda x: -x[1])
+                             if v >= 3][:12]
+    except Exception:
+        pass
+
+    # ── 所属题材: 涨停池行业 + F10 company 行业 + 概念库 ──
+    names = []
+    try:
+        company = (f10 or {}).get('company') or {}
+        ind = company.get('industry') or ''
+        if ind:
+            names.append(ind)
+    except Exception:
+        pass
+    try:
+        pool = ak_fetcher.get_limit_up_pool() or []
+        for lu in pool:
+            if lu.code == code and getattr(lu, 'board_type', ''):
+                if lu.board_type not in names:
+                    names.append(lu.board_type)
+                break
+    except Exception:
+        pass
+    try:
+        import json as _json, os as _os
+        _cmap_path = _os.path.join(_os.path.dirname(_os.path.dirname(
+            _os.path.abspath(__file__))), 'data', 'concept_map.json')
+        with open(_cmap_path, 'r', encoding='utf-8') as _fp:
+            _raw = _json.load(_fp)
+        _concepts = _raw.get('concepts', {}) if isinstance(_raw, dict) else {}
+        for cname, info in _concepts.items():
+            members = info.get('members', []) if isinstance(info, dict) else (info or [])
+            if code in members and cname not in names:
+                names.append(cname)
+            if len(names) >= 5:
+                break
+    except Exception:
+        pass
+    ctx['board_names'] = names[:5]
+    return ctx
+
+
+@app.route('/api/stock/f10/<code>')
+def api_stock_f10(code):
+    """F10 个股档案 + 九维个股分析（东财公开接口，每代码每天最多抓 1 次）。
+
+    返回 {"success": true, "data": {f10, analysis, ctx, fetched_at}}；
+    失败 {"success": false, "error": "..."}（始终 200 + JSON，避免前端解析 HTML）。
+    ⚠️ 2026-09-02 修复：该路由此前只存在于工作树、从未提交，随 app.py 截断事故丢失，
+    前端 fetch 落入 404 HTML 页面 → 报 "Unexpected token '<'"。
+    """
+    if not (len(code) == 6 and code.isdigit()):
+        return jsonify({'success': False, 'error': '无效的股票代码'}), 200
+    refresh = request.args.get('refresh') == '1'
+    try:
+        f10 = f10_fetcher.get_f10(code, refresh=refresh)
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'F10 抓取失败: {e}'}), 200
+    if not f10:
+        return jsonify({'success': False, 'error': 'F10 数据为空'}), 200
+
+    ctx = _build_f10_ctx(code, f10)
+    try:
+        analysis = analyze_stock(f10, ctx)
+    except Exception as e:
+        analysis = {'dims': [], 'summary': f'分析失败: {e}'}
+
+    data = {'f10': f10, 'analysis': analysis, 'ctx': ctx,
+            'fetched_at': f10.get('fetched_at', '')}
+    return jsonify({'success': True, 'data': _json_native(data)})
+
 # ── 缓存管理 API ──
 
 @app.route('/api/cache/status')
